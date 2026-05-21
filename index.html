@@ -1,0 +1,4685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>app</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Jost:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    :root {
+      --ink: #0c0c11;
+      --ink2: #14141c;
+      --ink3: #1c1c28;
+      --amber: #C9A646;
+      --amber2: #F5D37A;
+      --amber3: #f7e09a;
+      --amber-dim: rgba(201, 166, 70, .14);
+      --cream: #f5f0e8;
+      --white: #ffffff;
+      --card: rgba(255, 255, 255, .045);
+      --card2: rgba(255, 255, 255, .08);
+      --text: #f2efe9;
+      --text2: #a09c98;
+      --text3: rgba(255, 255, 255, .28);
+      --line: rgba(255, 255, 255, .07);
+      --radius: 20px;
+      --shadow: 0 4px 28px rgba(0, 0, 0, .5), inset 0 1px rgba(255, 255, 255, .06);
+      --shadow-lg: 0 16px 56px rgba(0, 0, 0, .65), inset 0 1px rgba(255, 255, 255, .08);
+      --glow: 0 0 32px rgba(201, 166, 70, .28);
+      --gold-grad: linear-gradient(135deg, #B8963A, #C9A646 30%, #F5D37A 60%, #C9A646 80%, #B8963A);
+      --gold-grad-simple: linear-gradient(135deg, #C9A646, #F5D37A, #B8963A);
+      --noise-bg: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: #07070a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Jost', sans-serif;
+      background-image: radial-gradient(ellipse at 30% 40%, rgba(201, 166, 70, .07) 0%, transparent 55%), radial-gradient(ellipse at 75% 70%, rgba(60, 30, 120, .08) 0%, transparent 55%), var(--noise-bg);
+      padding: 40px 20px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* ── PHONE SHELL ── */
+    .phone {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      background: #ffffff;
+      border-radius: 55px;
+      box-shadow:
+        0 0 0 1.5px #d0d0d8,
+        0 0 0 3px #f5f5f5,
+        0 0 0 4.5px #c8c8d0,
+        0 0 80px rgba(201, 166, 70, .08),
+        0 60px 160px rgba(0, 0, 0, .35),
+        0 20px 60px rgba(0, 0, 0, .2),
+        inset 0 0 0 1px rgba(255, 255, 255, .8);
+      flex-shrink: 0;
+    }
+
+    .phone::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: 148px;
+      width: 3px;
+      height: 32px;
+      background: #c0c0c8;
+      border-radius: 2px 0 0 2px;
+      box-shadow: 0 46px 0 #c0c0c8, 0 88px 0 #c0c0c8
+    }
+
+    .phone::after {
+      content: '';
+      position: absolute;
+      right: -3px;
+      top: 190px;
+      width: 3px;
+      height: 64px;
+      background: #c0c0c8;
+      border-radius: 0 2px 2px 0
+    }
+
+    /* ── MOBILE RESPONSIVE SCALING ── */
+    @media (max-width:860px) {
+
+      html,
+      body {
+        padding: 20px 10px;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width:480px) {
+
+      html,
+      body {
+        padding: 0;
+        align-items: flex-start;
+        justify-content: center;
+      }
+
+      .phone {
+        transform-origin: top center;
+        transform: scale(var(--phone-scale, 0.82));
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width:400px) {
+      .phone {
+        transform: scale(0.75);
+      }
+    }
+
+    @media (max-width:340px) {
+      .phone {
+        transform: scale(0.65);
+      }
+    }
+
+    /* Dynamic scale via JS on very small screens */
+    @supports (height:100dvh) {
+
+      html,
+      body {
+        min-height: 100dvh;
+      }
+    }
+
+    .screen-wrap {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border-radius: 47px;
+      overflow: hidden;
+      background: #0d0d12;
+    }
+
+
+    .island {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 126px;
+      height: 36px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 999;
+    }
+
+    #app {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0d0d12;
+    }
+
+    .scr {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      background: #0d0d12;
+      overflow: hidden;
+      transition: opacity .3s ease;
+    }
+
+    .scr.show {
+      display: flex
+    }
+
+    .scr-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .scr-body::-webkit-scrollbar {
+      display: none
+    }
+
+    /* ── STATUS BAR ── */
+    .sbar {
+      flex-shrink: 0;
+      height: 54px;
+      padding: 14px 26px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+
+    .sbar .time {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .02em
+    }
+
+    .sbar .icons {
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .sbar .icons svg {
+      width: 16px;
+      height: 16px
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bnav {
+      flex-shrink: 0;
+      height: 82px;
+      background: rgba(11, 11, 16, .97);
+      backdrop-filter: blur(36px) saturate(180%);
+      -webkit-backdrop-filter: blur(36px) saturate(180%);
+      border-top: 1px solid rgba(255, 255, 255, .07);
+      box-shadow: 0 -1px 0 rgba(255, 255, 255, .04), inset 0 1px rgba(255, 255, 255, .05);
+      display: flex;
+      align-items: center;
+      padding: 0 8px 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .bni {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px 4px;
+      border-radius: 14px;
+      transition: all .25s ease;
+    }
+
+    .bni:active {
+      transform: scale(.91)
+    }
+
+    .bni svg {
+      width: 22px;
+      height: 22px;
+      transition: all .25s ease;
+      stroke-width: 1.8
+    }
+
+    .bni span {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .28);
+      transition: color .25s ease;
+      letter-spacing: .05em;
+      text-transform: uppercase
+    }
+
+    .bni.on span {
+      color: var(--amber);
+      font-weight: 700;
+      letter-spacing: .06em
+    }
+
+    .bni.on svg {
+      filter: drop-shadow(0 2px 10px rgba(201, 166, 70, .6))
+    }
+
+    /* ── CSS VARS ── */
+    /* ── TYPOGRAPHY ── */
+    .display {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700
+    }
+
+    .mono {
+      font-family: 'DM Mono', monospace
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      font-family: 'Jost', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: .06em;
+      transition: all .25s ease;
+      padding: 15px 24px;
+      width: 100%;
+    }
+
+    .btn:active {
+      transform: scale(.97);
+      opacity: .92
+    }
+
+    .btn-dark {
+      background: rgba(255, 255, 255, .07);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, .1);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .btn-amber {
+      background: var(--gold-grad);
+      color: #0a0a10;
+      box-shadow: 0 6px 32px rgba(201, 166, 70, .5), 0 2px 8px rgba(0, 0, 0, .4), inset 0 1px rgba(255, 255, 255, .25), var(--glow);
+      font-weight: 700;
+      letter-spacing: .07em;
+      animation: amberGlow 3s infinite;
+    }
+
+    .btn-amber:active {
+      transform: scale(.96)
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--amber);
+      color: var(--amber);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .btn-ghost {
+      background: rgba(201, 166, 70, .09);
+      color: var(--amber);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .btn-lock {
+      background: rgba(255, 255, 255, .04);
+      color: rgba(255, 255, 255, .28);
+      cursor: not-allowed;
+      border: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .btn-sm {
+      padding: 10px 18px;
+      font-size: 13px;
+      border-radius: 11px;
+      width: auto
+    }
+
+    /* ── INPUT ── */
+    .field {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, .055);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 13px;
+      font-family: 'Jost', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: all .25s ease;
+      box-shadow: inset 0 1px rgba(0, 0, 0, .2)
+    }
+
+    .field:focus {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .06);
+      box-shadow: 0 0 0 3px rgba(201, 166, 70, .12), inset 0 1px rgba(0, 0, 0, .15)
+    }
+
+    .field::placeholder {
+      color: rgba(255, 255, 255, .22)
+    }
+
+    .flabel {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text2);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+      display: block
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .5), inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .card2 {
+      background: var(--card2);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, .1);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, .55), inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .card-glass {
+      background: rgba(255, 255, 255, .07);
+      backdrop-filter: blur(36px) saturate(160%);
+      -webkit-backdrop-filter: blur(36px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, .6), inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    /* ── SECTION HEAD ── */
+    .sh {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      margin-bottom: 14px
+    }
+
+    .sh h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .03em
+    }
+
+    .sh a {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber);
+      cursor: pointer;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      opacity: .9
+    }
+
+    /* ── PILL ── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    .pill-amber {
+      background: var(--gold-grad);
+      color: #0a0a10;
+      box-shadow: 0 2px 12px rgba(201, 166, 70, .4), inset 0 1px rgba(255, 255, 255, .2)
+    }
+
+    .pill-dark {
+      background: rgba(255, 255, 255, .1);
+      color: var(--text2)
+    }
+
+    .pill-green {
+      background: rgba(16, 185, 129, .12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, .22)
+    }
+
+    .pill-muted {
+      background: rgba(255, 255, 255, .06);
+      color: var(--text3)
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(40px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    @keyframes slideRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(.3);
+        opacity: 0
+      }
+
+      60% {
+        transform: scale(1.12)
+      }
+
+      80% {
+        transform: scale(.95)
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0
+      }
+
+      100% {
+        background-position: 200% 0
+      }
+    }
+
+    @keyframes amberGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 6px 32px rgba(201, 166, 70, .4), 0 0 0 1px rgba(201, 166, 70, .18), inset 0 1px rgba(255, 255, 255, .22)
+      }
+
+      50% {
+        box-shadow: 0 6px 56px rgba(201, 166, 70, .72), 0 0 0 1px rgba(201, 166, 70, .35), inset 0 1px rgba(255, 255, 255, .3)
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(.8);
+        opacity: 0
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-6px)
+      }
+    }
+
+    @keyframes orb {
+      0% {
+        transform: translate(0, 0) scale(1)
+      }
+
+      33% {
+        transform: translate(20px, -15px) scale(1.1)
+      }
+
+      66% {
+        transform: translate(-10px, 20px) scale(.9)
+      }
+
+      100% {
+        transform: translate(0, 0) scale(1)
+      }
+    }
+
+    /* ── TOAST ── */
+    /* ── PREMIUM TOAST ── */
+    /* ── PREMIUM TOAST (welcome-style) ── */
+    /* ── TOAST  (same look as welcome-notif) ── */
+    #toast {
+      position: absolute;
+      top: 68px;
+      left: 14px;
+      right: 14px;
+      background: linear-gradient(135deg, rgba(201, 166, 70, .22), rgba(14, 14, 20, .96) 60%);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(201, 166, 70, .4);
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      z-index: 9999;
+      pointer-events: none;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 0 1px rgba(201, 166, 70, .08), 0 0 40px rgba(201, 166, 70, .18), inset 0 1px rgba(255, 255, 255, .14);
+    }
+
+    #toast::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(201, 166, 70, .07), transparent);
+      animation: shimmer 2.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* colour overrides per type — keep the base dark shell, just tint border+glow */
+    #toast.success {
+      border-color: rgba(16, 185, 129, .45);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(16, 185, 129, .18), inset 0 1px rgba(255, 255, 255, .12);
+    }
+
+    #toast.success::before {
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, .07), transparent);
+    }
+
+    #toast.error {
+      border-color: rgba(239, 68, 68, .45);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(239, 68, 68, .18), inset 0 1px rgba(255, 255, 255, .1);
+    }
+
+    #toast.error::before {
+      background: linear-gradient(90deg, transparent, rgba(239, 68, 68, .07), transparent);
+    }
+
+    #toast.info {
+      border-color: rgba(99, 102, 241, .45);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(99, 102, 241, .18), inset 0 1px rgba(255, 255, 255, .1);
+    }
+
+    #toast.info::before {
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, .07), transparent);
+    }
+
+    #toast.show {
+      display: flex;
+      animation: welcomePop .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    }
+
+    /* icon — matches .wn-icon */
+    .t-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(201, 166, 70, .55), inset 0 1px rgba(255, 255, 255, .3);
+      animation: amberGlow 3s infinite;
+    }
+
+    #toast .t-icon {
+      background: var(--gold-grad);
+    }
+
+    #toast.success .t-icon {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, .45), inset 0 1px rgba(255, 255, 255, .3);
+      animation: none;
+    }
+
+    #toast.error .t-icon {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      box-shadow: 0 8px 24px rgba(239, 68, 68, .45), inset 0 1px rgba(255, 255, 255, .3);
+      animation: none;
+    }
+
+    #toast.info .t-icon {
+      background: linear-gradient(135deg, #4338ca, #6366f1);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, .45), inset 0 1px rgba(255, 255, 255, .3);
+      animation: none;
+    }
+
+    .t-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* text — matches .wn-text */
+    .t-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .t-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .01em;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .t-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .48);
+      letter-spacing: .02em;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* badge — matches .wn-badge */
+    .t-badge {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 14px rgba(201, 166, 70, .45), inset 0 1px rgba(255, 255, 255, .25);
+    }
+
+    #toast .t-badge {
+      background: var(--gold-grad);
+      color: #0a0a10;
+    }
+
+    #toast.success .t-badge {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, .4), inset 0 1px rgba(255, 255, 255, .2);
+    }
+
+    #toast.error .t-badge {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, .4), inset 0 1px rgba(255, 255, 255, .2);
+    }
+
+    #toast.info .t-badge {
+      background: linear-gradient(135deg, #4338ca, #6366f1);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, .4), inset 0 1px rgba(255, 255, 255, .2);
+    }
+
+
+    /* ══════════════════════════════════
+   AUTH SCREEN
+══════════════════════════════════ */
+    #s-auth {
+      background: var(--ink)
+    }
+
+    .auth-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden
+    }
+
+    .auth-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: .4
+    }
+
+    .auth-orb1 {
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, #C9A646, #7a3e08);
+      top: -80px;
+      left: -80px;
+      animation: orb 8s ease-in-out infinite
+    }
+
+    .auth-orb2 {
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, #2a1a7a, #0d0d14);
+      bottom: 120px;
+      right: -50px;
+      animation: orb 10s ease-in-out infinite reverse
+    }
+
+    .auth-orb3 {
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, #C9A646, transparent);
+      bottom: 200px;
+      left: 30px;
+      animation: orb 6s ease-in-out infinite 2s;
+      opacity: .18
+    }
+
+    .auth-noise {
+      position: absolute;
+      inset: 0;
+      background-image: var(--noise-bg);
+      pointer-events: none
+    }
+
+    .auth-top {
+      padding: 80px 28px 28px;
+      text-align: center;
+      position: relative;
+      z-index: 2
+    }
+
+    .auth-logo {
+      width: 72px;
+      height: 72px;
+      background: var(--gold-grad);
+      border-radius: 22px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 18px 48px rgba(201, 166, 70, .55), 0 0 0 1px rgba(201, 166, 70, .35), inset 0 1px rgba(255, 255, 255, .3);
+      animation: amberGlow 3s infinite;
+    }
+
+    .auth-logo svg {
+      width: 36px;
+      height: 36px
+    }
+
+    .auth-top h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+      letter-spacing: .01em
+    }
+
+    .auth-top p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .38);
+      letter-spacing: .03em
+    }
+
+    .auth-sheet {
+      margin: 0 16px;
+      background: rgba(255, 255, 255, .055);
+      backdrop-filter: blur(40px) saturate(160%);
+      -webkit-backdrop-filter: blur(40px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 28px;
+      padding: 26px;
+      box-shadow: 0 36px 90px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .12);
+      position: relative;
+      z-index: 2;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, .055);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, .09)
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .3);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: all .25s ease;
+      letter-spacing: .05em
+    }
+
+    .auth-tab.on {
+      background: linear-gradient(135deg, rgba(201, 166, 70, .28), rgba(201, 166, 70, .12));
+      color: var(--amber);
+      border: 1px solid rgba(201, 166, 70, .22);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .auth-note {
+      font-size: 10px;
+      color: rgba(255, 255, 255, .18);
+      text-align: center;
+      padding: 16px;
+      letter-spacing: .03em
+    }
+
+    .social-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px
+    }
+
+    .social-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      background: rgba(255, 255, 255, .055);
+      color: rgba(255, 255, 255, .65);
+      transition: all .25s ease;
+      letter-spacing: .02em;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .social-btn:active {
+      background: rgba(255, 255, 255, .1);
+      transform: scale(.97)
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0
+    }
+
+    .divider hr {
+      flex: 1;
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, .08)
+    }
+
+    .divider span {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .2)
+    }
+
+    .forgot {
+      text-align: right;
+      margin-bottom: 14px
+    }
+
+    .forgot a {
+      font-size: 12px;
+      color: var(--amber);
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .03em
+    }
+
+    .mg8 {
+      margin-bottom: 8px
+    }
+
+    .mg14 {
+      margin-bottom: 14px
+    }
+
+    .mg20 {
+      margin-bottom: 20px
+    }
+
+    /* ══════════════════════════════════
+   HOME SCREEN
+══════════════════════════════════ */
+    .home-hero {
+      background: linear-gradient(160deg, #090910 0%, #100e1c 40%, #170e1e 100%);
+      padding: 0 0 28px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .hero-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(ellipse at 80% 10%, rgba(201, 166, 70, .18) 0%, transparent 50%), radial-gradient(ellipse at 10% 90%, rgba(90, 50, 180, .12) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(201, 166, 70, .04) 0%, transparent 70%);
+      pointer-events: none
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px 18px;
+      position: relative;
+      z-index: 2
+    }
+
+    .hero-greet {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .35);
+      font-weight: 400;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 3px
+    }
+
+    .hero-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .hero-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(201, 166, 70, .28), rgba(201, 166, 70, .08));
+      border: 1.5px solid rgba(201, 166, 70, .38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 18px rgba(201, 166, 70, .2), inset 0 1px rgba(255, 255, 255, .12);
+      transition: all .25s ease;
+    }
+
+    .hero-avatar:active {
+      transform: scale(.93)
+    }
+
+    .hero-card {
+      margin: 0 20px;
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(145deg, rgba(201, 166, 70, .18) 0%, rgba(255, 255, 255, .07) 60%, rgba(201, 166, 70, .08) 100%);
+      backdrop-filter: blur(30px) saturate(150%);
+      -webkit-backdrop-filter: blur(30px) saturate(150%);
+      border: 1px solid rgba(201, 166, 70, .28);
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .55), 0 0 60px rgba(201, 166, 70, .08), inset 0 1px rgba(255, 255, 255, .12), inset 0 -1px rgba(0, 0, 0, .2);
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 50%;
+      height: 150%;
+      background: linear-gradient(135deg, rgba(245, 211, 122, .12), transparent 60%);
+      transform: rotate(-15deg);
+      pointer-events: none
+    }
+
+    .hero-card-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .38);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 4px
+    }
+
+    .hero-card-val {
+      font-size: 34px;
+      font-weight: 500;
+      color: #fff;
+      margin: 4px 0;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: -.01em;
+      text-shadow: 0 2px 20px rgba(201, 166, 70, .3)
+    }
+
+    .hero-card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .prime-banner-strip {
+      margin: 16px 20px 0;
+      border-radius: 18px;
+      background: var(--gold-grad);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      transition: transform .25s ease, box-shadow .25s ease;
+      box-shadow: 0 8px 28px rgba(201, 166, 70, .5), 0 2px 8px rgba(0, 0, 0, .3), 0 0 0 1px rgba(245, 211, 122, .2);
+      overflow: hidden;
+    }
+
+    .prime-banner-strip::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .22), transparent 60%);
+      pointer-events: none
+    }
+
+    .prime-banner-strip::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: 10%;
+      width: 30%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .12), transparent);
+      transform: skewX(-20deg);
+      animation: shimmer 4s ease-in-out infinite
+    }
+
+    .prime-banner-strip:active {
+      transform: scale(.97);
+      box-shadow: 0 4px 16px rgba(201, 166, 70, .4)
+    }
+
+    .pbs-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, .22);
+      border-radius: 13px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0, 0, 0, .1)
+    }
+
+    .pbs-icon svg {
+      width: 22px;
+      height: 22px
+    }
+
+    .pbs-text h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0a0a10;
+      margin-bottom: 2px;
+      letter-spacing: .02em
+    }
+
+    .pbs-text p {
+      font-size: 11px;
+      color: rgba(0, 0, 0, .52)
+    }
+
+    .pbs-arrow {
+      margin-left: auto;
+      color: rgba(0, 0, 0, .45);
+      font-size: 20px;
+      font-weight: 300
+    }
+
+    /* Category chips */
+    .cat-scroll {
+      display: flex;
+      gap: 10px;
+      padding: 18px 20px 4px;
+      overflow-x: auto;
+      flex-shrink: 0
+    }
+
+    .cat-scroll::-webkit-scrollbar {
+      display: none
+    }
+
+    .chip {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 16px;
+      border: 1.5px solid rgba(255, 255, 255, .08);
+      cursor: pointer;
+      transition: all .25s ease;
+      min-width: 62px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .chip:active {
+      transform: scale(.92)
+    }
+
+    .chip.on {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .11);
+      box-shadow: 0 2px 16px rgba(201, 166, 70, .18), inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .chip-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .chip-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.7
+    }
+
+    .chip-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .3);
+      white-space: nowrap;
+      letter-spacing: .05em;
+      text-transform: uppercase
+    }
+
+    .chip.on .chip-label {
+      color: var(--amber)
+    }
+
+    /* Merchant cards */
+    .mcards {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .mcard {
+      background: rgba(255, 255, 255, .045);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .09);
+      cursor: pointer;
+      transition: all .25s ease;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, .5), inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .mcard:active {
+      transform: scale(.975);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .4)
+    }
+
+    .mcard:hover {
+      box-shadow: 0 8px 36px rgba(0, 0, 0, .6), 0 0 0 1px rgba(201, 166, 70, .12)
+    }
+
+    .mcard-img {
+      height: 148px;
+      position: relative;
+      overflow: hidden;
+      background: #14141e
+    }
+
+    .mcard-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, .75) 0%, rgba(0, 0, 0, .2) 50%, transparent 100%);
+      pointer-events: none;
+      z-index: 1
+    }
+
+    .mcard-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform .4s ease, filter .4s ease;
+      filter: brightness(.82) contrast(1.05)
+    }
+
+    .mcard:hover .mcard-img img {
+      transform: scale(1.06);
+      filter: brightness(.88) contrast(1.08)
+    }
+
+    .mcard-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--gold-grad);
+      color: #0a0a10;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 11px;
+      border-radius: 20px;
+      letter-spacing: .05em;
+      box-shadow: 0 2px 10px rgba(201, 166, 70, .4), inset 0 1px rgba(255, 255, 255, .2);
+      z-index: 2
+    }
+
+    .mcard-lock {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2
+    }
+
+    .mcard-lock svg {
+      width: 28px;
+      height: 28px;
+      opacity: .45
+    }
+
+    .mcard-info {
+      padding: 14px 16px
+    }
+
+    .mcard-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 5px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .mcard-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .mcard-loc {
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .mcard-loc svg {
+      width: 11px;
+      height: 11px;
+      flex-shrink: 0;
+      stroke-width: 1.7
+    }
+
+    .mcard-cat {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--amber);
+      background: rgba(201, 166, 70, .1);
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      border: 1px solid rgba(201, 166, 70, .18)
+    }
+
+    .mcard-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .mcard-disc {
+      font-size: 12px;
+      color: var(--amber);
+      font-weight: 600
+    }
+
+    /* Merchant icon in card list */
+    .mcard-icon-thumb {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, rgba(201, 166, 70, .18), rgba(201, 166, 70, .05));
+      border: 1px solid rgba(201, 166, 70, .22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .mcard-icon-thumb svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 1.6
+    }
+
+    /* ══════════════════════════════════
+   PRIME SCREEN
+══════════════════════════════════ */
+    #s-prime {
+      background: var(--ink);
+      overflow-y: auto
+    }
+
+    .prime-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none
+    }
+
+    .prime-bg-orb {
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 166, 70, .32), transparent);
+      top: -100px;
+      left: -80px;
+      filter: blur(90px);
+      animation: orb 10s ease-in-out infinite
+    }
+
+    .prime-top {
+      padding: 60px 20px 24px;
+      text-align: center;
+      position: relative;
+      z-index: 2
+    }
+
+    .prime-crown-wrap {
+      width: 80px;
+      height: 80px;
+      background: var(--gold-grad);
+      border-radius: 26px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 56px rgba(201, 166, 70, .6), 0 0 0 1px rgba(245, 211, 122, .35), inset 0 1px rgba(255, 255, 255, .3);
+      animation: amberGlow 3s infinite
+    }
+
+    .prime-crown-wrap svg {
+      width: 42px;
+      height: 42px
+    }
+
+    .prime-top h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: .01em
+    }
+
+    .prime-top p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .42);
+      line-height: 1.7
+    }
+
+    .prime-sheet {
+      background: rgba(255, 255, 255, .055);
+      backdrop-filter: blur(40px) saturate(160%);
+      -webkit-backdrop-filter: blur(40px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 28px;
+      margin: 0 16px;
+      padding: 24px;
+      box-shadow: 0 36px 90px rgba(0, 0, 0, .6), inset 0 1px rgba(255, 255, 255, .12);
+      position: relative;
+      z-index: 2;
+      margin-bottom: 32px
+    }
+
+    .plans-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px
+    }
+
+    .plan {
+      flex: 1;
+      border-radius: 18px;
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .25s ease;
+      background: rgba(255, 255, 255, .04);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .plan.sel {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .09);
+      box-shadow: 0 0 0 1px rgba(201, 166, 70, .22), 0 4px 24px rgba(201, 166, 70, .2), inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .plan-badge {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 6px
+    }
+
+    .plan-name {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .32);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      margin-bottom: 8px
+    }
+
+    .plan-price {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: 'DM Mono', monospace
+    }
+
+    .plan.sel .plan-name {
+      color: var(--amber)
+    }
+
+    .plan-sub {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 3px
+    }
+
+    .benefits {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 22px
+    }
+
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .bicon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      background: rgba(201, 166, 70, .12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(201, 166, 70, .18);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .bicon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.6
+    }
+
+    .btext h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+      letter-spacing: .01em
+    }
+
+    .btext p {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.5
+    }
+
+    /* ══════════════════════════════════
+   PAYMENT SCREEN
+══════════════════════════════════ */
+    .pay-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px
+    }
+
+    .pay-merchant-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 22px;
+      margin: 0 auto 14px;
+      background: rgba(201, 166, 70, .14);
+      border: 1px solid rgba(201, 166, 70, .25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .4), inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .pay-merchant-thumb svg {
+      width: 38px;
+      height: 38px;
+      stroke-width: 1.6
+    }
+
+    .pay-card {
+      background: rgba(255, 255, 255, .055);
+      backdrop-filter: blur(30px) saturate(150%);
+      -webkit-backdrop-filter: blur(30px) saturate(150%);
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .65), inset 0 1px rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .12);
+      margin-bottom: 16px
+    }
+
+    .pay-amt-box {
+      background: rgba(201, 166, 70, .09);
+      border: 1px solid rgba(201, 166, 70, .18);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 18px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .pay-amt-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text2);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 6px
+    }
+
+    .pay-amt-val {
+      font-size: 36px;
+      font-weight: 500;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      text-shadow: 0 2px 20px rgba(201, 166, 70, .3)
+    }
+
+    .pay-save {
+      font-size: 12px;
+      color: #10b981;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 16px
+    }
+
+    .pay-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px
+    }
+
+    .pay-method {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 1.5px solid rgba(255, 255, 255, .09);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all .25s ease;
+      background: rgba(255, 255, 255, .035);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .pay-method.sel {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .08);
+      box-shadow: 0 2px 16px rgba(201, 166, 70, .15), inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .pay-method-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, .1)
+    }
+
+    .pay-method-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 1.7
+    }
+
+    .pay-method-text h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px
+    }
+
+    .pay-method-text p {
+      font-size: 11px;
+      color: var(--text2)
+    }
+
+    .pay-method-radio {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .2);
+      margin-left: auto;
+      flex-shrink: 0;
+      position: relative;
+      transition: border-color .25s ease
+    }
+
+    .pay-method.sel .pay-method-radio {
+      border-color: var(--amber);
+      box-shadow: 0 0 8px rgba(201, 166, 70, .3)
+    }
+
+    .pay-method.sel .pay-method-radio::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: var(--gold-grad-simple)
+    }
+
+    .loader {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, .08);
+      border-top-color: var(--amber);
+      animation: spin .85s linear infinite;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 20px rgba(201, 166, 70, .2)
+    }
+
+    .success-check {
+      width: 72px;
+      height: 72px;
+      background: var(--gold-grad);
+      border-radius: 24px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: popIn .6s ease;
+      box-shadow: 0 18px 56px rgba(201, 166, 70, .55), inset 0 1px rgba(255, 255, 255, .25)
+    }
+
+    .success-check svg {
+      width: 38px;
+      height: 38px
+    }
+
+    .tx-detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .tx-detail-row:last-child {
+      border: none
+    }
+
+    .tx-detail-row .k {
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .tx-detail-row .v {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: 'DM Mono', monospace
+    }
+
+    .secure-note {
+      font-size: 10px;
+      color: var(--text2);
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      opacity: .55
+    }
+
+    .secure-note svg {
+      width: 12px;
+      height: 12px;
+      stroke-width: 1.7
+    }
+
+    /* ══════════════════════════════════
+   MERCHANT DETAIL
+══════════════════════════════════ */
+    .md-hero {
+      height: 230px;
+      position: relative;
+      flex-shrink: 0;
+      background: #12121c
+    }
+
+    .md-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(.72) contrast(1.08)
+    }
+
+    .md-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .25) 50%, transparent 100%)
+    }
+
+    .md-back {
+      position: absolute;
+      top: 58px;
+      left: 16px;
+      width: 38px;
+      height: 38px;
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s ease;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .md-back:active {
+      transform: scale(.88)
+    }
+
+    .md-back svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2
+    }
+
+    .md-title {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px
+    }
+
+    .md-title h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .md-title p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .55);
+      display: flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .md-title p svg {
+      width: 12px;
+      height: 12px;
+      stroke-width: 1.7
+    }
+
+    .md-body {
+      padding: 18px 20px 24px
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px
+    }
+
+    .stat-box {
+      flex: 1;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, .09);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .stat-box.amber-bg {
+      background: rgba(201, 166, 70, .09);
+      border-color: rgba(201, 166, 70, .22);
+      box-shadow: 0 2px 16px rgba(201, 166, 70, .1), inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .stat-val {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      font-family: 'DM Mono', monospace
+    }
+
+    .stat-val.amber {
+      color: var(--amber);
+      text-shadow: 0 2px 14px rgba(201, 166, 70, .28)
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--text2);
+      margin-top: 5px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase
+    }
+
+    .calc-card {
+      background: rgba(255, 255, 255, .05);
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, .09);
+      margin-bottom: 16px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .calc-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      letter-spacing: .02em
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0
+    }
+
+    .calc-row+.calc-row {
+      border-top: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .calc-row .lbl {
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    .calc-row .val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: 'DM Mono', monospace
+    }
+
+    .calc-row.disc .val {
+      color: #10b981
+    }
+
+    .calc-total {
+      background: rgba(201, 166, 70, .09);
+      margin: -18px -18px -18px;
+      padding: 14px 18px;
+      border-radius: 0 0 18px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      border-top: 1px solid rgba(201, 166, 70, .18)
+    }
+
+    .calc-total .lbl {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .calc-total .val {
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      text-shadow: 0 2px 14px rgba(201, 166, 70, .28)
+    }
+
+    .lock-cta {
+      background: rgba(255, 255, 255, .04);
+      border-radius: 18px;
+      padding: 28px 20px;
+      text-align: center;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, .09);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .lock-cta-img {
+      width: 100%;
+      height: 100px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      background: rgba(201, 166, 70, .1);
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .lock-cta-img svg {
+      width: 48px;
+      height: 48px;
+      opacity: .38
+    }
+
+    .lock-cta h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .lock-cta p {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 16px;
+      line-height: 1.6
+    }
+
+    /* ══════════════════════════════════
+   TRANSACTIONS
+══════════════════════════════════ */
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 20px 20px
+    }
+
+    .tx-item {
+      background: rgba(255, 255, 255, .045);
+      border-radius: 16px;
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .35), inset 0 1px rgba(255, 255, 255, .05);
+      transition: all .25s ease
+    }
+
+    .tx-item:active {
+      transform: scale(.98)
+    }
+
+    .tx-thumb {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      flex-shrink: 0;
+      background: rgba(201, 166, 70, .11);
+      border: 1px solid rgba(201, 166, 70, .18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .tx-thumb svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.6
+    }
+
+    .tx-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .tx-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: .01em
+    }
+
+    .tx-date {
+      font-size: 10px;
+      color: var(--text2)
+    }
+
+    .tx-right {
+      text-align: right;
+      flex-shrink: 0
+    }
+
+    .tx-amt {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: 'DM Mono', monospace
+    }
+
+    .tx-saved {
+      font-size: 10px;
+      color: #10b981;
+      font-weight: 600;
+      margin-top: 2px
+    }
+
+    .empty {
+      text-align: center;
+      padding: 48px 20px
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 24px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, .08);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .empty-icon svg {
+      width: 36px;
+      height: 36px;
+      opacity: .28
+    }
+
+    .empty h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px
+    }
+
+    .empty p {
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    /* ══════════════════════════════════
+   CATEGORIES
+══════════════════════════════════ */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0 20px 18px
+    }
+
+    .cat-card {
+      background: rgba(255, 255, 255, .045);
+      border-radius: 18px;
+      padding: 16px 8px 14px;
+      text-align: center;
+      border: 1.5px solid rgba(255, 255, 255, .09);
+      cursor: pointer;
+      transition: all .25s ease;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .cat-card:active {
+      transform: scale(.93)
+    }
+
+    .cat-card.on {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .09);
+      box-shadow: 0 2px 18px rgba(201, 166, 70, .16), inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .cat-card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      margin: 0 auto 10px;
+      background: rgba(255, 255, 255, .06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, .09);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .cat-card.on .cat-card-icon {
+      background: rgba(201, 166, 70, .14);
+      border-color: rgba(201, 166, 70, .22);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .12)
+    }
+
+    .cat-card-icon svg {
+      width: 26px;
+      height: 26px;
+      stroke-width: 1.6
+    }
+
+    .cat-card-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .32);
+      letter-spacing: .05em;
+      text-transform: uppercase
+    }
+
+    .cat-card.on .cat-card-lbl {
+      color: var(--amber)
+    }
+
+    .cat-card-count {
+      font-size: 9px;
+      color: rgba(255, 255, 255, .18);
+      margin-top: 2px
+    }
+
+    .filtered-merchants {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 20px
+    }
+
+    .fm-item {
+      background: rgba(255, 255, 255, .045);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, .08);
+      cursor: pointer;
+      transition: all .25s ease;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .05)
+    }
+
+    .fm-item:active {
+      transform: scale(.97)
+    }
+
+    .fm-img {
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+      background: rgba(201, 166, 70, .1);
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .fm-img svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.6
+    }
+
+    .fm-info {
+      flex: 1;
+      padding: 12px 14px
+    }
+
+    .fm-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+      letter-spacing: .01em
+    }
+
+    .fm-loc {
+      font-size: 10px;
+      color: var(--text2);
+      margin-bottom: 6px
+    }
+
+    .fm-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--gold-grad);
+      color: #0a0a10;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: .05em;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .18)
+    }
+
+    /* ══════════════════════════════════
+   PROFILE
+══════════════════════════════════ */
+    .profile-hero {
+      background: linear-gradient(160deg, #090910 0%, #12101e 60%, #180e26 100%);
+      padding: 60px 20px 26px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0
+    }
+
+    .profile-hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(ellipse at 50% 10%, rgba(201, 166, 70, .2) 0%, transparent 60%);
+      pointer-events: none
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 26px;
+      margin: 0 auto 14px;
+      background: linear-gradient(135deg, rgba(201, 166, 70, .28), rgba(201, 166, 70, .08));
+      border: 2px solid rgba(201, 166, 70, .38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(201, 166, 70, .3), inset 0 1px rgba(255, 255, 255, .12);
+    }
+
+    .profile-avatar svg {
+      width: 38px;
+      height: 38px;
+      stroke-width: 1.7
+    }
+
+    .profile-name {
+      font-size: 21px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 3px;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .profile-email {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .32);
+      margin-bottom: 18px;
+      letter-spacing: .03em
+    }
+
+    .profile-stats-row {
+      display: flex;
+      background: rgba(255, 255, 255, .065);
+      backdrop-filter: blur(30px) saturate(150%);
+      -webkit-backdrop-filter: blur(30px) saturate(150%);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 18px;
+      overflow: hidden;
+      margin: 0 4px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .p-stat {
+      flex: 1;
+      padding: 14px 8px;
+      text-align: center
+    }
+
+    .p-stat+.p-stat {
+      border-left: 1px solid rgba(255, 255, 255, .08)
+    }
+
+    .p-stat h4 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'DM Mono', monospace
+    }
+
+    .p-stat p {
+      font-size: 9px;
+      color: rgba(255, 255, 255, .32);
+      margin-top: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em
+    }
+
+    .profile-body {
+      padding: 18px 20px
+    }
+
+    .prime-status-card {
+      background: rgba(201, 166, 70, .09);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid rgba(201, 166, 70, .22);
+      box-shadow: 0 2px 18px rgba(201, 166, 70, .1), inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .psc-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      flex-shrink: 0;
+      background: rgba(201, 166, 70, .14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(201, 166, 70, .22);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1)
+    }
+
+    .psc-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.7
+    }
+
+    .psc-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px
+    }
+
+    .psc-text p {
+      font-size: 11px;
+      color: var(--text2)
+    }
+
+    .menu-card {
+      background: rgba(255, 255, 255, .045);
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .09);
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06)
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 16px;
+      cursor: pointer;
+      transition: background .2s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .menu-item:last-child {
+      border-bottom: none
+    }
+
+    .menu-item:active {
+      background: rgba(255, 255, 255, .07);
+      transform: scale(.99)
+    }
+
+    .mi-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, .09);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .mi-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 1.7
+    }
+
+    .mi-icon.danger-bg {
+      background: rgba(220, 50, 50, .08);
+      border-color: rgba(220, 50, 50, .14)
+    }
+
+    .mi-label {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: .01em
+    }
+
+    .mi-label.danger {
+      color: #ef4444
+    }
+
+    .mi-arrow {
+      width: 18px;
+      height: 18px;
+      color: var(--text3)
+    }
+
+    .mi-arrow svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 1.7
+    }
+
+    /* ══════════════════════════════════
+   SCREEN HEADERS (dark)
+══════════════════════════════════ */
+    .screen-header {
+      padding: 0 20px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .screen-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em
+    }
+
+    .back-btn-dark {
+      width: 38px;
+      height: 38px;
+      background: rgba(255, 255, 255, .065);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s ease;
+      flex-shrink: 0;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .08)
+    }
+
+    .back-btn-dark:active {
+      transform: scale(.88)
+    }
+
+    .back-btn-dark svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2
+    }
+
+    /* ══════════════════════════════════
+   WELCOME NOTIFICATION (premium)
+══════════════════════════════════ */
+    /* ── PREMIUM WELCOME NOTIFICATION ── */
+    #welcome-notif {
+      position: absolute;
+      top: 68px;
+      left: 14px;
+      right: 14px;
+      background: linear-gradient(135deg, rgba(201, 166, 70, .22), rgba(14, 14, 20, .96) 60%);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(201, 166, 70, .4);
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      z-index: 9999;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 0 1px rgba(201, 166, 70, .08), 0 0 40px rgba(201, 166, 70, .18), inset 0 1px rgba(255, 255, 255, .14);
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    #welcome-notif::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(201, 166, 70, .07), transparent);
+      animation: shimmer 2.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    #welcome-notif.show {
+      display: flex;
+      animation: welcomePop .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    }
+
+    @keyframes welcomePop {
+      0% {
+        transform: translateY(-20px) scale(.93);
+        opacity: 0;
+      }
+
+      60% {
+        transform: translateY(3px) scale(1.01);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes welcomeFade {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+
+    #welcome-notif.hide {
+      animation: welcomeFade .3s ease forwards;
+    }
+
+    .wn-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      flex-shrink: 0;
+      background: var(--gold-grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(201, 166, 70, .55), inset 0 1px rgba(255, 255, 255, .3);
+      animation: amberGlow 3s infinite;
+    }
+
+    .wn-icon svg {
+      width: 22px;
+      height: 22px
+    }
+
+    .wn-text {
+      flex: 1
+    }
+
+    .wn-text h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3px;
+      letter-spacing: .01em
+    }
+
+    .wn-text p {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .48);
+      letter-spacing: .02em;
+      line-height: 1.4
+    }
+
+    .wn-badge {
+      padding: 5px 12px;
+      background: var(--gold-grad);
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #0a0a10;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 14px rgba(201, 166, 70, .45), inset 0 1px rgba(255, 255, 255, .25);
+      flex-shrink: 0;
+    }
+
+
+    /* ══════════════════════════════════
+   REFER & EARN SCREEN
+══════════════════════════════════ */
+    #s-refer {
+      background: var(--ink);
+      overflow-y: auto;
+    }
+
+    .refer-hero {
+      padding: 70px 20px 28px;
+      text-align: center;
+      position: relative;
+      background: linear-gradient(160deg, #0a0a12, #120e1e 60%, #180e22);
+      overflow: hidden;
+    }
+
+    .refer-hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      height: 340px;
+      background: radial-gradient(circle, rgba(201, 166, 70, .28), transparent 70%);
+      filter: blur(60px);
+      pointer-events: none
+    }
+
+    .refer-crown {
+      width: 76px;
+      height: 76px;
+      background: var(--gold-grad);
+      border-radius: 24px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 18px 50px rgba(201, 166, 70, .55), 0 0 0 1px rgba(245, 211, 122, .3), inset 0 1px rgba(255, 255, 255, .28);
+      animation: amberGlow 3s infinite;
+      position: relative;
+      z-index: 1
+    }
+
+    .refer-crown svg {
+      width: 38px;
+      height: 38px
+    }
+
+    .refer-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 1
+    }
+
+    .refer-hero p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .4);
+      line-height: 1.7;
+      position: relative;
+      z-index: 1
+    }
+
+    .refer-stats {
+      display: flex;
+      gap: 12px;
+      padding: 0 20px;
+      margin-bottom: 16px
+    }
+
+    .ref-stat {
+      flex: 1;
+      background: rgba(255, 255, 255, .055);
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 18px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .ref-stat h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 3px
+    }
+
+    .ref-stat p {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .28);
+      letter-spacing: .08em;
+      text-transform: uppercase
+    }
+
+    .ref-code-card {
+      margin: 0 20px 16px;
+      background: rgba(201, 166, 70, .09);
+      border: 1.5px dashed rgba(201, 166, 70, .4);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .ref-code-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .3);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .ref-code-val {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: .2em;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 20px rgba(201, 166, 70, .3)
+    }
+
+    .ref-code-btns {
+      display: flex;
+      gap: 10px
+    }
+
+    .refer-how {
+      margin: 0 20px 16px;
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid rgba(255, 255, 255, .09);
+      border-radius: 18px;
+      padding: 18px
+    }
+
+    .how-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .5);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 14px
+    }
+
+    .how-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .how-step:last-child {
+      margin-bottom: 0
+    }
+
+    .how-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--gold-grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #0a0a10;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(201, 166, 70, .3)
+    }
+
+    .how-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .55);
+      line-height: 1.5
+    }
+
+    .how-text strong {
+      color: rgba(255, 255, 255, .8)
+    }
+
+    .ref-withdraw-section {
+      margin: 0 20px 20px
+    }
+
+    /* ══════════════════════════════════
+   WITHDRAW SCREEN
+══════════════════════════════════ */
+    #s-withdraw {
+      background: var(--ink);
+    }
+
+    .wd-method-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px
+    }
+
+    .wd-method-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .04);
+      cursor: pointer;
+      transition: all .25s ease;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .4)
+    }
+
+    .wd-method-btn.sel {
+      border-color: var(--amber);
+      background: rgba(201, 166, 70, .09);
+      color: var(--amber);
+      box-shadow: 0 2px 16px rgba(201, 166, 70, .18)
+    }
+
+    .wd-amount-card {
+      background: rgba(201, 166, 70, .09);
+      border: 1px solid rgba(201, 166, 70, .22);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .07)
+    }
+
+    .wd-amount-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .3);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 6px
+    }
+
+    .wd-amount-val {
+      font-size: 36px;
+      font-weight: 500;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 6px
+    }
+
+    .wd-amount-note {
+      font-size: 10px;
+      color: rgba(255, 255, 255, .28);
+      letter-spacing: .02em
+    }
+
+    /* ══════════════════════════════════
+   PRIME REFERRAL CODE SECTION
+══════════════════════════════════ */
+    .prime-ref-section {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .09);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px
+    }
+
+    .prime-ref-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .45);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .prime-ref-row {
+      display: flex;
+      gap: 8px
+    }
+
+    .prime-ref-row .field {
+      flex: 1;
+      font-size: 13px
+    }
+
+    #prime-ref-msg {
+      font-size: 11px;
+      margin-top: 7px;
+      font-weight: 600;
+      min-height: 16px;
+      letter-spacing: .01em
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="phone">
+    <div class="screen-wrap">
+      <div class="island"></div>
+      <div id="app">
+
+        <!-- ─── TOAST ─── -->
+        <div id="toast">
+          <div class="t-icon">
+            <svg id="t-ico-svg" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div class="t-body">
+            <div class="t-title" id="toast-title">Done</div>
+            <div class="t-sub" id="toast-sub"></div>
+          </div>
+          <div class="t-badge" id="toast-badge">OK</div>
+        </div>
+
+        <!-- ─── WELCOME NOTIFICATION ─── -->
+        <div id="welcome-notif">
+          <div class="wn-icon">
+            <svg viewBox="0 0 24 24" fill="#0f0f14">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+          <div class="wn-text">
+            <h4>Welcome back! 👋</h4>
+            <p>Exclusive Kerala merchant privileges await</p>
+          </div>
+          <div class="wn-badge">PRIME</div>
+        </div>
+
+        <!-- ══════════ AUTH ══════════ -->
+        <div class="scr show" id="s-auth">
+          <div class="auth-bg">
+            <div class="auth-orb auth-orb1"></div>
+            <div class="auth-orb auth-orb2"></div>
+            <div class="auth-orb auth-orb3"></div>
+            <div class="auth-noise"></div>
+          </div>
+          <div class="auth-top">
+            <div class="auth-logo">
+              <svg viewBox="0 0 36 36" fill="none">
+                <path d="M18 4L22.5 13L33 14.5L25.5 22L27.5 33L18 28L8.5 33L10.5 22L3 14.5L13.5 13L18 4Z" fill="#0f0f14"
+                  stroke="#0f0f14" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <h1>app</h1>
+            <p>Exclusive merchant privileges across Kerala</p>
+          </div>
+          <div class="auth-sheet">
+            <div class="auth-tabs">
+              <div class="auth-tab on" id="tab-login" onclick="authTab('login')">Login</div>
+              <div class="auth-tab" id="tab-signup" onclick="authTab('signup')">Sign Up</div>
+            </div>
+            <div id="form-login">
+              <div class="mg14">
+                <label class="flabel">Email Address</label>
+                <input class="field" type="email" value="demo@app.in" id="a-email">
+              </div>
+              <div class="mg8">
+                <label class="flabel">Password</label>
+                <input class="field" type="password" value="demo1234" id="a-pass">
+              </div>
+              <div class="forgot mg14"><a onclick="toast('Password reset link sent to your email','success')">Forgot
+                  password?</a></div>
+              <button class="btn btn-amber" onclick="doLogin()">Login</button>
+              <div class="divider">
+                <hr><span>or</span>
+                <hr>
+              </div>
+              <div class="social-row">
+                <div class="social-btn" onclick="doLogin()">Google Sign In</div>
+                <div class="social-btn" onclick="doLogin()">Phone OTP</div>
+              </div>
+            </div>
+            <div id="form-signup" style="display:none">
+              <div class="mg14"><label class="flabel">Full Name</label><input class="field" type="text"
+                  placeholder="Arjun Menon"></div>
+              <div class="mg14"><label class="flabel">Phone Number</label><input class="field" type="tel"
+                  placeholder="+91 98456 00000"></div>
+              <div class="mg14"><label class="flabel">Email</label><input class="field" type="email"
+                  placeholder="you@example.com"></div>
+              <div class="mg14"><label class="flabel">Password</label><input class="field" type="password"
+                  placeholder="Create password"></div>
+              <button class="btn btn-amber" onclick="doLogin()">Create Account</button>
+            </div>
+          </div>
+          <div class="auth-note">By continuing you agree to our Terms &amp; Privacy Policy</div>
+        </div>
+
+        <!-- ══════════ HOME ══════════ -->
+        <div class="scr" id="s-home">
+          <div class="home-hero">
+            <div class="hero-pattern"></div>
+            <div class="sbar" style="position:relative;z-index:2">
+              <span class="time" style="color:rgba(255,255,255,.7)" id="clock">9:41</span>
+              <div class="icons">
+                <svg viewBox="0 0 24 24" fill="rgba(255,255,255,.5)" width="16">
+                  <path
+                    d="M1.42 9a15.91 15.91 0 0 1 21.16 0M5 12.55a10.94 10.94 0 0 1 14.06 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+                </svg>
+                <svg viewBox="0 0 24 24" fill="rgba(255,255,255,.5)" width="16">
+                  <rect x="1" y="6" width="18" height="11" rx="2" />
+                  <path d="M23 11v3" />
+                </svg>
+              </div>
+            </div>
+            <div class="hero-top" style="position:relative;z-index:2">
+              <div>
+                <div class="hero-greet" id="h-greet">Good morning</div>
+                <div class="hero-name" id="h-name">user.1</div>
+              </div>
+              <div class="hero-avatar" onclick="go('profile')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,80,.8)" stroke-width="1.8">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+            </div>
+            <div class="hero-card" style="position:relative;z-index:2">
+              <div class="hero-card-row">
+                <div>
+                  <div class="hero-card-label">Total Saved</div>
+                  <div class="hero-card-val" id="h-saved">₹0.00</div>
+                </div>
+                <div id="h-prime-pill"></div>
+              </div>
+            </div>
+            <div class="prime-banner-strip" id="prime-banner" onclick="go('prime')">
+              <div class="pbs-icon">
+                <svg viewBox="0 0 24 24" fill="#0f0f14">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </div>
+              <div class="pbs-text">
+                <h4>Upgrade to Prime</h4>
+                <p>Unlock exclusive discounts at 50+ merchants</p>
+              </div>
+              <div class="pbs-arrow">›</div>
+            </div>
+          </div>
+          <div class="scr-body">
+            <div class="cat-scroll" id="h-cats">
+              <div class="chip on" onclick="filterCat('all',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,80,.9)"
+                    stroke-width="1.8">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  </svg></div>
+                <span class="chip-label">All</span>
+              </div>
+              <div class="chip" onclick="filterCat('restaurant',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                    <line x1="7" y1="2" x2="7" y2="11" />
+                    <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
+                  </svg></div>
+                <span class="chip-label">Food</span>
+              </div>
+              <div class="chip" onclick="filterCat('hotel',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path d="M2 20h20M3 20V8l9-6 9 6v12" />
+                    <rect x="9" y="12" width="6" height="8" />
+                    <path d="M6 8h.01M18 8h.01" />
+                  </svg></div>
+                <span class="chip-label">Hotels</span>
+              </div>
+              <div class="chip" onclick="filterCat('fashion',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path
+                      d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z" />
+                  </svg></div>
+                <span class="chip-label">Fashion</span>
+              </div>
+              <div class="chip" onclick="filterCat('jewellery',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path d="M6 3h12l4 6-10 13L2 9z" />
+                    <path d="M11 3 8 9l4 13 4-13-3-6" />
+                    <path d="M2 9h20" />
+                  </svg></div>
+                <span class="chip-label">Jewellery</span>
+              </div>
+              <div class="chip" onclick="filterCat('bar',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path d="M8 22h8M12 11v11M3.5 3h17l-7 9.28V17l-3 2v-6.72z" />
+                  </svg></div>
+                <span class="chip-label">Bar</span>
+              </div>
+              <div class="chip" onclick="filterCat('spa',this)">
+                <div class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)"
+                    stroke-width="1.8">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg></div>
+                <span class="chip-label">Beauty</span>
+              </div>
+            </div>
+            <div style="padding:16px 0 0">
+              <div class="sh">
+                <h3>Featured Merchants</h3><a>View All</a>
+              </div>
+              <div class="mcards" id="m-list"></div>
+            </div>
+          </div>
+          <nav class="bnav" id="nav-home">
+            <div class="bni on" onclick="go('home')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#d4a850" stroke-width="2"
+                  fill="none" />
+                <polyline points="9 22 9 12 15 12 15 22" stroke="#d4a850" stroke-width="2" />
+              </svg>
+              <span>Home</span>
+            </div>
+            <div class="bni" onclick="go('categories')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Categories</span>
+            </div>
+            <div class="bni" onclick="go('transactions')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="14 2 14 8 20 8" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>History</span>
+            </div>
+            <div class="bni" onclick="go('profile')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <circle cx="12" cy="7" r="4" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Profile</span>
+            </div>
+          </nav>
+        </div>
+
+        <!-- ══════════ PRIME ══════════ -->
+        <div class="scr" id="s-prime" style="overflow-y:auto">
+          <div class="prime-bg">
+            <div class="prime-bg-orb"></div>
+          </div>
+          <div class="sbar" style="position:relative;z-index:2;color:#fff">
+            <span class="time" style="color:rgba(255,255,255,.6)">9:41</span>
+            <div
+              style="width:38px;height:38px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto"
+              onclick="go('home')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)"
+                stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </div>
+          </div>
+          <div class="prime-top">
+            <div class="prime-crown-wrap">
+              <svg viewBox="0 0 42 42" fill="none">
+                <path d="M6 32L12 16L21 27L30 10L36 32H6Z" fill="#0f0f14" stroke="#0f0f14" stroke-width="1.5"
+                  stroke-linejoin="round" />
+                <circle cx="6" cy="13" r="3" fill="rgba(15,15,20,.7)" />
+                <circle cx="36" cy="9" r="3" fill="rgba(15,15,20,.7)" />
+                <circle cx="21" cy="7" r="3" fill="rgba(15,15,20,.7)" />
+              </svg>
+            </div>
+            <h1>Prime Membership</h1>
+            <p>Unlock exclusive discounts at Kerala's finest merchants</p>
+          </div>
+          <div class="prime-sheet">
+            <div class="plans-row">
+              <div class="plan" onclick="selectPlan(this,'monthly',499)">
+                <div class="plan-name">Monthly</div>
+                <div class="plan-price">₹499</div>
+                <div class="plan-sub">per month</div>
+              </div>
+              <div class="plan sel" onclick="selectPlan(this,'yearly',2999)">
+                <div class="plan-badge">Best Value</div>
+                <div class="plan-name">Yearly</div>
+                <div class="plan-price">₹2,999</div>
+                <div class="plan-sub">₹250/month</div>
+              </div>
+            </div>
+            <div class="benefits">
+              <div class="benefit">
+                <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg></div>
+                <div class="btext">
+                  <h4>Exclusive Discounts</h4>
+                  <p>Save 5–40% at 50+ premium merchants</p>
+                </div>
+              </div>
+              <div class="benefit">
+                <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg></div>
+                <div class="btext">
+                  <h4>Priority Access</h4>
+                  <p>First access to special deals and events</p>
+                </div>
+              </div>
+              <div class="benefit">
+                <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                    <circle cx="12" cy="8" r="7" />
+                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                  </svg></div>
+                <div class="btext">
+                  <h4>Reward Points</h4>
+                  <p>Earn points on every purchase redeemable</p>
+                </div>
+              </div>
+              <div class="benefit">
+                <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                    <path
+                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12 19.79 19.79 0 0 1 1.56 3.38 2 2 0 0 1 3.53 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.05 6.05l1.36-1.36a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg></div>
+                <div class="btext">
+                  <h4>24/7 Support</h4>
+                  <p>Dedicated premium customer support</p>
+                </div>
+              </div>
+            </div>
+            <div class="prime-ref-section">
+              <div class="prime-ref-title">Have a Referral Code?</div>
+              <div class="prime-ref-row">
+                <input class="field" type="text" placeholder="Enter code (e.g. APP5KX2)" id="prime-ref-input"
+                  style="text-transform:uppercase;font-family:'DM Mono',monospace;letter-spacing:.1em">
+                <button class="btn btn-ghost btn-sm" id="prime-ref-apply-btn" onclick="applyRefCode()"
+                  style="white-space:nowrap;padding:0 16px;height:48px;border-radius:11px">Apply</button>
+              </div>
+              <div id="prime-ref-msg"></div>
+            </div>
+            <button class="btn btn-amber" id="prime-pay-btn" onclick="startPay('prime',2999,'Prime Membership',null)"
+              style="animation:amberGlow 3s infinite">Get Prime — ₹2,999 / year</button>
+            <p
+              style="font-size:10px;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;letter-spacing:.02em">
+              Cancel anytime · No hidden charges · Auto-renewal</p>
+          </div>
+        </div>
+
+        <!-- ══════════ PAYMENT ══════════ -->
+        <div class="scr" id="s-pay">
+          <div class="sbar" style="color:rgba(255,255,255,.7)">
+            <span class="time">9:41</span>
+            <div class="icons"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5"
+                width="16">
+                <rect x="1" y="6" width="18" height="11" rx="2" />
+                <path d="M23 11v3" />
+              </svg></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:0 20px 16px">
+            <div class="back-btn-dark" onclick="go('back')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)"
+                stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);font-family:'Playfair Display',serif">Checkout
+            </h2>
+          </div>
+
+          <div id="pay-sel" class="scr-body" style="padding:0 20px 24px">
+            <div style="text-align:center;margin-bottom:18px">
+              <div class="pay-merchant-thumb" id="pay-mthumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.5" width="38">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <div style="font-size:13px;color:var(--text2);font-weight:500;margin-top:6px" id="pay-mname">Merchant
+              </div>
+            </div>
+            <div class="pay-card">
+              <div class="pay-amt-box">
+                <div class="pay-amt-label">Amount to Pay</div>
+                <div class="pay-amt-val" id="pay-amt">₹0</div>
+              </div>
+              <div class="pay-save" id="pay-save-txt"></div>
+              <div class="pay-methods">
+                <div class="pay-method sel" onclick="selPM(this)">
+                  <div class="pay-method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <line x1="2" y1="10" x2="22" y2="10" />
+                    </svg></div>
+                  <div class="pay-method-text">
+                    <h4>UPI Payment</h4>
+                    <p>GPay, PhonePe, Paytm</p>
+                  </div>
+                  <div class="pay-method-radio"></div>
+                </div>
+                <div class="pay-method" onclick="selPM(this)">
+                  <div class="pay-method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)"
+                      stroke-width="1.8">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <rect x="9" y="12" width="6" height="7" />
+                    </svg></div>
+                  <div class="pay-method-text">
+                    <h4>Net Banking</h4>
+                    <p>SBI, HDFC, Axis and more</p>
+                  </div>
+                  <div class="pay-method-radio"></div>
+                </div>
+                <div class="pay-method" onclick="selPM(this)">
+                  <div class="pay-method-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)"
+                      stroke-width="1.8">
+                      <rect x="1" y="4" width="22" height="16" rx="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg></div>
+                  <div class="pay-method-text">
+                    <h4>Debit / Credit Card</h4>
+                    <p>Visa, Mastercard, Rupay</p>
+                  </div>
+                  <div class="pay-method-radio"></div>
+                </div>
+              </div>
+              <button class="btn btn-amber" onclick="procPay()">Pay Now</button>
+            </div>
+            <div class="secure-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Secured by 256-bit SSL encryption
+            </div>
+          </div>
+
+          <div id="pay-load"
+            style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">
+            <div class="loader"></div>
+            <h3
+              style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:'Playfair Display',serif">
+              Processing Payment</h3>
+            <p style="font-size:13px;color:var(--text2)">Please wait, do not close this app</p>
+          </div>
+
+          <div id="pay-ok"
+            style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
+            <div class="success-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0f0f14" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h3
+              style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;font-family:'Playfair Display',serif"
+              id="suc-title">Payment Successful</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px" id="suc-sub">Transaction completed</p>
+            <div class="pay-card" style="width:100%;margin-bottom:20px">
+              <div class="tx-detail-row"><span class="k">Transaction ID</span><span class="v" id="suc-txid">#---</span>
+              </div>
+              <div class="tx-detail-row"><span class="k">Amount Paid</span><span class="v" id="suc-amt">₹0</span></div>
+              <div class="tx-detail-row"><span class="k">Status</span><span class="v"
+                  style="color:#10b981">Completed</span></div>
+            </div>
+            <button class="btn btn-amber" onclick="afterPay()">Continue</button>
+          </div>
+        </div>
+
+        <!-- ══════════ MERCHANT DETAIL ══════════ -->
+        <div class="scr" id="s-mdetail">
+          <div class="md-hero" style="flex-shrink:0">
+            <img id="md-img" src="" alt="">
+            <div class="md-overlay"></div>
+            <div class="md-back" onclick="go('home')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </div>
+            <div class="md-title">
+              <h2 id="md-name">Merchant</h2>
+              <p>
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span id="md-loc">Location</span>
+              </p>
+            </div>
+          </div>
+          <div class="scr-body">
+            <div class="md-body">
+              <div class="stats-row">
+                <div class="stat-box amber-bg">
+                  <div class="stat-val amber" id="md-disc">15%</div>
+                  <div class="stat-label">Prime Discount</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val" id="md-rating">4.8</div>
+                  <div class="stat-label">Rating</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val" id="md-cat" style="font-size:13px">Restaurant</div>
+                  <div class="stat-label">Category</div>
+                </div>
+              </div>
+              <div id="md-lock" class="lock-cta">
+                <div class="lock-cta-img">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,80,.5)" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <h3>Prime Members Only</h3>
+                <p>Upgrade to Prime to access exclusive discounts at this merchant</p>
+                <button class="btn btn-amber" onclick="go('prime')">Upgrade to Prime</button>
+              </div>
+              <div id="md-calc" style="display:none">
+                <div class="calc-card">
+                  <h3>Calculate Your Savings</h3>
+                  <div class="mg14">
+                    <label class="flabel">Bill Amount</label>
+                    <input class="field" type="number" id="bill-inp" placeholder="Enter total bill amount (₹)"
+                      oninput="calcDisc()" inputmode="decimal">
+                  </div>
+                  <div id="calc-res" style="display:none">
+                    <div class="calc-row"><span class="lbl">Original Amount</span><span class="val"
+                        id="c-orig">₹0</span></div>
+                    <div class="calc-row disc"><span class="lbl">Prime Discount (<span id="c-pct">0</span>%)</span><span
+                        class="val">− <span id="c-disc">₹0</span></span></div>
+                    <div class="calc-total"><span class="lbl">You Pay</span><span class="val" id="c-tot">₹0</span></div>
+                  </div>
+                </div>
+                <button class="btn btn-amber" id="md-pay-btn" onclick="payMerchant()" style="display:none">Pay and Use
+                  Discount</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════ TRANSACTIONS ══════════ -->
+        <div class="scr" id="s-transactions">
+          <div class="sbar"><span class="time" style="color:rgba(255,255,255,.7)">9:41</span>
+            <div class="icons"></div>
+          </div>
+          <div class="screen-header">
+            <span class="screen-title">Transactions</span>
+            <span
+              style="font-size:11px;color:var(--amber);font-weight:600;letter-spacing:.04em;text-transform:uppercase"
+              id="tx-count">0 records</span>
+          </div>
+          <div class="scr-body">
+            <div class="tx-list" id="tx-list"></div>
+          </div>
+          <nav class="bnav">
+            <div class="bni" onclick="go('home')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="9 22 9 12 15 12 15 22" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Home</span>
+            </div>
+            <div class="bni" onclick="go('categories')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Categories</span>
+            </div>
+            <div class="bni on" onclick="go('transactions')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#d4a850"
+                  stroke-width="2" />
+                <polyline points="14 2 14 8 20 8" stroke="#d4a850" stroke-width="2" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="#d4a850" stroke-width="2" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="#d4a850" stroke-width="2" />
+              </svg>
+              <span>History</span>
+            </div>
+            <div class="bni" onclick="go('profile')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <circle cx="12" cy="7" r="4" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Profile</span>
+            </div>
+          </nav>
+        </div>
+
+        <!-- ══════════ CATEGORIES ══════════ -->
+        <div class="scr" id="s-categories">
+          <div class="sbar"><span class="time" style="color:rgba(255,255,255,.7)">9:41</span>
+            <div class="icons"></div>
+          </div>
+          <div class="screen-header"><span class="screen-title">Categories</span></div>
+          <div class="scr-body">
+            <div class="cat-grid" id="cat-grid"></div>
+            <div style="padding:0 20px 8px">
+              <div class="sh">
+                <h3 id="cat-filter-lbl">All Merchants</h3><span id="cat-filter-cnt"
+                  style="font-size:11px;color:var(--text2)"></span>
+              </div>
+            </div>
+            <div class="filtered-merchants" id="filt-merchants"></div>
+          </div>
+          <nav class="bnav">
+            <div class="bni" onclick="go('home')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="9 22 9 12 15 12 15 22" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Home</span>
+            </div>
+            <div class="bni on" onclick="go('categories')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#d4a850" stroke-width="2" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#d4a850" stroke-width="2" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#d4a850" stroke-width="2" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#d4a850" stroke-width="2" />
+              </svg>
+              <span>Categories</span>
+            </div>
+            <div class="bni" onclick="go('transactions')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="14 2 14 8 20 8" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>History</span>
+            </div>
+            <div class="bni" onclick="go('profile')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <circle cx="12" cy="7" r="4" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Profile</span>
+            </div>
+          </nav>
+        </div>
+
+        <!-- ══════════ PROFILE ══════════ -->
+        <div class="scr" id="s-profile">
+          <div class="scr-body">
+            <div class="profile-hero">
+              <div class="profile-hero-bg"></div>
+              <div class="sbar" style="position:relative;z-index:2">
+                <span class="time" style="color:rgba(255,255,255,.6)">9:41</span>
+              </div>
+              <div class="profile-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div class="profile-name" id="p-name">user.1</div>
+              <div class="profile-email">demo@app.in</div>
+              <div class="profile-stats-row">
+                <div class="p-stat">
+                  <h4 id="p-tx">0</h4>
+                  <p>Transactions</p>
+                </div>
+                <div class="p-stat">
+                  <h4 id="p-saved">₹0</h4>
+                  <p>Saved</p>
+                </div>
+                <div class="p-stat">
+                  <h4 id="p-ref-earn">₹0</h4>
+                  <p>Referrals</p>
+                </div>
+              </div>
+            </div>
+            <div class="profile-body">
+              <div class="prime-status-card" id="p-prime-card">
+                <div class="psc-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <div class="psc-text">
+                  <h3 id="p-prime-title">Prime Membership</h3>
+                  <p id="p-prime-sub">Not active — Upgrade now</p>
+                </div>
+                <div id="p-prime-btn" onclick="go('prime')" style="cursor:pointer">
+                  <span class="pill pill-amber" id="p-prime-badge">Get Prime</span>
+                </div>
+              </div>
+
+              <div class="menu-card">
+                <div class="menu-item" onclick="go('transactions')">
+                  <div class="mi-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.8">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <span class="mi-label">My Transactions</span>
+                  <div class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg></div>
+                </div>
+                <div class="menu-item" onclick="go('refer')" style="background:rgba(201,166,70,.04)">
+                  <div class="mi-icon" style="background:rgba(201,166,70,.14);border-color:rgba(201,166,70,.22)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div style="flex:1">
+                    <span class="mi-label" style="color:var(--amber)">Refer &amp; Earn</span>
+                    <div style="font-size:10px;color:rgba(201,166,70,.55);margin-top:1px">Earn ₹100 per referral</div>
+                  </div>
+                  <div class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(201,166,70,.3)"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg></div>
+                </div>
+              </div>
+
+              <div class="menu-card">
+                <div class="menu-item">
+                  <div class="mi-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.8">
+                      <circle cx="12" cy="12" r="3" />
+                      <path
+                        d="M19.07 4.93l-1.41 1.41M17.66 17.66l1.41 1.41M4.93 4.93l1.41 1.41M6.34 17.66l-1.41 1.41M21 12h-2M5 12H3M12 3V1M12 23v-2" />
+                    </svg>
+                  </div>
+                  <span class="mi-label">Settings</span>
+                  <div class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg></div>
+                </div>
+                <div class="menu-item">
+                  <div class="mi-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.8">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </div>
+                  <span class="mi-label">Notifications</span>
+                  <div class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg></div>
+                </div>
+                <div class="menu-item" onclick="doLogout()">
+                  <div class="mi-icon danger-bg">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,.7)" stroke-width="1.8">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </div>
+                  <span class="mi-label danger">Logout</span>
+                  <div class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,.4)"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg></div>
+                </div>
+              </div>
+              <p
+                style="font-size:10px;color:rgba(255,255,255,.15);text-align:center;padding-bottom:20px;letter-spacing:.04em">
+                app v1.0 · Made with love in Kerala</p>
+            </div>
+          </div>
+          <nav class="bnav" style="position:sticky;bottom:0">
+            <div class="bni" onclick="go('home')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="9 22 9 12 15 12 15 22" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Home</span>
+            </div>
+            <div class="bni" onclick="go('categories')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>Categories</span>
+            </div>
+            <div class="bni" onclick="go('transactions')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="rgba(255,255,255,.3)"
+                  stroke-width="2" />
+                <polyline points="14 2 14 8 20 8" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="rgba(255,255,255,.3)" stroke-width="2" />
+              </svg>
+              <span>History</span>
+            </div>
+            <div class="bni on" onclick="go('profile')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#d4a850" stroke-width="2" />
+                <circle cx="12" cy="7" r="4" stroke="#d4a850" stroke-width="2" />
+              </svg>
+              <span>Profile</span>
+            </div>
+          </nav>
+        </div>
+
+
+        <!-- ══════════ REFER & EARN ══════════ -->
+        <div class="scr" id="s-refer" style="overflow-y:auto">
+          <div class="sbar" style="position:relative;z-index:2">
+            <span class="time" style="color:rgba(255,255,255,.6)"></span>
+            <div
+              style="width:38px;height:38px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto"
+              onclick="go('profile')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)"
+                stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </div>
+          </div>
+          <div class="refer-hero">
+            <div class="refer-crown">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0f0f14" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <h1>Refer &amp; Earn</h1>
+            <p>Invite friends · Earn ₹100 per referral<br>when they subscribe to Prime</p>
+          </div>
+          <div class="refer-stats">
+            <div class="ref-stat">
+              <h3 id="ref-earnings">₹0</h3>
+              <p>Total Earned</p>
+            </div>
+            <div class="ref-stat">
+              <h3 id="ref-count">0</h3>
+              <p>Referrals</p>
+            </div>
+          </div>
+          <div class="ref-code-card">
+            <div class="ref-code-label">Your Referral Code</div>
+            <div class="ref-code-val" id="ref-code">APP00000</div>
+            <div class="ref-code-btns">
+              <button class="btn btn-ghost btn-sm" style="flex:1;border-radius:11px" onclick="copyRefCode()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copy Code
+              </button>
+              <button class="btn btn-amber btn-sm" style="flex:1;border-radius:11px" onclick="shareRef()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0a0a10" stroke-width="2.5">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+                Share
+              </button>
+            </div>
+          </div>
+          <div class="refer-how">
+            <div class="how-title">How it works</div>
+            <div class="how-step">
+              <div class="how-num">1</div>
+              <div class="how-text">Share your code with friends &amp; family</div>
+            </div>
+            <div class="how-step">
+              <div class="how-num">2</div>
+              <div class="how-text">They enter your code when subscribing to <strong>Prime</strong></div>
+            </div>
+            <div class="how-step">
+              <div class="how-num">3</div>
+              <div class="how-text">You earn <strong>₹100</strong> for every successful Prime subscription</div>
+            </div>
+            <div class="how-step">
+              <div class="how-num">4</div>
+              <div class="how-text">Withdraw earnings to your bank or UPI anytime (min. ₹100)</div>
+            </div>
+          </div>
+          <div class="ref-withdraw-section">
+            <button class="btn btn-amber" id="ref-withdraw-btn" onclick="openWithdraw()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a0a10" stroke-width="2.5">
+                <path d="M12 5v14M19 12l-7 7-7-7" />
+              </svg>
+              Withdraw Earnings
+            </button>
+            <p style="font-size:10px;color:rgba(255,255,255,.2);text-align:center;margin-top:10px;letter-spacing:.02em">
+              Minimum ₹100 to withdraw · Credited to bank within 7 days</p>
+          </div>
+        </div>
+
+        <!-- ══════════ WITHDRAW ══════════ -->
+        <div class="scr" id="s-withdraw">
+          <div class="sbar" style="color:rgba(255,255,255,.7)">
+            <span class="time">9:41</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:0 20px 16px">
+            <div class="back-btn-dark" onclick="go('refer')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)"
+                stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);font-family:'Playfair Display',serif">Withdraw
+              Earnings</h2>
+          </div>
+          <div class="scr-body" style="padding:0 20px 24px">
+            <div class="wd-amount-card">
+              <div class="wd-amount-label">Withdrawal Amount</div>
+              <div class="wd-amount-val" id="wd-amount-show">₹0</div>
+              <div class="wd-amount-note">💳 Credited to your account within 7 business days</div>
+            </div>
+            <div class="wd-method-row">
+              <div class="wd-method-btn sel" id="wd-method-upi" onclick="selWdMethod('upi')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+                UPI ID
+              </div>
+              <div class="wd-method-btn" id="wd-method-bank" onclick="selWdMethod('bank')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <rect x="9" y="12" width="6" height="7" />
+                </svg>
+                Bank Account
+              </div>
+            </div>
+            <div id="wd-upi-section">
+              <div class="mg14">
+                <label class="flabel">UPI ID</label>
+                <input class="field" type="text" placeholder="yourname@upi" id="wd-upi-id">
+              </div>
+            </div>
+            <div id="wd-bank-section" style="display:none">
+              <div class="mg14">
+                <label class="flabel">Account Holder Name</label>
+                <input class="field" type="text" placeholder="Full name as per bank" id="wd-holder">
+              </div>
+              <div class="mg14">
+                <label class="flabel">Account Number</label>
+                <input class="field" type="text" placeholder="Enter account number" id="wd-account">
+              </div>
+              <div class="mg14">
+                <label class="flabel">IFSC Code</label>
+                <input class="field" type="text" placeholder="e.g. HDFC0001234" id="wd-ifsc"
+                  style="text-transform:uppercase">
+              </div>
+            </div>
+            <div
+              style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);border-radius:14px;padding:14px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"
+                style="flex-shrink:0;margin-top:1px">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p style="font-size:11px;color:rgba(255,255,255,.45);line-height:1.6">Amount will be credited to your
+                account within <strong style="color:rgba(16,185,129,.8)">7 business days</strong>. For any issues,
+                contact our support team.</p>
+            </div>
+            <button class="btn btn-amber" onclick="submitWithdraw()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a0a10" stroke-width="2.5">
+                <path d="M12 5v14M19 12l-7 7-7-7" />
+              </svg>
+              Confirm Withdrawal
+            </button>
+            <div class="secure-note" style="margin-top:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Bank-grade security · All transactions encrypted
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /#app -->
+    </div><!-- /.screen-wrap -->
+  </div><!-- /.phone -->
+
+  <script>
+    // ══════════════════════════════════
+    //   MERCHANT ICONS (SVG per category)
+    // ══════════════════════════════════
+    const CAT_ICONS = {
+      restaurant: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="11"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>`,
+      hotel: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M2 20h20M3 20V8l9-6 9 6v12"/><rect x="9" y="12" width="6" height="8"/><path d="M6 8h.01M18 8h.01"/></svg>`,
+      fashion: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>`,
+      jewellery: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>`,
+      electronics: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+      spa: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+      bar: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M8 22h8M12 11v11M3.5 3h17l-7 9.28V17l-3 2v-6.72z"/></svg>`,
+      default: `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a850" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+    };
+
+    // ══════════════════════════════════
+    //   DATA
+    // ══════════════════════════════════
+    const MERCHANTS = [
+      {
+        id: 1, name: 'Spice Garden', loc: 'Fort Kochi, Ernakulam', cat: 'restaurant', disc: 20, rating: '4.8',
+        img: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=700&q=80&auto=format'
+      },
+      {
+        id: 2, name: 'The Lalit Resort', loc: 'Kovalam, Trivandrum', cat: 'hotel', disc: 25, rating: '4.9',
+        img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&q=80&auto=format'
+      },
+      {
+        id: 3, name: 'Kalyan Jewellers', loc: 'MG Road, Kochi', cat: 'jewellery', disc: 5, rating: '4.7',
+        img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=700&q=80&auto=format'
+      },
+      {
+        id: 4, name: 'Fabindia Kerala', loc: 'Palayam, Trivandrum', cat: 'fashion', disc: 18, rating: '4.6',
+        img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=700&q=80&auto=format'
+      },
+      {
+        id: 5, name: 'Serene Spa & Wellness', loc: 'Calicut Beach Road', cat: 'spa', disc: 30, rating: '4.9',
+        img: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=700&q=80&auto=format'
+      },
+      {
+        id: 6, name: 'Reliance Digital', loc: 'Thrissur Round', cat: 'electronics', disc: 10, rating: '4.4',
+        img: 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=700&q=80&auto=format'
+      },
+      {
+        id: 7, name: 'Malabar Gold', loc: 'Kozhikode City', cat: 'jewellery', disc: 4, rating: '4.8',
+        img: 'https://images.unsplash.com/photo-1573408301185-9519eb645fb8?w=700&q=80&auto=format'
+      },
+      {
+        id: 8, name: 'Estuary Island Resort', loc: 'Alleppey Backwaters', cat: 'hotel', disc: 35, rating: '5.0',
+        img: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=700&q=80&auto=format'
+      },
+      {
+        id: 9, name: 'Cochin Bakehouse', loc: 'Panampilly Nagar', cat: 'restaurant', disc: 12, rating: '4.7',
+        img: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=700&q=80&auto=format'
+      },
+      {
+        id: 10, name: 'W Fashion House', loc: 'MG Road, Kochi', cat: 'fashion', disc: 22, rating: '4.5',
+        img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&q=80&auto=format'
+      },
+      {
+        id: 11, name: 'BodyCraft Spa', loc: 'Infopark, Kochi', cat: 'spa', disc: 20, rating: '4.6',
+        img: 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=700&q=80&auto=format'
+      },
+      {
+        id: 12, name: 'Lulu Electronics', loc: 'Edappally, Kochi', cat: 'electronics', disc: 8, rating: '4.5',
+        img: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=700&q=80&auto=format'
+      },
+      {
+        id: 13, name: 'Cochin Bar & Grill', loc: 'Marine Drive, Kochi', cat: 'bar', disc: 15, rating: '4.6',
+        img: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=700&q=80&auto=format'
+      },
+      {
+        id: 14, name: 'The Tavern Calicut', loc: 'Kozhikode Beach Road', cat: 'bar', disc: 20, rating: '4.4',
+        img: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=700&q=80&auto=format'
+      },
+      {
+        id: 15, name: 'Grand Hotel Trivandrum', loc: 'Statue Junction, Trivandrum', cat: 'hotel', disc: 28, rating: '4.8',
+        img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=700&q=80&auto=format'
+      },
+      {
+        id: 16, name: 'Josco Jewellers', loc: 'Thrissur Town', cat: 'jewellery', disc: 6, rating: '4.7',
+        img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=700&q=80&auto=format'
+      },
+    ];
+
+    const CAT_DEFS = [
+      { id: 'restaurant', lbl: 'Restaurants' },
+      { id: 'hotel', lbl: 'Hotels' },
+      { id: 'fashion', lbl: 'Fashion' },
+      { id: 'jewellery', lbl: 'Jewellery' },
+      { id: 'bar', lbl: 'Bar & Lounge' },
+      { id: 'electronics', lbl: 'Electronics' },
+      { id: 'spa', lbl: 'Beauty & Spa' },
+    ];
+
+    // ══════════════════════════════════
+    //   STATE
+    // ══════════════════════════════════
+    let S = {
+      isPrime: false,
+      totalSaved: 0,
+      transactions: [],
+      curMerchant: null,
+      payCtx: null,
+      prevScr: 'home',
+      planPrice: 2999,
+      planType: 'yearly',
+      referralCode: 'APP' + Math.random().toString(36).substr(2, 5).toUpperCase(),
+      referralEarnings: 0,
+      referralCount: 0,
+      userName: 'Arjun Menon',
+    };
+
+    // ══════════════════════════════════
+    //   NAVIGATION
+    // ══════════════════════════════════
+    function go(id) {
+      if (id === 'back') { go(S.prevScr); return; }
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('show'));
+      const scr = document.getElementById('s-' + id);
+      if (!scr) return;
+      scr.classList.add('show');
+      scr.style.animation = 'fadeIn .22s ease';
+      scr.querySelectorAll('.scr-body').forEach(b => b.scrollTop = 0);
+      if (scr.scrollTop !== undefined) scr.scrollTop = 0;
+      if (id !== 'pay' && id !== 'mdetail') S.prevScr = id;
+      if (id === 'home') renderHome();
+      if (id === 'transactions') renderTx();
+      if (id === 'categories') renderCats(activeCat);
+      if (id === 'profile') renderProfile();
+      if (id === 'refer') renderRefer();
+    }
+
+    // ══════════════════════════════════
+    //   AUTH
+    // ══════════════════════════════════
+    function authTab(tab) {
+      document.getElementById('tab-login').classList.toggle('on', tab === 'login');
+      document.getElementById('tab-signup').classList.toggle('on', tab === 'signup');
+      document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+    }
+
+    function doLogin() {
+      showWelcome();
+      setTimeout(() => go('home'), 1600);
+    }
+
+    function showWelcome() {
+      const el = document.getElementById('welcome-notif');
+      el.classList.remove('hide');
+      el.classList.add('show');
+      setTimeout(() => {
+        el.classList.add('hide');
+        setTimeout(() => { el.classList.remove('show', 'hide'); }, 350);
+      }, 2600);
+    }
+
+    // ── DYNAMIC MOBILE SCALE ──
+    function applyPhoneScale() {
+      const vw = window.innerWidth;
+      const phone = document.querySelector('.phone');
+      if (!phone) return;
+      if (vw < 480) {
+        const scale = Math.max(0.55, (vw - 10) / 390);
+        phone.style.transform = 'scale(' + scale + ')';
+        phone.style.transformOrigin = 'top center';
+        phone.style.marginBottom = '-' + Math.round(844 * (1 - scale)) + 'px';
+        document.body.style.minHeight = Math.round(844 * scale + 40) + 'px';
+      } else {
+        phone.style.transform = '';
+        phone.style.marginBottom = '';
+        document.body.style.minHeight = '';
+      }
+    }
+    applyPhoneScale();
+    window.addEventListener('resize', applyPhoneScale);
+
+    function doLogout() {
+      const rc = S.referralCode;
+      S = { isPrime: false, totalSaved: 0, transactions: [], curMerchant: null, payCtx: null, prevScr: 'home', planPrice: 2999, planType: 'yearly', referralCode: rc, referralEarnings: 0, referralCount: 0, userName: 'Arjun Menon' };
+      go('auth');
+    }
+
+    // ══════════════════════════════════
+    //   HOME
+    // ══════════════════════════════════
+    function getIcon(cat) {
+      return CAT_ICONS[cat] || CAT_ICONS.default;
+    }
+
+    function renderHome() {
+      const h = new Date().getHours();
+      document.getElementById('h-greet').textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('h-saved').textContent = fmt(S.totalSaved);
+      const pp = document.getElementById('h-prime-pill');
+      pp.innerHTML = S.isPrime ? '<span class="pill pill-amber">Prime Active</span>' : '';
+      const banner = document.getElementById('prime-banner');
+      banner.style.display = S.isPrime ? 'none' : 'flex';
+      filterCat('all', document.querySelector('.chip.on') || document.querySelector('.chip'));
+    }
+
+    let activeMCat = 'all';
+    function filterCat(cat, el) {
+      activeMCat = cat;
+      document.querySelectorAll('#h-cats .chip').forEach(c => c.classList.remove('on'));
+      if (el) el.classList.add('on');
+      const filtered = cat === 'all' ? MERCHANTS : MERCHANTS.filter(m => m.cat === cat);
+      const list = document.getElementById('m-list');
+      list.innerHTML = filtered.map((m, i) => `
+    <div class="mcard" style="animation:slideUp .3s ease ${i * 0.04}s both" onclick="openMerchant(${m.id})">
+      <div class="mcard-img">
+        <img src="${m.img}" alt="${m.name}" loading="lazy">
+        <div class="mcard-badge">Prime ${m.disc}% Off</div>
+        ${!S.isPrime ? '<div class="mcard-lock"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>' : ''}
+      </div>
+      <div class="mcard-info">
+        <div class="mcard-name">${m.name}</div>
+        <div class="mcard-meta">
+          <div class="mcard-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${m.loc}</div>
+          <div class="mcard-cat">${CAT_DEFS.find(c => c.id === m.cat)?.lbl || m.cat}</div>
+        </div>
+        <div class="mcard-footer">
+          <div class="mcard-disc">★ ${m.rating}</div>
+          ${S.isPrime ? `<span class="pill pill-amber">Prime ${m.disc}% Off</span>` : `<span class="pill pill-dark">Members Only</span>`}
+        </div>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════
+    //   MERCHANT DETAIL
+    // ══════════════════════════════════
+    function openMerchant(id) {
+      const m = MERCHANTS.find(x => x.id === id);
+      if (!m) return;
+      S.curMerchant = m;
+      document.getElementById('md-img').src = m.img;
+      document.getElementById('md-name').textContent = m.name;
+      document.getElementById('md-loc').textContent = m.loc;
+      document.getElementById('md-disc').textContent = m.disc + '%';
+      document.getElementById('md-rating').textContent = m.rating;
+      document.getElementById('md-cat').textContent = CAT_DEFS.find(c => c.id === m.cat)?.lbl || m.cat;
+      document.getElementById('md-lock').style.display = S.isPrime ? 'none' : 'block';
+      document.getElementById('md-calc').style.display = S.isPrime ? 'block' : 'none';
+      document.getElementById('bill-inp').value = '';
+      document.getElementById('calc-res').style.display = 'none';
+      document.getElementById('md-pay-btn').style.display = 'none';
+      go('mdetail');
+    }
+
+    function calcDisc() {
+      const m = S.curMerchant;
+      const bill = parseFloat(document.getElementById('bill-inp').value) || 0;
+      if (!bill || bill <= 0) { document.getElementById('calc-res').style.display = 'none'; document.getElementById('md-pay-btn').style.display = 'none'; return; }
+      const disc = Math.round(bill * m.disc / 100 * 100) / 100;
+      const final = bill - disc;
+      document.getElementById('c-orig').textContent = fmt(bill);
+      document.getElementById('c-pct').textContent = m.disc;
+      document.getElementById('c-disc').textContent = fmt(disc);
+      document.getElementById('c-tot').textContent = fmt(final);
+      document.getElementById('calc-res').style.display = 'block';
+      document.getElementById('md-pay-btn').style.display = 'flex';
+      S._bill = bill; S._disc = disc; S._final = final;
+    }
+
+    function payMerchant() {
+      startPay('merchant', S._final, S.curMerchant.name, { merchant: S.curMerchant, amount: S._final, disc: S._disc, type: 'merchant', name: S.curMerchant.name });
+    }
+
+    // ══════════════════════════════════
+    //   PAYMENT
+    // ══════════════════════════════════
+    function startPay(type, amount, name, ctx) {
+      const c = ctx || { type, amount: amount, name, disc: 0 };
+      S.payCtx = c;
+      document.getElementById('pay-mname').textContent = name;
+      document.getElementById('pay-amt').textContent = fmt(amount);
+      const saveTxt = document.getElementById('pay-save-txt');
+      saveTxt.textContent = c.disc > 0 ? `You save ${fmt(c.disc)} with Prime!` : '';
+      payState('sel');
+      go('pay');
+    }
+
+    function payState(s) {
+      ['sel', 'load', 'ok'].forEach(id => {
+        const el = document.getElementById('pay-' + id);
+        if (el) el.style.display = id === s ? (id === 'sel' ? 'block' : 'flex') : 'none';
+      });
+    }
+
+    function selPM(el) {
+      document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('sel'));
+      el.classList.add('sel');
+    }
+
+    function procPay() {
+      const ctx = S.payCtx;
+      const amountPaise = Math.round(ctx.amount * 100); // Razorpay uses paise
+
+      const options = {
+        key: 'rzp_test_Sm2pL8FXvuDqOC',
+        amount: amountPaise,
+        currency: 'INR',
+        name: 'app',
+        description: ctx.type === 'prime' ? 'Prime Membership' : ctx.name,
+        image: '',
+        handler: function (response) {
+          // Payment successful — record transaction
+          const txId = response.razorpay_payment_id || Math.random().toString(36).substr(2, 8).toUpperCase();
+          const shortId = txId.replace('pay_', '').toUpperCase();
+          document.getElementById('suc-txid').textContent = '#' + shortId;
+          document.getElementById('suc-amt').textContent = fmt(ctx.amount);
+          document.getElementById('suc-title').textContent = ctx.type === 'prime' ? 'Prime Activated!' : 'Payment Successful';
+          document.getElementById('suc-sub').textContent = ctx.type === 'prime' ? 'Welcome to app Prime' : 'Discount applied successfully';
+
+          const now = new Date();
+          S.transactions.unshift({
+            id: '#' + shortId, type: ctx.type, merchant: ctx.name,
+            catIcon: ctx.merchant ? ctx.merchant.cat : (ctx.type === 'prime' ? 'jewellery' : 'default'),
+            amount: ctx.amount, saved: ctx.disc || 0,
+            date: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+            time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          });
+          if (ctx.type === 'prime') {
+            S.isPrime = true;
+            if (S._appliedRef) {
+              S._appliedRef = null;
+              const refInput = document.getElementById('prime-ref-input');
+              const refMsg = document.getElementById('prime-ref-msg');
+              if (refInput) { refInput.value = ''; refInput.disabled = false; }
+              if (refMsg) { refMsg.textContent = ''; }
+              const applyBtn = document.getElementById('prime-ref-apply-btn');
+              if (applyBtn) applyBtn.disabled = false;
+            }
+          }
+          if (ctx.disc) S.totalSaved += ctx.disc;
+          S._bill = 0; S._disc = 0; S._final = 0;
+          payState('ok');
+        },
+        prefill: {
+          name: S.name || '',
+          email: S.email || '',
+        },
+        theme: {
+          color: '#C9A646',
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed the Razorpay modal — go back to payment selection
+            payState('sel');
+          }
+        }
+      };
+
+      payState('load');
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          payState('sel');
+          toast('Payment failed: ' + (response.error.description || 'Please try again'), 'error');
+        });
+        rzp.open();
+      } catch (e) {
+        payState('sel');
+        toast('Could not open payment gateway', 'error');
+      }
+    }
+
+    function afterPay() {
+      const t = S.payCtx.type;
+      toast(t === 'prime' ? 'Prime membership activated!' : 'Discount applied successfully', 'success');
+      go('home');
+    }
+
+    // ══════════════════════════════════
+    //   TRANSACTIONS
+    // ══════════════════════════════════
+    function renderTx() {
+      const list = document.getElementById('tx-list');
+      document.getElementById('tx-count').textContent = S.transactions.length + ' record' + (S.transactions.length !== 1 ? 's' : '');
+      if (!S.transactions.length) {
+        list.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><h3>No Transactions Yet</h3><p>Your transaction history will appear here after your first purchase</p></div>`;
+        return;
+      }
+      list.innerHTML = S.transactions.map((tx, i) => `
+    <div class="tx-item" style="animation:slideUp .3s ease ${i * 0.05}s both">
+      <div class="tx-thumb">${getIcon(tx.catIcon)}</div>
+      <div class="tx-info">
+        <div class="tx-name">${tx.merchant}</div>
+        <div class="tx-date">${tx.date} · ${tx.time}</div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amt">${fmt(tx.amount)}</div>
+        ${tx.saved > 0 ? `<div class="tx-saved">Saved ${fmt(tx.saved)}</div>` : `<div class="tx-saved" style="color:rgba(255,255,255,.25)">${tx.type === 'prime' ? 'Membership' : 'Paid'}</div>`}
+      </div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════
+    //   PROFILE
+    // ══════════════════════════════════
+    function renderProfile() {
+      document.getElementById('p-tx').textContent = S.transactions.length;
+      document.getElementById('p-saved').textContent = '₹' + S.totalSaved.toLocaleString('en-IN');
+      document.getElementById('p-ref-earn').textContent = '₹' + S.referralEarnings.toLocaleString('en-IN');
+      const isPrime = S.isPrime;
+      document.getElementById('p-prime-title').textContent = 'Prime Membership';
+      if (isPrime) {
+        const exp = new Date(); exp.setFullYear(exp.getFullYear() + 1);
+        document.getElementById('p-prime-sub').textContent = 'Valid until ' + exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('p-prime-badge').textContent = 'Prime Active';
+        document.getElementById('p-prime-badge').className = 'pill pill-amber';
+        document.getElementById('p-prime-btn').onclick = null;
+      } else {
+        document.getElementById('p-prime-sub').textContent = 'Not active — Upgrade now';
+        document.getElementById('p-prime-badge').textContent = 'Get Prime';
+        document.getElementById('p-prime-badge').className = 'pill pill-dark';
+        document.getElementById('p-prime-btn').onclick = () => go('prime');
+      }
+    }
+
+    // ══════════════════════════════════
+    //   CATEGORIES
+    // ══════════════════════════════════
+    let activeCat = 'all';
+    function renderCats(cat) {
+      activeCat = cat;
+      const grid = document.getElementById('cat-grid');
+      const allIcon = `<div class="cat-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="${cat === 'all' ? '#d4a850' : 'rgba(255,255,255,.4)'}" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>`;
+      grid.innerHTML = [`<div class="cat-card ${cat === 'all' ? 'on' : ''}" onclick="renderCats('all')">${allIcon}<div class="cat-card-lbl">All</div><div class="cat-card-count">${MERCHANTS.length} merchants</div></div>`]
+        .concat(CAT_DEFS.map(c => {
+          const isOn = cat === c.id;
+          const iconSvg = (CAT_ICONS[c.id] || CAT_ICONS.default).replace('stroke="#d4a850"', `stroke="${isOn ? '#d4a850' : 'rgba(255,255,255,.4)'}"`)
+          return `<div class="cat-card ${isOn ? 'on' : ''}" onclick="renderCats('${c.id}')">
+        <div class="cat-card-icon">${iconSvg}</div>
+        <div class="cat-card-lbl">${c.lbl}</div>
+        <div class="cat-card-count">${MERCHANTS.filter(m => m.cat === c.id).length} merchants</div>
+      </div>`;
+        })).join('');
+
+      const filtered = cat === 'all' ? MERCHANTS : MERCHANTS.filter(m => m.cat === cat);
+      const cLabel = cat === 'all' ? 'All Merchants' : (CAT_DEFS.find(c => c.id === cat)?.lbl || 'Merchants');
+      document.getElementById('cat-filter-lbl').textContent = cLabel;
+      document.getElementById('cat-filter-cnt').textContent = filtered.length + ' merchants';
+      document.getElementById('filt-merchants').innerHTML = filtered.map(m => `
+    <div class="fm-item" onclick="openMerchant(${m.id})">
+      <div class="fm-img">${getIcon(m.cat)}</div>
+      <div class="fm-info">
+        <div class="fm-name">${m.name}</div>
+        <div class="fm-loc">${m.loc}</div>
+        <div class="fm-badge">Prime ${m.disc}% Off</div>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════
+    //   PRIME PLAN
+    // ══════════════════════════════════
+    function selectPlan(el, type, price) {
+      document.querySelectorAll('.plan').forEach(p => p.classList.remove('sel'));
+      el.classList.add('sel');
+      S.planPrice = price; S.planType = type;
+      document.getElementById('prime-pay-btn').textContent = `Get Prime — ${fmt(price)} / ${type === 'yearly' ? 'year' : 'month'}`;
+      document.getElementById('prime-pay-btn').setAttribute('onclick', `startPay('prime',${price},'Prime Membership',null)`);
+    }
+
+    // ══════════════════════════════════
+    //   TOAST
+    // ══════════════════════════════════
+    let toastTimer = null;
+    const TOAST_CONFIG = {
+      success: {
+        icon: `<polyline points="20 6 9 17 4 12"/>`,
+        badge: '✓ DONE',
+        sub: 'Action completed successfully'
+      },
+      error: {
+        icon: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+        badge: 'ERROR',
+        sub: 'Please try again'
+      },
+      info: {
+        icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`,
+        badge: 'INFO',
+        sub: ''
+      }
+    };
+
+    // Context-aware subtitles
+    const TOAST_SUBS = {
+      'Referral code copied!': 'Share it with friends to earn ₹100',
+      'Referral code applied — ₹100 off!': '₹100 discount added to your plan',
+      'Prime membership activated!': 'Welcome to exclusive privileges',
+      'Discount applied successfully': 'Savings credited to your account',
+      'Password reset link sent to your email': 'Check your inbox',
+    };
+
+    function toast(msg, type = 'success') {
+      const cfg = TOAST_CONFIG[type] || TOAST_CONFIG.success;
+      const sub = TOAST_SUBS[msg] || cfg.sub;
+      document.getElementById('t-ico-svg').innerHTML = cfg.icon;
+      document.getElementById('toast-title').textContent = msg;
+      document.getElementById('toast-sub').textContent = sub;
+      document.getElementById('toast-badge').textContent = cfg.badge;
+      const el = document.getElementById('toast');
+      el.className = 'show ' + type;
+      el.style.display = 'flex';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.style.display = 'none'; el.className = ''; }, 3200);
+    }
+
+    // ══════════════════════════════════
+    //   UTILS
+    // ══════════════════════════════════
+    function fmt(n) { return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    function updateClock() {
+      const n = new Date();
+      const t = n.getHours().toString().padStart(2, '0') + ':' + n.getMinutes().toString().padStart(2, '0');
+      document.querySelectorAll('.time').forEach(el => el.textContent = t);
+    }
+    updateClock();
+    setInterval(updateClock, 30000);
+
+    // ══════════════════════════════════
+    //   REFER & EARN
+    // ══════════════════════════════════
+    function renderRefer() {
+      document.getElementById('ref-code').textContent = S.referralCode;
+      document.getElementById('ref-earnings').textContent = '₹' + S.referralEarnings.toLocaleString('en-IN');
+      document.getElementById('ref-count').textContent = S.referralCount;
+      document.getElementById('ref-withdraw-btn').disabled = S.referralEarnings < 100;
+      document.getElementById('ref-withdraw-btn').style.opacity = S.referralEarnings < 100 ? '0.4' : '1';
+    }
+
+    function copyRefCode() {
+      navigator.clipboard && navigator.clipboard.writeText(S.referralCode);
+      toast('Referral code copied!', 'success');
+    }
+
+    function shareRef() {
+      if (navigator.share) {
+        navigator.share({ title: 'Join app', text: `Use my code ${S.referralCode} and get ₹100 off on Prime!`, url: 'https://app.in' });
+      } else {
+        copyRefCode();
+      }
+    }
+
+    // ══════════════════════════════════
+    //   PRIME REFERRAL CODE
+    // ══════════════════════════════════
+    function applyRefCode() {
+      const code = document.getElementById('prime-ref-input').value.trim().toUpperCase();
+      const msgEl = document.getElementById('prime-ref-msg');
+      if (!code) { msgEl.textContent = 'Enter a referral code'; msgEl.style.color = '#ef4444'; return; }
+      if (code === S.referralCode) { msgEl.textContent = "You can't use your own code"; msgEl.style.color = '#ef4444'; return; }
+      if (code.startsWith('APP')) {
+        S._appliedRef = code;
+        msgEl.textContent = '✓ Code applied! You save ₹100';
+        msgEl.style.color = '#10b981';
+        document.getElementById('prime-ref-input').disabled = true;
+        document.getElementById('prime-ref-apply-btn').disabled = true;
+        toast('Referral code applied — ₹100 off!', 'success');
+      } else {
+        msgEl.textContent = 'Invalid referral code';
+        msgEl.style.color = '#ef4444';
+      }
+    }
+
+    // ══════════════════════════════════
+    //   WITHDRAW
+    // ══════════════════════════════════
+    function openWithdraw() {
+      if (S.referralEarnings < 100) {
+        TOAST_SUBS['Minimum ₹100 required'] = 'Keep referring friends to earn more';
+        toast('Minimum ₹100 required', 'error'); return;
+      }
+      document.getElementById('wd-amount-show').textContent = '₹' + S.referralEarnings.toLocaleString('en-IN');
+      document.getElementById('wd-method-upi').classList.add('sel');
+      document.getElementById('wd-method-bank').classList.remove('sel');
+      document.getElementById('wd-upi-section').style.display = 'block';
+      document.getElementById('wd-bank-section').style.display = 'none';
+      document.getElementById('wd-upi-id').value = '';
+      document.getElementById('wd-account').value = '';
+      document.getElementById('wd-ifsc').value = '';
+      document.getElementById('wd-holder').value = '';
+      go('withdraw');
+    }
+
+    function selWdMethod(method) {
+      document.querySelectorAll('.wd-method-btn').forEach(b => b.classList.remove('sel'));
+      document.getElementById('wd-method-' + method).classList.add('sel');
+      document.getElementById('wd-upi-section').style.display = method === 'upi' ? 'block' : 'none';
+      document.getElementById('wd-bank-section').style.display = method === 'bank' ? 'block' : 'none';
+    }
+
+    function submitWithdraw() {
+      const isUpi = document.getElementById('wd-method-upi').classList.contains('sel');
+      if (isUpi) {
+        const upi = document.getElementById('wd-upi-id').value.trim();
+        if (!upi || !upi.includes('@')) { toast('Enter a valid UPI ID', 'error'); return; }
+      } else {
+        const acc = document.getElementById('wd-account').value.trim();
+        const ifsc = document.getElementById('wd-ifsc').value.trim();
+        const holder = document.getElementById('wd-holder').value.trim();
+        if (!acc || acc.length < 8) { toast('Enter a valid account number', 'error'); return; }
+        if (!ifsc || ifsc.length < 11) { toast('Enter a valid IFSC code', 'error'); return; }
+        if (!holder) { toast('Enter account holder name', 'error'); return; }
+      }
+      const amt = S.referralEarnings;
+      S.referralEarnings = 0;
+      const wdMsg = 'Withdrawal initiated!';
+      TOAST_SUBS[wdMsg] = '₹' + amt + ' · Credited to bank within 7 days';
+      toast(wdMsg, 'success');
+      go('refer');
+      renderRefer();
+    }
+
+    // ══════════════════════════════════
+    //   BOOT
+    // ══════════════════════════════════
+    go('auth');
+  </script>
+</body>
+
+</html>
