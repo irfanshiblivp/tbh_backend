@@ -45,6 +45,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class MerchantSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category')
     owner_name = serializers.ReadOnlyField(source='user.name')
+    state = serializers.ReadOnlyField(source='user.state')
     
     class Meta:
         model = Merchant
@@ -52,9 +53,9 @@ class MerchantSerializer(serializers.ModelSerializer):
             'id', 'user', 'business_name', 'category', 'description', 
             'address', 'logo', 'card_image', 'discount_percent', 
             'status', 'created_at', 'updated_at', 'category_name', 'owner_name',
-            'latitude', 'longitude', 'license_document'
+            'latitude', 'longitude', 'license_document', 'state'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name']
+        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name', 'state', 'user']
 
 class PrimeMembershipSerializer(serializers.ModelSerializer):
     class Meta:

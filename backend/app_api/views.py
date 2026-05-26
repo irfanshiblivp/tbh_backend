@@ -160,65 +160,70 @@ class RazorpayVerifyPaymentView(views.APIView):
             )
             
         payment.razorpay_payment_id = payment_id
-        payment.status = 'success'
+        payment.status = 'paid'
         payment.save()
         
-        from django.utils import timezone
-        now = timezone.now()
-        
-        active_membership = PrimeMembership.objects.filter(user=user, expires_at__gt=now).first()
-        if active_membership:
-            active_membership.expires_at = active_membership.expires_at + timezone.timedelta(days=365)
-            active_membership.save()
-            membership = active_membership
+        if payment.purpose == 'prime_membership':
+            from django.utils import timezone
+            now = timezone.now()
+            
+            active_membership = PrimeMembership.objects.filter(user=user, expires_at__gt=now).first()
+            if active_membership:
+                active_membership.expires_at = active_membership.expires_at + timezone.timedelta(days=365)
+                active_membership.save()
+                membership = active_membership
+            else:
+                membership = PrimeMembership.objects.create(
+                    user=user,
+                    source='payment',
+                    starts_at=now,
+                    expires_at=now + timezone.timedelta(days=365)
+                )
+                
+            # Dynamically process referral code if provided during Prime purchase
+            referral_code = request.data.get('referral_code')
+            if referral_code:
+                try:
+                    clean_code = ''.join(c for c in str(referral_code) if c.isdigit())
+                    if clean_code:
+                        referrer = User.objects.filter(customer_number=int(clean_code)).first()
+                        if referrer and referrer != user:
+                            if not Referral.objects.filter(referred=user).exists():
+                                import random, string
+                                link, _ = ReferralLink.objects.get_or_create(
+                                    user=referrer,
+                                    defaults={
+                                        'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                                        'expires_at': timezone.now() + timezone.timedelta(days=365)
+                                    }
+                                )
+                                Referral.objects.create(
+                                    referrer=referrer,
+                                    referred=user,
+                                    referral_link=link
+                                )
+                                print(f"Created dynamic referral record via verify_payment: {referrer.email} referred {user.email}")
+                except Exception as e:
+                    print(f"Error processing dynamic referral code via verify_payment: {e}")
+                
+            referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
+            if referral:
+                referrer = referral.referrer
+                reward_amount = 100
+                referrer.referral_balance = float(referrer.referral_balance or 0) + reward_amount
+                referrer.referral_total_earned = float(referrer.referral_total_earned or 0) + reward_amount
+                referrer.save()
+                referral.reward_paid_at = timezone.now()
+                referral.reward_amount = reward_amount
+                referral.save()
+                
+            message = 'Payment verified and Prime membership activated successfully!'
         else:
-            membership = PrimeMembership.objects.create(
-                user=user,
-                source='payment',
-                starts_at=now,
-                expires_at=now + timezone.timedelta(days=365)
-            )
-            
-        # Dynamically process referral code if provided during Prime purchase
-        referral_code = request.data.get('referral_code')
-        if referral_code:
-            try:
-                clean_code = ''.join(c for c in str(referral_code) if c.isdigit())
-                if clean_code:
-                    referrer = User.objects.filter(customer_number=int(clean_code)).first()
-                    if referrer and referrer != user:
-                        if not Referral.objects.filter(referred=user).exists():
-                            import random, string
-                            link, _ = ReferralLink.objects.get_or_create(
-                                user=referrer,
-                                defaults={
-                                    'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                    'expires_at': timezone.now() + timezone.timedelta(days=365)
-                                }
-                            )
-                            Referral.objects.create(
-                                referrer=referrer,
-                                referred=user,
-                                referral_link=link
-                            )
-                            print(f"Created dynamic referral record via verify_payment: {referrer.email} referred {user.email}")
-            except Exception as e:
-                print(f"Error processing dynamic referral code via verify_payment: {e}")
-            
-        referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
-        if referral:
-            referrer = referral.referrer
-            reward_amount = 100
-            referrer.referral_balance = float(referrer.referral_balance or 0) + reward_amount
-            referrer.referral_total_earned = float(referrer.referral_total_earned or 0) + reward_amount
-            referrer.save()
-            referral.reward_paid_at = timezone.now()
-            referral.reward_amount = reward_amount
-            referral.save()
+            message = 'Payment verified successfully!'
             
         return Response({
             'status': 'success',
-            'message': 'Payment verified and Prime membership activated successfully!',
+            'message': message,
             'user': UserSerializer(user).data
         })
 
@@ -366,6 +371,9 @@ class MerchantViewSet(viewsets.ModelViewSet):
         user_id = request.data.get('user_id')
         bill_amount = float(request.data.get('bill_amount', 0))
         merchant_user = request.user
+        payment_method = request.data.get('payment_method', 'CASH').upper()
+        if payment_method not in ['ONLINE', 'CASH']:
+            payment_method = 'CASH'
         
         try:
             merchant = Merchant.objects.get(user=merchant_user)
@@ -384,7 +392,8 @@ class MerchantViewSet(viewsets.ModelViewSet):
             bill_amount=bill_amount,
             amount_saved=amount_saved,
             used_at=timezone.now(),
-            expires_at=timezone.now()
+            expires_at=timezone.now(),
+            payment_method=payment_method
         )
         
         return Response({
@@ -417,6 +426,10 @@ class MerchantViewSet(viewsets.ModelViewSet):
         if bill_amount <= 0:
             return Response({'error': 'Bill amount must be greater than zero'}, status=400)
             
+        payment_method = request.data.get('payment_method', 'ONLINE').upper()
+        if payment_method not in ['ONLINE', 'CASH']:
+            payment_method = 'ONLINE'
+
         amount_saved = (bill_amount * merchant.discount_percent) / 100.0
         
         # Generate voucher code
@@ -433,7 +446,8 @@ class MerchantViewSet(viewsets.ModelViewSet):
             bill_amount=bill_amount,
             amount_saved=amount_saved,
             used_at=timezone.now(),
-            expires_at=timezone.now()
+            expires_at=timezone.now(),
+            payment_method=payment_method
         )
         
         return Response({
@@ -505,15 +519,33 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
         
         data = request.data
+        email = data.get('email', '').strip().lower()
+        password = data.get('password')
+        name = data.get('name', data.get('username', '')).strip()
+        role = data.get('role', 'staff').lower()
+        
+        if not email or not password or not name:
+            return Response({'error': 'Name, email, and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if len(password) < 8:
+            return Response({'error': 'The password field must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            
         try:
             user = User.objects.create_user(
-                email=data.get('email'),
-                password=data.get('password'),
-                name=data.get('name', data.get('username', 'Staff')),
-                role=data.get('role', 'staff'),
+                email=email,
+                password=password,
+                name=name,
+                role=role,
                 email_verified_at=timezone.now(),
                 status='active'
             )
+            
+            # Send welcome email containing login credentials
+            send_welcome_email(user, password)
+            
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -602,6 +634,9 @@ class UserViewSet(viewsets.ModelViewSet):
                     merchant.logo = path 
                     merchant.save()
             
+            # Send welcome email containing login credentials
+            send_welcome_email(user, data.get('password'))
+            
             return Response({
                 'user': UserSerializer(user).data,
                 'merchant': MerchantSerializer(merchant).data
@@ -618,7 +653,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         PrimeMembership.objects.create(
             user=user,
-            source='admin_grant',
+            source='admin',
             starts_at=timezone.now(),
             expires_at=timezone.now() + timezone.timedelta(days=365)
         )
@@ -773,7 +808,7 @@ class LoginView(views.APIView):
         print(f"Login attempt for email: '{email}'")
         try:
             db_user = User.objects.get(email__iexact=email)
-            if db_user.status == 'blocked':
+            if db_user.status == 'inactive':
                 return Response({'error': 'Your account has been blocked by the administrator.'}, status=status.HTTP_403_FORBIDDEN)
             print(f"DEBUG: User found in DB: {db_user.email}, Role: {db_user.role}")
             print(f"DEBUG: Stored Hash: {db_user.password[:20]}...")
@@ -876,6 +911,47 @@ def send_otp_email(user, otp, expiry_str):
         fail_silently=False,
     )
 
+def send_welcome_email(user, password):
+    subject = 'Welcome to The Baron Club - Account Created'
+    role_name = 'Administrator' if user.role == 'admin' else 'Staff Member' if user.role == 'staff' else 'Merchant Partner'
+    
+    html_message = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://thebaronclub.com/logo-01.png" alt="The Baron Club" style="height: 80px;">
+        </div>
+        <h2 style="color: #333; text-align: center;">Account Created Successfully</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.5;">
+            Hello {user.name},<br><br>
+            An account has been created for you as a <strong>{role_name}</strong> on The Baron Club.<br>
+            Here are your login credentials:
+        </p>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #eee;">
+            <p style="margin: 5px 0; font-size: 15px;"><strong>Email / Username:</strong> {user.email}</p>
+            <p style="margin: 5px 0; font-size: 15px;"><strong>Password:</strong> {password}</p>
+        </div>
+        <p style="color: #555; font-size: 15px; line-height: 1.5;">
+            Please log in to the app and change your password as soon as possible for security reasons.
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #aaa; font-size: 12px; text-align: center;">
+            © 2026 The Baron Club. All rights reserved.
+        </p>
+    </div>
+    """
+    try:
+        print(f"DEBUG: Sending welcome email to {user.email} (Role: {user.role}, Password: {password})")
+        send_mail(
+            subject,
+            f'Welcome to The Baron Club. Your account has been created. Username: {user.email}, Password: {password}',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f"Error sending welcome email to {user.email}: {e}")
+
 class SignupView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -903,7 +979,7 @@ class SignupView(views.APIView):
             role=role,
             phone=phone if phone else None,
             status='active',
-            email_verified_at=None,
+            email_verified_at=timezone.now() if role == 'merchant' else None,
             state=data.get('state')
         )
 
@@ -948,6 +1024,7 @@ class SignupView(views.APIView):
             cache.set(cache_key, otp, 900) # 15 minutes
             
             expiry_str = (timezone.now() + timezone.timedelta(minutes=15)).strftime("%I:%M %p")
+            print(f"DEBUG: Generated signup OTP {otp} for user {user.email}")
             send_otp_email(user, otp, expiry_str)
         except Exception as e:
             print(f"Error sending OTP email: {e}")
@@ -975,12 +1052,14 @@ class ResendVerificationView(views.APIView):
             cache.set(cache_key, otp, 900) # 15 minutes
             
             expiry_str = (timezone.now() + timezone.timedelta(minutes=15)).strftime("%I:%M %p")
+            print(f"DEBUG: Generated resend OTP {otp} for user {user.email}")
             send_otp_email(user, otp, expiry_str)
             
             return Response({
                 'message': 'OTP sent to your email'
             })
         except Exception as e:
+            print(f"Error resending OTP email for {user.email}: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class VerifyOTPView(views.APIView):
@@ -1216,10 +1295,11 @@ class AdminDashboardView(views.APIView):
         total_revenue = Payment.objects.filter(status='success').aggregate(models.Sum('amount'))['amount__sum'] or 0
         total_revenue = float(total_revenue) / 100.0  # Convert from paisa to rupees
         
-        total_users = User.objects.count()
+        total_users = User.objects.filter(role='customer').count()
         total_merchants = Merchant.objects.count()
         total_vouchers = Voucher.objects.count()
         total_payments = Payment.objects.count()
+        total_prime_users = PrimeMembership.objects.filter(expires_at__gt=timezone.now()).values('user_id').distinct().count()
         
         # Recent activity (mix of payments and vouchers)
         recent_payments = Payment.objects.all().order_by('-id')[:5]
@@ -1245,7 +1325,7 @@ class AdminDashboardView(views.APIView):
                 'total_merchants': total_merchants,
                 'total_redemptions': total_vouchers,
                 'total_transactions': total_payments,
-                'total_prime_users': PrimeMembership.objects.count(),
+                'total_prime_users': total_prime_users,
             },
             'recent_activity': expiring_announcements + [
                 {
@@ -1314,15 +1394,21 @@ class ChangePasswordView(views.APIView):
         new_password = request.data.get('new_password')
 
         if not old_password or not new_password:
+            print("DEBUG: ChangePasswordView - Missing parameters")
             return Response({'error': 'Both old and new passwords are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not user.check_password(old_password):
+        match = user.check_password(old_password)
+        print(f"DEBUG: ChangePasswordView for {user.email} - old password matches: {match}")
+
+        if not match:
             return Response({'error': 'Incorrect old password'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user.set_password(new_password)
             user.save()
+            print(f"DEBUG: ChangePasswordView for {user.email} - Password changed successfully")
             return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
+            print(f"DEBUG: ChangePasswordView error: {e}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
