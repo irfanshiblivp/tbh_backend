@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     User, Category, Merchant, PrimeMembership, Payment, Voucher, AppSetting,
-    ReferralPayout
+    ReferralPayout, HeroBanner
 )
 from django.utils import timezone
 
@@ -14,6 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_prime = serializers.SerializerMethodField()
     prime_starts_at = serializers.SerializerMethodField()
     prime_expires_at = serializers.SerializerMethodField()
+    signup_method = serializers.SerializerMethodField()
     
     class Meta:
         model = User
@@ -22,7 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
             'status', 'referral_balance', 'referral_total_earned', 'referral_code',
             'bank_account_holder_name', 'bank_account_number', 'bank_ifsc', 
             'bank_name', 'bank_upi_id', 'customer_number', 'created_at',
-            'is_prime', 'prime_starts_at', 'prime_expires_at', 'email_verified_at', 'state'
+            'is_prime', 'prime_starts_at', 'prime_expires_at', 'email_verified_at', 'state',
+            'signup_method'
         )
         read_only_fields = ('referral_balance', 'referral_total_earned', 'customer_number')
 
@@ -36,6 +38,13 @@ class UserSerializer(serializers.ModelSerializer):
     def get_prime_expires_at(self, obj):
         membership = PrimeMembership.objects.filter(user=obj).order_by('-expires_at').first()
         return membership.expires_at.isoformat() if membership and membership.expires_at else None
+
+    def get_signup_method(self, obj):
+        from .models import Referral
+        ref = Referral.objects.filter(referred=obj).select_related('referrer').first()
+        if ref:
+            return f"Referral ({ref.referrer.referral_code})"
+        return "Direct"
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,3 +113,9 @@ class ReferralPayoutSerializer(serializers.ModelSerializer):
                 'reward_paid_at': ref.reward_paid_at.isoformat() if ref.reward_paid_at else None
             })
         return result
+
+class HeroBannerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HeroBanner
+        fields = ['id', 'image', 'created_at', 'updated_at']
+

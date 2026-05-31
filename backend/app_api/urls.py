@@ -7,7 +7,8 @@ from .views import (
     AdminPaymentListView, AdminVoucherListView, ResendVerificationView,
     VerifyEmailView, ForgotPasswordView, ResetPasswordView, VerifyOTPView,
     AdminNotificationView, ReferralPayoutViewSet, RazorpayCreateOrderView,
-    RazorpayVerifyPaymentView, CustomerTransactionsView, ChangePasswordView
+    RazorpayVerifyPaymentView, CustomerTransactionsView, ChangePasswordView,
+    HeroBannerViewSet
 )
 
 router = DefaultRouter()
@@ -16,6 +17,7 @@ router.register(r'merchants', MerchantViewSet)
 router.register(r'users', UserViewSet)
 router.register(r'settings', AppSettingViewSet)
 router.register(r'referral-payouts', ReferralPayoutViewSet)
+router.register(r'hero-banners', HeroBannerViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

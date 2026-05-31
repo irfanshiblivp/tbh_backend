@@ -54,8 +54,8 @@ class User(AbstractBaseUser):
     @property
     def referral_code(self):
         if self.customer_number:
-            return f"TBH{self.customer_number}"
-        return f"TBH{self.id + 1000}"
+            return f"TBC{self.customer_number}"
+        return f"TBC{self.id + 1000}"
 
     # Virtual updated_at property for code compatibility
     @property
@@ -264,3 +264,13 @@ class ReferralPayout(models.Model):
     class Meta:
         db_table = 'referral_payouts'
         managed = True
+
+class HeroBanner(models.Model):
+    image = models.ImageField(upload_to='hero-banners/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'hero_banners'
+        managed = True
+

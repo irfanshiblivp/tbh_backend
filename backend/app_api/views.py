@@ -13,12 +13,12 @@ from django.utils import timezone
 from django.http import HttpResponse
 from .models import (
     User, Category, Merchant, PrimeMembership, Payment, Voucher, AppSetting,
-    Referral, ReferralLink, SystemAnnouncement, ReferralPayout
+    Referral, ReferralLink, SystemAnnouncement, ReferralPayout, HeroBanner
 )
 from .serializers import (
     UserSerializer, CategorySerializer, MerchantSerializer, 
     PrimeMembershipSerializer, PaymentSerializer, ReferralPayoutSerializer,
-    ChangePasswordSerializer, VoucherSerializer, AppSettingSerializer
+    ChangePasswordSerializer, VoucherSerializer, AppSettingSerializer, HeroBannerSerializer
 )
 
 
@@ -263,6 +263,10 @@ class MerchantViewSet(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def perform_update(self, serializer):
+        if self.request.user.role != 'admin' and not getattr(self.request.user, 'is_superuser', False):
+            if 'discount_percent' in serializer.validated_data:
+                serializer.validated_data.pop('discount_percent')
+
         # Handle file uploads manually if they are in request.FILES
         instance = serializer.save()
         updated = False
@@ -958,9 +962,9 @@ class SignupView(views.APIView):
     def post(self, request):
         data = request.data
         name = data.get('name')
-        email = data.get('email')
+        email = data.get('email', '').strip().lower()
         password = data.get('password')
-        phone = data.get('phone')
+        phone = data.get('phone', '').strip()
         role = data.get('role', 'customer').lower()
         
         if not name or not email or not password:
@@ -969,8 +973,11 @@ class SignupView(views.APIView):
         if len(password) < 8:
             return Response({'error': 'The password field must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
             
-        if User.objects.filter(email=email).exists():
-            return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if phone and User.objects.filter(phone=phone).exists():
+            return Response({'error': 'A user with this phone number already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
         user = User.objects.create_user(
             email=email,
@@ -1411,4 +1418,20 @@ class ChangePasswordView(views.APIView):
         except Exception as e:
             print(f"DEBUG: ChangePasswordView error: {e}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class HeroBannerViewSet(viewsets.ModelViewSet):
+    queryset = HeroBanner.objects.all().order_by('-created_at')
+    serializer_class = HeroBannerSerializer
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.image:
+            sync_uploaded_file(instance.image.name)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.image:
+            sync_uploaded_file(instance.image.name)
+
 
