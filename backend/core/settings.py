@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -149,7 +150,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -182,18 +184,27 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-import os
 MEDIA_URL = '/storage/'
-MEDIA_ROOT = 'c:/Users/Dell/Documents/App/website/public_html/storage'
 
-# Email Settings
+# Dynamically resolve MEDIA_ROOT relative to BASE_DIR so it works on both Windows local dev
+# and Linux production environments.
+POTENTIAL_MEDIA_ROOT = BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage'
+if POTENTIAL_MEDIA_ROOT.exists():
+    MEDIA_ROOT = str(POTENTIAL_MEDIA_ROOT.resolve().as_posix())
+else:
+    MEDIA_ROOT = str((BASE_DIR / 'media').resolve().as_posix())
+
+
+# Email Settings (Hostinger SMTP with SSL on port 465)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.hostinger.com'
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
 EMAIL_HOST_USER = 'info@thebaronclub.com'
 EMAIL_HOST_PASSWORD = '9aH7&!2|Zk'
 DEFAULT_FROM_EMAIL = 'The Baron Club <info@thebaronclub.com>'
+EMAIL_TIMEOUT = 30
 
 # Razorpay Credentials (from environment or default test keys)
 RAZORPAY_KEY = os.environ.get('RAZORPAY_KEY', 'rzp_test_Sq5pz3FrwtVkhg')

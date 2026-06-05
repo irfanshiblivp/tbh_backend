@@ -23,7 +23,9 @@ import requests
 def serve_media_with_fallback(request, path, document_root=None, **kwargs):
     try:
         # Try serving the file from the local disk first
-        return serve(request, path, document_root=document_root, **kwargs)
+        response = serve(request, path, document_root=document_root, **kwargs)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
     except Http404:
         # Fall back to the live production server if it doesn't exist locally.
         # To avoid CORS issues on Flutter Web (Chrome), we proxy the bytes on the backend
@@ -47,4 +49,5 @@ def serve_media_with_fallback(request, path, document_root=None, **kwargs):
 urlpatterns = [
     path('api/', include('app_api.urls')),
     re_path(r'^storage/(?P<path>.*)$', serve_media_with_fallback, {'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^app-storage/(?P<path>.*)$', serve_media_with_fallback, {'document_root': settings.MEDIA_ROOT}),
 ]

@@ -55,6 +55,7 @@ class MerchantSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category')
     owner_name = serializers.ReadOnlyField(source='user.name')
     state = serializers.ReadOnlyField(source='user.state')
+    city = serializers.SerializerMethodField()
     
     class Meta:
         model = Merchant
@@ -62,9 +63,19 @@ class MerchantSerializer(serializers.ModelSerializer):
             'id', 'user', 'business_name', 'category', 'description', 
             'address', 'logo', 'card_image', 'discount_percent', 
             'status', 'created_at', 'updated_at', 'category_name', 'owner_name',
-            'latitude', 'longitude', 'license_document', 'state'
+            'latitude', 'longitude', 'license_document', 'state', 'city'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name', 'state', 'user']
+        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name', 'state', 'user', 'logo', 'card_image', 'license_document']
+
+    def get_city(self, obj):
+        if not obj.address:
+            return ""
+        parts = [p.strip() for p in obj.address.split(',')]
+        if len(parts) >= 3:
+            return parts[-3]
+        elif len(parts) == 2:
+            return parts[0]
+        return ""
 
 class PrimeMembershipSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,7 +126,19 @@ class ReferralPayoutSerializer(serializers.ModelSerializer):
         return result
 
 class HeroBannerSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = HeroBanner
         fields = ['id', 'image', 'created_at', 'updated_at']
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        if request:
+            url = request.build_absolute_uri(obj.image.url)
+        else:
+            url = f'https://api.thebaronclub.com{obj.image.url}'
+        return url.replace('/storage/', '/app-storage/')
 

@@ -29,19 +29,28 @@ def sync_uploaded_file(saved_path):
     """
     import os
     import shutil
+    from django.conf import settings
+    from pathlib import Path
     try:
-        src = os.path.join('c:/Users/Dell/Documents/App/website/public_html/storage', saved_path)
-        dst = os.path.join('c:/Users/Dell/Documents/App/website/baronclub/public/storage', saved_path)
+        src = os.path.join(settings.MEDIA_ROOT, saved_path)
         
-        # Ensure destination directory exists
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        
-        # Copy file
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
-            print(f"DEBUG SYNC: Copied {src} to {dst}")
+        backend_root = Path(settings.BASE_DIR)
+        website_dir = backend_root.parent.parent / 'website'
+        if website_dir.exists():
+            dst_dir = website_dir / 'baronclub' / 'public' / 'storage'
+            dst = os.path.join(str(dst_dir.resolve().as_posix()), saved_path)
+            
+            # Ensure destination directory exists
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            
+            # Copy file
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                print(f"DEBUG SYNC: Copied {src} to {dst}")
+            else:
+                print(f"DEBUG SYNC: Source file {src} not found!")
         else:
-            print(f"DEBUG SYNC: Source file {src} not found!")
+            print(f"DEBUG SYNC: Website directory not found at {website_dir}, skipping sync.")
     except Exception as e:
         print(f"DEBUG SYNC ERROR: Failed to sync file: {e}")
 
@@ -969,6 +978,14 @@ class SignupView(views.APIView):
         
         if not name or not email or not password:
             return Response({'error': 'Name, Email and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not phone:
+            return Response({'error': 'Phone number is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Basic phone validation - must have at least 10 digits
+        digits_only = ''.join(c for c in phone if c.isdigit())
+        if len(digits_only) < 10:
+            return Response({'error': 'Please enter a valid phone number (at least 10 digits)'}, status=status.HTTP_400_BAD_REQUEST)
             
         if len(password) < 8:
             return Response({'error': 'The password field must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -976,7 +993,7 @@ class SignupView(views.APIView):
         if User.objects.filter(email__iexact=email).exists():
             return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
             
-        if phone and User.objects.filter(phone=phone).exists():
+        if User.objects.filter(phone=phone).exists():
             return Response({'error': 'A user with this phone number already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
         user = User.objects.create_user(
