@@ -24,31 +24,39 @@ from .serializers import (
 
 def sync_uploaded_file(saved_path):
     """
-    Syncs/copies an uploaded file from the primary storage root (public_html/storage)
-    to the secondary storage root (baronclub/public/storage) to maintain absolute consistency.
+    Syncs/copies an uploaded file to both Laravel storage directories:
+    1. website/baronclub/public/storage
+    2. website/public_html/storage
+    to maintain absolute consistency regardless of settings.MEDIA_ROOT.
     """
     import os
     import shutil
     from django.conf import settings
     from pathlib import Path
     try:
-        src = os.path.join(settings.MEDIA_ROOT, saved_path)
+        src = os.path.abspath(os.path.join(settings.MEDIA_ROOT, saved_path))
         
         backend_root = Path(settings.BASE_DIR)
         website_dir = backend_root.parent.parent / 'website'
         if website_dir.exists():
-            dst_dir = website_dir / 'baronclub' / 'public' / 'storage'
-            dst = os.path.join(str(dst_dir.resolve().as_posix()), saved_path)
+            destinations = [
+                website_dir / 'baronclub' / 'public' / 'storage' / saved_path,
+                website_dir / 'public_html' / 'storage' / saved_path
+            ]
             
-            # Ensure destination directory exists
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            
-            # Copy file
-            if os.path.exists(src):
-                shutil.copy2(src, dst)
-                print(f"DEBUG SYNC: Copied {src} to {dst}")
-            else:
-                print(f"DEBUG SYNC: Source file {src} not found!")
+            for dst_path in destinations:
+                dst = os.path.abspath(str(dst_path.resolve().as_posix()))
+                if src != dst:
+                    # Ensure destination directory exists
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    # Copy file
+                    if os.path.exists(src):
+                        shutil.copy2(src, dst)
+                        print(f"DEBUG SYNC: Copied {src} to {dst}")
+                    else:
+                        print(f"DEBUG SYNC: Source file {src} not found!")
+                else:
+                    print(f"DEBUG SYNC: Source and destination are the same ({src}), skipping copy.")
         else:
             print(f"DEBUG SYNC: Website directory not found at {website_dir}, skipping sync.")
     except Exception as e:
@@ -596,14 +604,14 @@ class UserViewSet(viewsets.ModelViewSet):
             lng_val = data.get('longitude')
             
             try:
-                latitude = Decimal(str(lat_val)) if lat_val and str(lat_val).strip() not in ('', 'None', 'null') else None
+                latitude = Decimal(str(lat_val)) if lat_val and str(lat_val).strip() not in ('', 'None', 'null') else Decimal('9.9857409')
             except (InvalidOperation, ValueError):
-                latitude = None
+                latitude = Decimal('9.9857409')
                 
             try:
-                longitude = Decimal(str(lng_val)) if lng_val and str(lng_val).strip() not in ('', 'None', 'null') else None
+                longitude = Decimal(str(lng_val)) if lng_val and str(lng_val).strip() not in ('', 'None', 'null') else Decimal('76.3096248')
             except (InvalidOperation, ValueError):
-                longitude = None
+                longitude = Decimal('76.3096248')
 
             with transaction.atomic():
                 # 1. Create the User
@@ -845,15 +853,68 @@ class LoginView(views.APIView):
         print(f"Login failed for email: {email}")
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-from django.core.mail import send_mail
-from django.conf import settings
+from django.core.mail import get_connection, EmailMultiAlternatives
+import threading
+
+def send_async_email_with_fallback(subject, text_content, to_email, html_message=None):
+    """
+    Sends an email asynchronously in a daemonized background thread.
+    First attempts using standard settings (Hostinger Port 465 SSL).
+    Falls back to Port 587 TLS if the primary method fails or times out.
+    """
+    def _send():
+        from django.conf import settings
+        # Try Port 465 (SSL) first
+        try:
+            print(f"SMTP Thread: Attempting to send email to {to_email} via Port 465 (SSL)...")
+            connection = get_connection(
+                host=settings.EMAIL_HOST,
+                port=settings.EMAIL_PORT, # 465
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_ssl=settings.EMAIL_USE_SSL, # True
+                use_tls=settings.EMAIL_USE_TLS, # False
+                timeout=10,
+            )
+            email = EmailMultiAlternatives(
+                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+            )
+            if html_message:
+                email.attach_alternative(html_message, "text/html")
+            email.send()
+            print(f"SMTP Thread: Email sent successfully to {to_email} via Port 465 (SSL).")
+            return
+        except Exception as e:
+            print(f"SMTP Thread: Failed to send via Port 465 (SSL): {e}")
+
+        # Fallback to Port 587 (TLS)
+        try:
+            print(f"SMTP Thread: Attempting fallback to send email to {to_email} via Port 587 (TLS)...")
+            connection = get_connection(
+                host=settings.EMAIL_HOST,
+                port=587,
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_ssl=False,
+                use_tls=True,
+                timeout=15,
+            )
+            email = EmailMultiAlternatives(
+                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+            )
+            if html_message:
+                email.attach_alternative(html_message, "text/html")
+            email.send()
+            print(f"SMTP Thread: Email sent successfully to {to_email} via Port 587 (TLS) fallback.")
+        except Exception as e2:
+            print(f"SMTP Thread ERROR: Fallback to Port 587 (TLS) also failed: {e2}")
+
+    threading.Thread(target=_send, daemon=True).start()
 
 def send_verification_email(user):
     subject = 'Verify your email - The Baron Club'
-    # Generate a secure verification link pointing to the Django backend
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    # Use the production domain URL for verification
     verification_url = f"https://thebaronclub.com/api/auth/verify-email/{uid}/{token}/"
     
     html_message = f"""
@@ -878,13 +939,11 @@ def send_verification_email(user):
         </p>
     </div>
     """
-    send_mail(
+    send_async_email_with_fallback(
         subject,
         'Please verify your email address.',
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        html_message=html_message,
-        fail_silently=False,
+        user.email,
+        html_message=html_message
     )
 
 def send_otp_email(user, otp, expiry_str):
@@ -914,14 +973,11 @@ def send_otp_email(user, otp, expiry_str):
         </p>
     </div>
     """
-    
-    send_mail(
+    send_async_email_with_fallback(
         subject,
         f'Your verification code is {otp}',
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        html_message=html_message,
-        fail_silently=False,
+        user.email,
+        html_message=html_message
     )
 
 def send_welcome_email(user, password):
@@ -952,18 +1008,13 @@ def send_welcome_email(user, password):
         </p>
     </div>
     """
-    try:
-        print(f"DEBUG: Sending welcome email to {user.email} (Role: {user.role}, Password: {password})")
-        send_mail(
-            subject,
-            f'Welcome to The Baron Club. Your account has been created. Username: {user.email}, Password: {password}',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-    except Exception as e:
-        print(f"Error sending welcome email to {user.email}: {e}")
+    print(f"DEBUG: Triggering welcome email to {user.email} (Role: {user.role}, Password: {password})")
+    send_async_email_with_fallback(
+        subject,
+        f'Welcome to The Baron Club. Your account has been created. Username: {user.email}, Password: {password}',
+        user.email,
+        html_message=html_message
+    )
 
 class SignupView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -1033,12 +1084,27 @@ class SignupView(views.APIView):
                 print(f"Error processing referral code: {e}")
         
         if role == 'merchant':
+            from decimal import Decimal, InvalidOperation
+            lat_val = data.get('latitude')
+            lng_val = data.get('longitude')
+            try:
+                latitude = Decimal(str(lat_val)) if lat_val and str(lat_val).strip() not in ('', 'None', 'null') else Decimal('9.9857409')
+            except (InvalidOperation, ValueError):
+                latitude = Decimal('9.9857409')
+                
+            try:
+                longitude = Decimal(str(lng_val)) if lng_val and str(lng_val).strip() not in ('', 'None', 'null') else Decimal('76.3096248')
+            except (InvalidOperation, ValueError):
+                longitude = Decimal('76.3096248')
+
             Merchant.objects.create(
                 user=user,
                 business_name=data.get('business_name', name + "'s Business"),
                 address=data.get('address', ''),
                 status='active',
-                discount_percent=50
+                discount_percent=50,
+                latitude=latitude,
+                longitude=longitude
             )
         
         try:
