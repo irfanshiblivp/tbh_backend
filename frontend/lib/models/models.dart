@@ -1,3 +1,37 @@
+import 'package:frontend/services/api_service.dart';
+
+String resolveAssetUrl(String? path) {
+  if (path == null || path.isEmpty) return '';
+  if (path.startsWith('http')) return path;
+  
+  String cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  
+  // Dynamically resolve baseDomain from the active ApiService.baseUrl (local host or production domain)
+  String baseDomain;
+  try {
+    Uri uri = Uri.parse(ApiService.baseUrl);
+    String portStr = (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
+        ? ''
+        : ':${uri.port}';
+    baseDomain = '${uri.scheme}://${uri.host}$portStr';
+  } catch (e) {
+    baseDomain = 'https://api.thebaronclub.com';
+  }
+  if (baseDomain.isEmpty) {
+    baseDomain = 'https://api.thebaronclub.com';
+  }
+  
+  if (cleanPath.startsWith('storage/')) {
+    return '$baseDomain/$cleanPath';
+  }
+  
+  if (cleanPath.startsWith('app-storage/')) {
+    return '$baseDomain/$cleanPath';
+  }
+  
+  return '$baseDomain/storage/$cleanPath';
+}
+
 class Category {
   final int id;
   final String name;
@@ -61,41 +95,14 @@ class Merchant {
   List<Offer> get offers => [];
 
   factory Merchant.fromJson(Map<String, dynamic> json) {
-    String resolveUrl(String? path) {
-      if (path == null || path.isEmpty) return '';
-      if (path.startsWith('http')) return path;
-      
-      String cleanPath = path.startsWith('/') ? path.substring(1) : path;
-      
-      // If it already has storage/ or we are adding it for local development
-      if (cleanPath.startsWith('storage/')) {
-        return 'http://10.71.54.62:8000/$cleanPath';
-      }
-
-      // Local development fallback for common folders
-      if (cleanPath.startsWith('merchant-cards/') || 
-          cleanPath.startsWith('merchant-logos/') ||
-          cleanPath.startsWith('merchants/profiles/') ||
-          cleanPath.contains('shawaya')) {
-        return 'http://10.71.54.62:8000/storage/$cleanPath';
-      }
-      
-      if (!cleanPath.startsWith('storage/')) {
-        return 'http://10.71.54.62:8000/storage/$cleanPath';
-      }
-
-      // Production fallback
-      return 'https://thebaronclub.com/storage/$cleanPath';
-    }
-
     return Merchant(
       id: json['id'] ?? 0,
       userId: json['user'] is int ? json['user'] : (json['user']?['id'] ?? 0),
       businessName: json['business_name'] ?? json['name'] ?? 'Unnamed Business',
       description: json['description'] ?? '',
       address: json['address'] ?? '',
-      logo: resolveUrl(json['logo']),
-      cardImage: resolveUrl(json['card_image']),
+      logo: resolveAssetUrl(json['logo']),
+      cardImage: resolveAssetUrl(json['card_image']),
       discountPercent: json['discount_percent'] ?? 50,
       status: json['status'] ?? 'active',
       city: json['city'] ?? '',
@@ -129,6 +136,7 @@ class AppUser {
   final String? state;
   final DateTime? primeStartsAt;
   final DateTime? primeExpiresAt;
+  final String signupMethod;
 
   AppUser({
     required this.id,
@@ -152,38 +160,20 @@ class AppUser {
     this.state,
     this.primeStartsAt,
     this.primeExpiresAt,
+    this.signupMethod = "Direct",
   });
 
   // bool get isPrime => role == 'customer' && referralBalance > 0;
-  bool get isBlocked => status == 'blocked';
+  bool get isBlocked => status == 'inactive';
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
-    String resolveUrl(String? path) {
-      if (path == null || path.isEmpty) return '';
-      if (path.startsWith('http')) return path;
-      
-      String cleanPath = path.startsWith('/') ? path.substring(1) : path;
-      
-      if (cleanPath.startsWith('storage/')) {
-        return 'http://10.71.54.62:8000/$cleanPath';
-      }
-
-      if (cleanPath.startsWith('merchant-cards/') || 
-          cleanPath.startsWith('merchant-logos/') ||
-          cleanPath.startsWith('merchants/profiles/')) {
-        return 'http://10.71.54.62:8000/storage/$cleanPath';
-      }
-      
-      return 'https://thebaronclub.com/storage/$cleanPath';
-    }
-
     return AppUser(
       id: json['id'] ?? 0,
       username: json['username'] ?? json['name'] ?? 'User',
       email: json['email'] ?? '',
       role: json['role'] ?? 'customer',
       phone: json['phone'],
-      profilePicture: resolveUrl(json['profile_picture']),
+      profilePicture: resolveAssetUrl(json['profile_picture']),
       status: json['status'] ?? 'active',
       referralBalance: double.tryParse((json['referral_balance'] ?? 0).toString()) ?? 0.0,
       referralTotalEarned: double.tryParse((json['referral_total_earned'] ?? 0).toString()) ?? 0.0,
@@ -199,6 +189,7 @@ class AppUser {
       state: json['state'],
       primeStartsAt: DateTime.tryParse(json['prime_starts_at'] ?? ''),
       primeExpiresAt: DateTime.tryParse(json['prime_expires_at'] ?? ''),
+      signupMethod: json['signup_method'] ?? 'Direct',
     );
   }
 }
@@ -211,6 +202,7 @@ class Transaction {
   final DateTime timestamp;
   final String userName;
   final String merchantName;
+  final String paymentMethod;
 
   Transaction({
     required this.transactionId,
@@ -220,6 +212,7 @@ class Transaction {
     required this.timestamp,
     this.userName = '',
     this.merchantName = '',
+    this.paymentMethod = 'ONLINE',
   });
 }
 
@@ -344,3 +337,21 @@ class Payment {
     );
   }
 }
+
+class HeroBanner {
+  final int id;
+  final String imageUrl;
+
+  HeroBanner({
+    required this.id,
+    required this.imageUrl,
+  });
+
+  factory HeroBanner.fromJson(Map<String, dynamic> json) {
+    return HeroBanner(
+      id: json['id'] ?? 0,
+      imageUrl: resolveAssetUrl(json['image']),
+    );
+  }
+}
+

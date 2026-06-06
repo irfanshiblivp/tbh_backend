@@ -11,6 +11,8 @@ import 'package:frontend/models/models.dart';
 import 'package:frontend/screens/prime_screen.dart';
 import 'package:frontend/screens/payment_success_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:frontend/screens/qr_scanner_pay_screen.dart';
+import 'package:frontend/widgets/premium_loading.dart';
 
 class MerchantDetailScreen extends StatefulWidget {
   final Merchant merchant;
@@ -27,20 +29,22 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
   double finalAmount = 0;
   String paymentMethod = 'ONLINE'; 
   String? receiptPath;
-  late Razorpay _razorpay;
+  Razorpay? _razorpay;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handleMerchantPaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handleMerchantPaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    if (!kIsWeb) {
+      _razorpay = Razorpay();
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handleMerchantPaymentSuccess);
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handleMerchantPaymentError);
+      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    }
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpay?.clear();
     _billController.dispose();
     super.dispose();
   }
@@ -171,10 +175,353 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
           },
         );
       } else {
-        _razorpay.open(options);
+        _razorpay?.open(options);
       }
     } catch (e) {
       debugPrint("Error opening Razorpay: $e");
+    }
+  }
+
+  void _showPaymentSelectionSheet(BuildContext parentContext, AppState state) {
+    showModalBottomSheet(
+      context: parentContext,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: const EdgeInsets.all(28),
+        decoration: const BoxDecoration(
+          color: AppColors.ink2,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: AppColors.line, width: 1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "CHOOSE PAYMENT METHOD",
+              style: GoogleFonts.jost(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Select how you would like to complete your payment of ₹${finalAmount.toStringAsFixed(2)} to ${widget.merchant.businessName}:",
+              style: const TextStyle(color: Colors.white38, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 28),
+            
+            // Option 1: Scan QR Code
+            ListTile(
+              onTap: () {
+                Navigator.pop(sheetContext); // Close sheet
+                Navigator.push(
+                  parentContext,
+                  MaterialPageRoute(
+                    builder: (_) => QRScannerPayScreen(
+                      merchantId: widget.merchant.id,
+                      businessName: widget.merchant.businessName,
+                      billAmount: billAmount,
+                      discountAmount: discountAmount,
+                      finalAmount: finalAmount,
+                    ),
+                  ),
+                );
+              },
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.qr_code_scanner, color: AppColors.amber),
+              ),
+              title: Text(
+                "SCAN SHOP QR CODE",
+                style: GoogleFonts.jost(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
+              ),
+              subtitle: const Text(
+                "Point your camera at the shop's physical UPI QR code",
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+            const Divider(color: AppColors.line, height: 24),
+            
+            // Option 2: Enter UPI ID Manually
+            ListTile(
+              onTap: () {
+                Navigator.pop(sheetContext); // Close selection sheet
+                _showManualUpiBottomSheet(parentContext, state);
+              },
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: const Icon(Icons.alternate_email, color: AppColors.amber),
+              ),
+              title: Text(
+                "ENTER MERCHANT UPI ID",
+                style: GoogleFonts.jost(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
+              ),
+              subtitle: const Text(
+                "Type the merchant's UPI address to launch payment directly",
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+            const Divider(color: AppColors.line, height: 24),
+
+            // Option 3: Cash Payment Option
+            ListTile(
+              onTap: () async {
+                Navigator.pop(sheetContext); // Close sheet
+                
+                final confirm = await showDialog<bool>(
+                  context: parentContext,
+                  builder: (dialogContext) => AlertDialog(
+                    backgroundColor: const Color(0xFF1A1A2E),
+                    title: const Text("Confirm Cash Payment"),
+                    content: Text("Are you sure you want to pay ₹${finalAmount.toStringAsFixed(2)} in cash to ${widget.merchant.businessName}? This will instantly register your club discount of ₹${discountAmount.toStringAsFixed(2)}."),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false), 
+                        child: const Text("Cancel", style: TextStyle(color: Colors.white38)),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
+                        child: const Text("Confirm"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  if (!parentContext.mounted) return;
+                  showDialog(
+                    context: parentContext,
+                    barrierDismissible: false,
+                    builder: (spinnerContext) => const Center(child: PremiumLoadingSpinner()),
+                  );
+
+                  final success = await state.customerPay(widget.merchant.id, billAmount, paymentMethod: 'CASH');
+                  
+                  if (!parentContext.mounted) return;
+                  Navigator.pop(parentContext); // Close spinner
+
+                  if (success) {
+                    Navigator.pushReplacement(
+                      parentContext,
+                      MaterialPageRoute(
+                        builder: (_) => PaymentSuccessScreen(
+                          amount: finalAmount.toStringAsFixed(0),
+                          message: "Cash payment recorded and discount successfully applied! You saved ₹${discountAmount.toStringAsFixed(0)}.",
+                          onDone: () => state.refreshData(),
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text("Failed to register cash payment. Please try again."),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                }
+              },
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.payments_outlined, color: Colors.greenAccent),
+              ),
+              title: Text(
+                "CASH PAYMENT",
+                style: GoogleFonts.jost(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
+              ),
+              subtitle: const Text(
+                "Pay cash at the shop's counter and register your club savings",
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showManualUpiBottomSheet(BuildContext parentContext, AppState state) {
+    final TextEditingController upiController = TextEditingController();
+    showModalBottomSheet(
+      context: parentContext,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: const BoxDecoration(
+            color: AppColors.ink2,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(top: BorderSide(color: AppColors.line, width: 1)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "ENTER MERCHANT UPI ID",
+                style: GoogleFonts.jost(
+                  color: AppColors.text2,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Type the merchant's UPI ID (VPA) shown at the counter to pay ₹${finalAmount.toStringAsFixed(2)} directly:",
+                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: upiController,
+                autofocus: true,
+                style: GoogleFonts.dmMono(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: "MERCHANT UPI ID",
+                  labelStyle: const TextStyle(color: AppColors.text2, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                  hintText: "example@okaxis or name@ybl",
+                  hintStyle: const TextStyle(color: Colors.white12),
+                  filled: true,
+                  fillColor: Colors.black26,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  prefixIcon: const Icon(Icons.alternate_email, color: AppColors.amber, size: 18),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final String val = upiController.text.trim();
+                    if (val.isEmpty || !val.contains('@')) {
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(content: Text("Please enter a valid UPI ID containing '@'"), backgroundColor: Colors.redAccent),
+                      );
+                      return;
+                    }
+                    Navigator.pop(sheetContext); // Close bottom sheet
+                    
+                    String cleanName = widget.merchant.businessName.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '');
+                    String generatedUpiUrl = "upi://pay?pa=$val&pn=${Uri.encodeComponent(cleanName)}&am=${finalAmount.toStringAsFixed(2)}&mam=${finalAmount.toStringAsFixed(2)}&cu=INR";
+                    
+                    final uri = Uri.parse(generatedUpiUrl);
+                    
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text("Launching external UPI app (GPay, PhonePe, Paytm)..."),
+                        backgroundColor: AppColors.amber,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (e) {
+                      debugPrint("Failed to launch UPI URL: $e");
+                    }
+
+                    _recordUpiPaymentAndShowSuccess(state);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.amber,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text("PROCEED TO PAY", style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _recordUpiPaymentAndShowSuccess(AppState state) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+    );
+
+    final success = await state.customerPay(widget.merchant.id, billAmount);
+    
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading spinner
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentSuccessScreen(
+            amount: finalAmount.toStringAsFixed(0),
+            message: "Payment recorded successfully! You saved ₹${discountAmount.toStringAsFixed(0)} at ${widget.merchant.businessName}.",
+            onDone: () => state.refreshData(),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Payment completed but failed to register discount. Please contact support."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -520,7 +867,9 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: state.isLoading ? null : () => _showPaymentOptions(context, state),
+                    onPressed: state.isLoading
+                        ? null
+                        : () => _showPaymentSelectionSheet(context, state),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amber,
                       foregroundColor: Colors.black,
@@ -540,203 +889,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
     );
   }
 
-  void _showPaymentOptions(BuildContext context, AppState state) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(32),
-        decoration: const BoxDecoration(color: AppColors.ink2, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("CHOOSE PAYMENT", style: GoogleFonts.jost(color: AppColors.text2, fontWeight: FontWeight.bold, letterSpacing: 2)),
-            const SizedBox(height: 24),
-            _paymentOptionTile(Icons.account_balance_wallet_outlined, "UPI PAYMENT", "Pay directly using any UPI App (GPay, PhonePe, Paytm, etc.)", () {
-              Navigator.pop(context);
-              _startDirectUpiPayment(state);
-            }),
-            const SizedBox(height: 12),
-            _paymentOptionTile(Icons.money, "CASH PAYMENT", "Pay directly at store", () {
-              Navigator.pop(context);
-              _simulatePayment(state);
-            }),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _startDirectUpiPayment(AppState state) async {
-    String cleanMerchantName = widget.merchant.businessName.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '');
-    String upiUrl = "upi://pay?pa=thebaronclub@ybl&pn=${Uri.encodeComponent(cleanMerchantName)}&am=${finalAmount.toStringAsFixed(2)}&cu=INR";
-    final uri = Uri.parse(upiUrl);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Launching payment. Select any UPI app (GPay, PhonePe, Paytm, etc.) to pay."),
-        backgroundColor: AppColors.amber,
-        duration: Duration(seconds: 4),
-      ),
-    );
-    
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Could not launch UPI app: $e"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
-
-    if (mounted) {
-      _showUpiCompletionDialog(context, state);
-    }
-  }
-
-  void _showUpiCompletionDialog(BuildContext context, AppState state) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: AppColors.ink2,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    color: AppColors.amber,
-                    size: 64,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    "UPI PAYMENT INITIATED",
-                    style: GoogleFonts.jost(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Please complete the payment of ₹${finalAmount.toStringAsFixed(2)} in your selected UPI app.",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.text2, fontSize: 13, height: 1.4),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: state.isLoading ? null : () {
-                        Navigator.pop(context);
-                        _simulatePayment(state);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.amber,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        "I HAVE COMPLETED PAYMENT",
-                        style: GoogleFonts.jost(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      "Cancel / Go Back",
-                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _paymentOptionTile(IconData icon, String title, String sub, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(20)),
-        child: Row(
-          children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: AppColors.amber)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  Text(sub, style: const TextStyle(color: AppColors.text2, fontSize: 11)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _simulatePayment(AppState state) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-    );
-
-    final success = await state.customerPay(widget.merchant.id, billAmount);
-    
-    if (!mounted) return;
-    Navigator.pop(context); // Close loading
-
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PaymentSuccessScreen(
-            amount: finalAmount.toStringAsFixed(0),
-            message: "Discount applied successfully! You saved ₹${discountAmount.toStringAsFixed(0)}.",
-            onDone: () => state.refreshData(),
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Payment processing failed. Please try again."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
-  }
 
   Widget _buildPriceRow(String label, String value, Color color, {bool isLarge = false}) {
     return Row(

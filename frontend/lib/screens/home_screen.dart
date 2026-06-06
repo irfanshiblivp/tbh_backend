@@ -10,6 +10,7 @@ import 'merchant_detail_screen.dart';
 import 'prime_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'profile_screen.dart';
+import '../widgets/premium_loading.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,11 +21,94 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String activeCategory = 'all';
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  String _searchQuery = '';
+  List<Map<String, dynamic>> _locationSuggestions = [];
+  bool _showSuggestions = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> _buildSuggestions(List<Merchant> merchants, String query) {
+    if (query.trim().isEmpty) return [];
+    final q = query.toLowerCase().trim();
+    final Map<String, bool> suggestionsMap = {};
+    for (final m in merchants) {
+      if (m.city.isNotEmpty && m.city.toLowerCase().contains(q)) {
+        suggestionsMap[m.city] = true;
+      }
+      if (m.state.isNotEmpty && m.state.toLowerCase().contains(q)) {
+        suggestionsMap[m.state] = true;
+      }
+      if (m.businessName.toLowerCase().contains(q)) {
+        suggestionsMap[m.businessName] = false;
+      }
+    }
+    final sortedKeys = suggestionsMap.keys.toList()..sort();
+    return sortedKeys.take(6).map((key) {
+      return {
+        'text': key,
+        'isLocation': suggestionsMap[key]!,
+      };
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final profile = state.profile;
+
+    final rawMerchants = state.merchants;
+    List<Merchant> filteredMerchants = List.from(rawMerchants);
+
+    if (_searchQuery.trim().isNotEmpty) {
+      final query = _searchQuery.toLowerCase().trim();
+      
+      List<Merchant> matches = [];
+      List<Merchant> nonMatches = [];
+
+      for (var m in rawMerchants) {
+        final city = m.city.toLowerCase();
+        final stateName = m.state.toLowerCase();
+        final address = m.address.toLowerCase();
+        final name = m.businessName.toLowerCase();
+        
+        if (city.contains(query) || stateName.contains(query) || address.contains(query) || name.contains(query)) {
+          matches.add(m);
+        } else {
+          nonMatches.add(m);
+        }
+      }
+
+      if (state.devicePosition != null) {
+        int sortFn(Merchant a, Merchant b) {
+          if (a.latitude == null || a.longitude == null) return 1;
+          if (b.latitude == null || b.longitude == null) return -1;
+          double distA = Geolocator.distanceBetween(
+            state.devicePosition!.latitude,
+            state.devicePosition!.longitude,
+            a.latitude!,
+            a.longitude!,
+          );
+          double distB = Geolocator.distanceBetween(
+            state.devicePosition!.latitude,
+            state.devicePosition!.longitude,
+            b.latitude!,
+            b.longitude!,
+          );
+          return distA.compareTo(distB);
+        }
+        matches.sort(sortFn);
+        nonMatches.sort(sortFn);
+      }
+
+      filteredMerchants = [...matches, ...nonMatches];
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF07070A),
@@ -59,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset('res/images/logo_transparent.png', height: 28),
+                    Image.asset('res/images/logo_transparent.png', height: 40),
                     Row(
                       children: [
                         GestureDetector(
@@ -147,11 +231,139 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    // Search bar with suggestions
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _showSuggestions ? AppColors.amber.withOpacity(0.5) : AppColors.line,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            focusNode: _searchFocusNode,
+                            style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
+                            onChanged: (val) {
+                              final suggestions = _buildSuggestions(state.merchants, val);
+                              setState(() {
+                                _searchQuery = val;
+                                _locationSuggestions = suggestions;
+                                _showSuggestions = val.isNotEmpty && suggestions.isNotEmpty;
+                              });
+                            },
+                            onTap: () {
+                              if (_searchQuery.isNotEmpty && _locationSuggestions.isNotEmpty) {
+                                setState(() => _showSuggestions = true);
+                              }
+                            },
+                            onSubmitted: (_) => setState(() => _showSuggestions = false),
+                            decoration: InputDecoration(
+                              hintText: "Search location, city, state or shop...",
+                              hintStyle: GoogleFonts.jost(color: Colors.white30, fontSize: 14),
+                              prefixIcon: const Icon(Icons.search, color: AppColors.amber, size: 20),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, color: Colors.white30, size: 18),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                          _showSuggestions = false;
+                                          _locationSuggestions = [];
+                                        });
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                        // Suggestion Dropdown
+                        if (_showSuggestions && _locationSuggestions.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1A2E),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: _locationSuggestions.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final suggestion = entry.value;
+                                final isLast = idx == _locationSuggestions.length - 1;
+                                return InkWell(
+                                  onTap: () {
+                                    _searchController.text = suggestion['text'];
+                                    setState(() {
+                                      _searchQuery = suggestion['text'];
+                                      _showSuggestions = false;
+                                    });
+                                    _searchFocusNode.unfocus();
+                                  },
+                                  borderRadius: BorderRadius.vertical(
+                                    top: idx == 0 ? const Radius.circular(14) : Radius.zero,
+                                    bottom: isLast ? const Radius.circular(14) : Radius.zero,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      border: isLast ? null : Border(
+                                        bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          suggestion['isLocation'] == true
+                                              ? Icons.location_on_outlined
+                                              : Icons.storefront,
+                                          color: AppColors.amber,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            suggestion['text'],
+                                            style: GoogleFonts.jost(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                        const Icon(Icons.north_west, color: Colors.white24, size: 14),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                      ],
+                    ),
                     const SizedBox(height: 24),
                     
-                    // Referral & Prime Card
-                    _buildReferralCard(context, state),
-                    
+                    _buildPromoBanners(context, state),
                     const SizedBox(height: 32),
                     
                     // Categories
@@ -225,16 +437,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Merchants List
             if (state.isLoading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator(color: AppColors.amber)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => const ShimmerMerchantCard(),
+                    childCount: 3,
+                  ),
+                ),
+              )
+            else if (filteredMerchants.isEmpty && _searchQuery.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    decoration: BoxDecoration(
+                      color: AppColors.ink2,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.search_off_rounded, color: AppColors.amber.withOpacity(0.5), size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No Merchants Found",
+                          style: GoogleFonts.playfairDisplay(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "No shops found matching your search. Try searching another location or city.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.jost(color: AppColors.text2, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               )
             else
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildMerchantCard(state.merchants[index]),
-                    childCount: state.merchants.length,
+                    (context, index) => _buildMerchantCard(filteredMerchants[index]),
+                    childCount: filteredMerchants.length,
                   ),
                 ),
               ),
@@ -270,225 +519,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildReferralCard(BuildContext context, AppState state) {
-    final profile = state.profile;
-    final bool isPrime = profile?.isPrime ?? false;
+  Widget _buildPromoBanners(BuildContext context, AppState state) {
+    final activeBanners = state.heroBanners;
+    if (activeBanners.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isPrime 
-            ? [const Color(0xFF1C1810), const Color(0xFF0C0C11)]
-            : [const Color(0xFF140E0E), const Color(0xFF0C0C11)],
-        ),
-        border: Border.all(
-          color: isPrime ? AppColors.amber.withOpacity(0.3) : AppColors.line,
-          width: 1,
-        ),
-        boxShadow: [
-          if (isPrime) BoxShadow(color: AppColors.amber.withOpacity(0.05), blurRadius: 30, spreadRadius: 5),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "REFERRAL BALANCE",
-                      style: GoogleFonts.jost(
-                        color: AppColors.text2,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "₹${profile?.referralBalance.toStringAsFixed(0) ?? "0"}",
-                      style: GoogleFonts.dmMono(
-                        color: Colors.white,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: Icon(
-                    isPrime ? Icons.auto_awesome : Icons.card_giftcard,
-                    color: AppColors.amber,
-                    size: 24,
-                  ),
+    return SizedBox(
+      height: 180,
+      child: PageView.builder(
+        itemCount: activeBanners.length,
+        itemBuilder: (context, index) {
+          final banner = activeBanners[index];
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.line),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "TOTAL EARNED",
-                        style: GoogleFonts.jost(color: AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "₹${profile?.referralTotalEarned.toStringAsFixed(0) ?? "0"}",
-                        style: GoogleFonts.dmMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "TOTAL SAVED",
-                        style: GoogleFonts.jost(color: AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "₹${state.totalSaved.toStringAsFixed(0)}",
-                        style: GoogleFonts.dmMono(color: AppColors.amber, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                // Share Button
-                IconButton(
-                  onPressed: () {
-                    final code = profile?.referralCode ?? "TBH000";
-                    final text = "Join The Baron Club and save 5-40% at the finest merchants! Use my referral code: $code\nDownload the app now!";
-                    Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Referral message copied to clipboard!"), backgroundColor: AppColors.amber),
-                    );
-                  },
-                  icon: const Icon(Icons.share, color: AppColors.text2, size: 20),
-                  tooltip: "Share Referral Code",
-                ),
-                const SizedBox(width: 8),
-                if (!isPrime)
-                  ElevatedButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrimeScreen())),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.amber,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 8,
-                      shadowColor: AppColors.amber.withOpacity(0.4),
-                    ),
-                    child: const Text(
-                      "JOIN PRIME",
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1),
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.amber.withOpacity(0.2)),
-                    ),
-                    child: const Text(
-                      "MEMBERSHIP ACTIVE",
-                      style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold, fontSize: 10),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPrimePurchaseSheet(BuildContext context, AppState state) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: AppColors.ink2,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.line, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 32),
-            Text("THE BARON CLUB", style: GoogleFonts.jost(color: AppColors.amber, fontWeight: FontWeight.bold, letterSpacing: 4)),
-            const SizedBox(height: 12),
-            Text("Upgrade to Prime", style: GoogleFonts.playfairDisplay(fontSize: 32, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 32),
-            _buildBenefitItem(Icons.verified, "Exclusive Merchant Discounts"),
-            _buildBenefitItem(Icons.stars, "Priority Support & Access"),
-            _buildBenefitItem(Icons.card_giftcard, "Higher Referral Rewards"),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  bool success = await state.buyPrimeSimulated();
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Welcome to The Baron Club Prime!"), backgroundColor: AppColors.amber),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                ),
-                child: const Text("ACTIVATE NOW - ₹199", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: CachedNetworkImage(
+                imageUrl: banner.imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(color: AppColors.ink2),
+                errorWidget: (context, url, error) => Container(color: AppColors.ink2),
               ),
             ),
-            const SizedBox(height: 16),
-            const Text("Simulated Purchase for Demo", style: TextStyle(color: AppColors.text2, fontSize: 12)),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildBenefitItem(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.amber, size: 20),
-          const SizedBox(width: 16),
-          Text(text, style: const TextStyle(fontSize: 16, color: AppColors.text)),
-        ],
-      ),
-    );
-  }
 
   Widget _buildCategoryItem(String slug, String label, IconData icon, AppState state) {
     bool isSelected = activeCategory == slug;

@@ -78,7 +78,38 @@ class MerchantTransactionsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tx.userName ?? "User", style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(DateFormat('MMM d, HH:mm').format(tx.timestamp), style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Text(DateFormat('MMM d, HH:mm').format(tx.timestamp), style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: tx.paymentMethod.toUpperCase() == 'CASH'
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: tx.paymentMethod.toUpperCase() == 'CASH'
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.blue.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        tx.paymentMethod.toUpperCase(),
+                        style: TextStyle(
+                          color: tx.paymentMethod.toUpperCase() == 'CASH'
+                              ? Colors.greenAccent
+                              : Colors.blueAccent,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

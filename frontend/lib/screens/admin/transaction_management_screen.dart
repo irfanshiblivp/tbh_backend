@@ -198,6 +198,7 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
             DataColumn(label: Text("USER")),
             DataColumn(label: Text("MERCHANT")),
             DataColumn(label: Text("AMOUNT")),
+            DataColumn(label: Text("METHOD")),
             DataColumn(label: Text("STATUS")),
           ],
           rows: filtered.map((t) => DataRow(
@@ -207,6 +208,22 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
               DataCell(Text(t.userName)),
               DataCell(Text(t.merchantName)),
               DataCell(Text("₹${t.amountPaid}")),
+              DataCell(Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withOpacity(0.3) : Colors.blue.withOpacity(0.3)),
+                ),
+                child: Text(
+                  t.paymentMethod.toUpperCase(),
+                  style: TextStyle(
+                    color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.greenAccent : Colors.blueAccent,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )),
               DataCell(_statusBadge(t.status)),
             ],
           )).toList(),

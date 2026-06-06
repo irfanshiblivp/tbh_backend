@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'map_picker_screen.dart';
+import 'merchant_form_screen.dart';
 
 class MerchantManagementScreen extends StatefulWidget {
   const MerchantManagementScreen({super.key});
@@ -53,253 +53,19 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddMerchantDialog(context, state),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const MerchantFormScreen(),
+            ),
+          ).then((_) {
+            state.refreshData();
+          });
+        },
         backgroundColor: AppColors.amber,
         icon: const Icon(Icons.add, color: Colors.black),
         label: const Text("Add Merchant", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  void _showAddMerchantDialog(BuildContext context, AppState state) {
-    final businessNameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final phoneController = TextEditingController();
-    final addressController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final discountController = TextEditingController(text: "50");
-    final latController = TextEditingController();
-    final lngController = TextEditingController();
-    
-    String status = "active";
-    bool showPassword = false;
-    String? selectedCategory = state.categories.isNotEmpty ? state.categories.first.name : null;
-    XFile? pickedImage;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A2E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text("Add New Merchant"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _dialogField(businessNameController, "Business Name (Merchant Name)"),
-                _dialogField(emailController, "Login Email"),
-                _dialogField(passwordController, "Login Password", 
-                  isObscured: !showPassword, 
-                  onToggle: () => setDialogState(() => showPassword = !showPassword)
-                ),
-                _dialogField(phoneController, "Phone Number", isNumber: true),
-                
-                // Category Dropdown
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: DropdownButtonFormField<String>(
-                    value: selectedCategory,
-                    dropdownColor: const Color(0xFF1A1A2E),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Category",
-                      labelStyle: const TextStyle(color: Colors.white60),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                    items: state.categories.map((c) => DropdownMenuItem(value: c.name, child: Text(c.name))).toList(),
-                    onChanged: (val) => setDialogState(() => selectedCategory = val),
-                  ),
-                ),
-
-                // Image Picker
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: InkWell(
-                    onTap: () async {
-                      final picker = ImagePicker();
-                      final image = await picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) {
-                        setDialogState(() => pickedImage = image);
-                      }
-                    },
-                    child: Container(
-                      height: 100,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
-                      ),
-                      child: pickedImage != null 
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: kIsWeb 
-                              ? Image.network(pickedImage!.path, fit: BoxFit.cover)
-                              : Image.file(File(pickedImage!.path), fit: BoxFit.cover),
-                          )
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, color: Colors.white30),
-                              SizedBox(height: 4),
-                              Text("Upload Card Image", style: TextStyle(color: Colors.white30, fontSize: 12)),
-                            ],
-                          ),
-                    ),
-                  ),
-                ),
-
-                // Status Dropdown
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: DropdownButtonFormField<String>(
-                    value: status,
-                    dropdownColor: const Color(0xFF1A1A2E),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Status",
-                      labelStyle: const TextStyle(color: Colors.white60),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: "active", child: Text("Active")),
-                      DropdownMenuItem(value: "inactive", child: Text("Inactive")),
-                    ],
-                    onChanged: (val) => setDialogState(() => status = val!),
-                  ),
-                ),
-
-                _dialogField(discountController, "Discount %", isNumber: true),
-                _dialogField(addressController, "Full Address"),
-                _dialogField(descriptionController, "Description", maxLines: 3),
-                
-                Row(
-                  children: [
-                    Expanded(child: _dialogField(latController, "Latitude", isNumber: true)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _dialogField(lngController, "Longitude", isNumber: true)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      double? initialLat = double.tryParse(latController.text.trim());
-                      double? initialLng = double.tryParse(lngController.text.trim());
-                      LatLng? initialLatLng;
-                      if (initialLat != null && initialLng != null) {
-                        initialLatLng = LatLng(initialLat, initialLng);
-                      }
-                      
-                      final LatLng? pickedLatLng = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MapPickerScreen(initialLocation: initialLatLng),
-                        ),
-                      );
-                      
-                      if (pickedLatLng != null) {
-                        setDialogState(() {
-                          latController.text = pickedLatLng.latitude.toStringAsFixed(6);
-                          lngController.text = pickedLatLng.longitude.toStringAsFixed(6);
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.map_outlined, color: AppColors.amber),
-                    label: const Text("PICK LOCATION ON MAP", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.amber.withOpacity(0.3)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () async {
-                FocusScope.of(context).unfocus(); // Force sync controllers on Web/Mobile
-                
-                if (businessNameController.text.trim().isEmpty || emailController.text.trim().isEmpty || 
-                    passwordController.text.trim().isEmpty || phoneController.text.trim().isEmpty ||
-                    addressController.text.trim().isEmpty || discountController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Name, Email, Password, Phone, Address and Discount are mandatory!")));
-                  return;
-                }
-                try {
-                  http.MultipartFile? imageFile;
-                  if (pickedImage != null) {
-                    final bytes = await pickedImage!.readAsBytes();
-                    imageFile = http.MultipartFile.fromBytes(
-                      'card_image',
-                      bytes,
-                      filename: 'card_image.jpg',
-                      contentType: MediaType('image', 'jpeg'),
-                    );
-                  }
-
-                  final postData = {
-                    'business_name': businessNameController.text.trim(),
-                    'email': emailController.text.trim(),
-                    'password': passwordController.text.trim(),
-                    'phone': phoneController.text.trim(),
-                    'category': selectedCategory,
-                    'address': addressController.text.trim(),
-                    'description': descriptionController.text.trim(),
-                    'status': status,
-                    'discount_percent': int.tryParse(discountController.text.trim()) ?? 50,
-                    'latitude': double.tryParse(latController.text.trim()),
-                    'longitude': double.tryParse(lngController.text.trim()),
-                  };
-                  debugPrint("Sending merchant data: $postData");
-                  await state.adminCreateMerchant(postData, imageFile: imageFile);
-                  
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Merchant added successfully!")));
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-                }
-              },
-              child: const Text("Create"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dialogField(TextEditingController ctrl, String label, {bool obscure = false, bool isNumber = false, int maxLines = 1, VoidCallback? onToggle, bool? isObscured}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextField(
-        controller: ctrl,
-        obscureText: isObscured ?? obscure,
-        maxLines: maxLines,
-        keyboardType: isNumber 
-          ? (label.contains("Phone") ? TextInputType.phone : const TextInputType.numberWithOptions(decimal: true)) 
-          : TextInputType.text,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.white60),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.05),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          suffixIcon: onToggle != null ? IconButton(
-            icon: Icon(isObscured! ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white38, size: 20),
-            onPressed: onToggle,
-          ) : null,
-        ),
       ),
     );
   }
@@ -367,9 +133,21 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.end,
             children: [
+              _actionButton("Edit Banners / Info", Icons.edit_outlined, AppColors.amber, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MerchantFormScreen(merchant: merchant),
+                  ),
+                ).then((_) {
+                  state.refreshData();
+                });
+              }),
               if (merchant.status != 'active')
                 _actionButton("Restore", Icons.restore, Colors.greenAccent, () async {
                   try {
@@ -378,8 +156,6 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                   }
                 }),
-              if (merchant.status != 'active')
-                const SizedBox(width: 8),
               _actionButton("Delete", Icons.delete_outline, Colors.redAccent, () async {
                 try {
                   await state.deleteMerchant(merchant.id);
@@ -393,6 +169,7 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
       ),
     );
   }
+
 
   Widget _actionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
     return InkWell(

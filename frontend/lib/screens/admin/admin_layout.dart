@@ -13,6 +13,8 @@ import 'transaction_management_screen.dart';
 import 'announcement_screen.dart';
 import 'state_management_screen.dart';
 import 'referral_management_screen.dart';
+import 'hero_banner_management_screen.dart';
+import '../../widgets/premium_loading.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -25,16 +27,17 @@ class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _pages = [
-    const AdminDashboard(),
-    const TransactionManagementScreen(),
-    const MerchantManagementScreen(),
-    const AppUserManagementScreen(),
-    const CategoryManagementScreen(),
-    const AnnouncementScreen(),
-    const AdminManagementScreen(),
-    const PrimeManagementScreen(),
-    const ReferralManagementScreen(),
+  static const List<Widget> _pages = [
+    AdminDashboard(),
+    TransactionManagementScreen(),
+    MerchantManagementScreen(),
+    AppUserManagementScreen(),
+    CategoryManagementScreen(),
+    AnnouncementScreen(),
+    AdminManagementScreen(),
+    PrimeManagementScreen(),
+    ReferralManagementScreen(),
+    HeroBannerManagementScreen(),
   ];
 
 
@@ -69,41 +72,8 @@ class _AdminLayoutState extends State<AdminLayout> {
             ),
             drawer: (!isDesktop) ? Drawer(child: _buildSidebar(true)) : null,
           ),
-          if (state.isLoading)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.6),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A2E),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.amber.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.amber),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          "Processing...",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                            fontFamily: 'Outfit',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          if (state.isBlockingLoading)
+            const PremiumProcessingOverlay(message: "Processing..."),
         ],
       );
     } catch (e) {
@@ -135,6 +105,7 @@ class _AdminLayoutState extends State<AdminLayout> {
           _buildSidebarItem(6, Icons.admin_panel_settings_outlined, Icons.admin_panel_settings, "Admins", isExpanded),
           _buildSidebarItem(7, Icons.star_outline, Icons.star, "Prime Plan", isExpanded),
           _buildSidebarItem(8, Icons.card_giftcard_outlined, Icons.card_giftcard, "Referrals", isExpanded),
+          _buildSidebarItem(9, Icons.view_carousel_outlined, Icons.view_carousel, "Hero Banners", isExpanded),
           const Spacer(),
 
           const SizedBox(height: 20),

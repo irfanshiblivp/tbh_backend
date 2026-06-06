@@ -4,15 +4,89 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:frontend/models/models.dart';
 
+class AppError implements Exception {
+  final String message;
+  AppError(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
-  // Use production URL
-  static const String baseUrl = 'http://10.71.54.62:8000/api';
-  // static const String baseUrl = 'https://thebaronclub.com/api'; // Production URL
+  static const String baseUrl = 'https://api.thebaronclub.com/api'; // ✅ Production
+
+  // ─── Alternatives (comment in the one you need, comment out the rest) ───────
+  // static const String baseUrl = 'http://10.71.54.62:8000/api';  // Local Wi-Fi (laptop IP)
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';    // Desktop / Chrome / Web
+  // static const String baseUrl = 'http://10.0.2.2:8000/api';     // Android Emulator
 
   String? _token;
 
   void setToken(String? token) {
     _token = token;
+  }
+
+  static AppError parseError(dynamic e) {
+    if (e is AppError) return e;
+    
+    final String msg = e.toString();
+    
+    // Check for network connection issues
+    if (msg.contains('SocketException') || 
+        msg.contains('Connection refused') || 
+        msg.contains('Network is unreachable') || 
+        msg.contains('Connection failed') || 
+        msg.contains('ClientException') || 
+        msg.contains('HandshakeException')) {
+      return AppError("Unable to connect to our servers. Please check your internet connection and try again.");
+    }
+    
+    if (msg.contains('TimeoutException') || msg.toLowerCase().contains('timeout')) {
+      return AppError("The connection timed out. Please check your internet strength and try again.");
+    }
+    
+    // Clean any existing Exception: prefixes
+    String cleanMsg = msg;
+    if (cleanMsg.startsWith('Exception: ')) {
+      cleanMsg = cleanMsg.substring('Exception: '.length);
+    } else if (cleanMsg.startsWith('Exception:')) {
+      cleanMsg = cleanMsg.substring('Exception:'.length);
+    }
+    
+    return AppError(cleanMsg);
+  }
+
+  static String _cleanBackendError(dynamic error) {
+    if (error == null) return 'An unexpected error occurred.';
+    if (error is List) {
+      return error.map((e) => _cleanBackendError(e)).join(', ');
+    }
+    if (error is Map) {
+      final List<String> fieldErrors = [];
+      error.forEach((key, value) {
+        final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
+        if (value is List) {
+          fieldErrors.add('$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}');
+        } else {
+          fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+        }
+      });
+      return fieldErrors.join('\n');
+    }
+    
+    String msg = error.toString();
+    if (msg.contains('Signature has expired')) {
+      return 'Your session has expired. Please log in again.';
+    }
+    if (msg.contains('Invalid password')) {
+      return 'The password you entered is incorrect.';
+    }
+    return msg;
+  }
+
+  static String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
   }
 
   bool _isTokenExpired(String token) {
@@ -85,244 +159,381 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> login(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      ).timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['access'];
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', data['access']);
-      await prefs.setString('refresh_token', data['refresh']);
-      await prefs.setString('user_role', data['user']['role']);
-      return data;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['access'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', data['access']);
+        await prefs.setString('refresh_token', data['refresh']);
+        await prefs.setString('user_role', data['user']['role']);
+        return data;
+      }
+      _handleResponse(response);
+      return null;
+    } catch (e) {
+      throw parseError(e);
     }
-    final errorData = jsonDecode(response.body);
-    throw Exception(errorData['error'] ?? errorData['detail'] ?? 'Login failed (${response.statusCode})');
   }
 
   Future<Map<String, dynamic>?> signup(Map<String, dynamic> userData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/signup/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(userData),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/signup/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(userData),
+      ).timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', data['access']);
-      await prefs.setString('refresh_token', data['refresh']);
-      if (data['user'] != null && data['user']['role'] != null) {
-        await prefs.setString('user_role', data['user']['role']);
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', data['access']);
+        await prefs.setString('refresh_token', data['refresh']);
+        if (data['user'] != null && data['user']['role'] != null) {
+          await prefs.setString('user_role', data['user']['role']);
+        }
+        return data;
       }
-      return data;
+      _handleResponse(response);
+      return null;
+    } catch (e) {
+      throw parseError(e);
     }
-    final errorData = jsonDecode(response.body);
-    throw Exception(errorData['error'] ?? errorData['detail'] ?? 'Signup failed');
   }
 
   Future<List<Merchant>> getMerchants({String? category}) async {
-    final url = category != null ? '$baseUrl/merchants/?category=$category' : '$baseUrl/merchants/';
-    final response = await http.get(Uri.parse(url), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
-    if (response.statusCode == 200) {
-      List data = jsonDecode(response.body);
-      return data.map((m) => Merchant.fromJson(m)).toList();
+    try {
+      final url = category != null ? '$baseUrl/merchants/?category=$category' : '$baseUrl/merchants/';
+      final response = await http.get(Uri.parse(url), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((m) => Merchant.fromJson(m)).toList();
+      }
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      throw parseError(e);
     }
-    throw Exception('Failed to load merchants');
   }
 
   Future<List<Category>> getCategories() async {
-    final response = await http.get(Uri.parse('$baseUrl/categories/'), headers: await _getHeaders());
-    if (response.statusCode == 200) {
-      List data = jsonDecode(response.body);
-      return data.map((c) => Category.fromJson(c)).toList();
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/categories/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((c) => Category.fromJson(c)).toList();
+      }
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      throw parseError(e);
     }
-    throw Exception('Failed to load categories');
   }
 
   Future<AppUser> getProfile() async {
-    final url = '$baseUrl/profile/';
-    final response = await http.get(Uri.parse(url), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
-    
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return AppUser.fromJson(data);
+    try {
+      final url = '$baseUrl/profile/';
+      final response = await http.get(Uri.parse(url), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return AppUser.fromJson(data);
+      }
+      _handleResponse(response);
+      throw AppError('Failed to load profile');
+    } catch (e) {
+      throw parseError(e);
     }
-    throw Exception('Failed to load profile (Status: ${response.statusCode})');
   }
 
   Future<AppUser> updateProfile(Map<String, dynamic> data) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/profile/'),
-      headers: await _getHeaders(),
-      body: jsonEncode(data),
-    );
-    if (response.statusCode == 200) {
-      return AppUser.fromJson(jsonDecode(response.body));
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/profile/'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        return AppUser.fromJson(jsonDecode(response.body));
+      }
+      _handleResponse(response);
+      throw AppError('Failed to update profile');
+    } catch (e) {
+      throw parseError(e);
     }
-    throw Exception('Failed to update profile');
   }
 
   Future<Map<String, dynamic>> getAdminDashboard() async {
-    final response = await http.get(Uri.parse('$baseUrl/admin/dashboard/'), headers: await _getHeaders());
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception('Failed to load dashboard');
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/dashboard/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      _handleResponse(response);
+      throw AppError('Failed to load dashboard');
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> adminCreateStaff(Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/users/admin_create_staff/'),
-      headers: await _getHeaders(),
-      body: jsonEncode(data),
-    );
-    if (response.statusCode != 201) throw Exception('Failed to create staff');
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/admin_create_staff/'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 201) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<List<AppUser>> getAppUsers() async {
-    final response = await http.get(Uri.parse('$baseUrl/users/'), headers: await _getHeaders());
-    if (response.statusCode == 200) {
-      List data = jsonDecode(response.body);
-      return data.map((u) => AppUser.fromJson(u)).toList();
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/users/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((u) => AppUser.fromJson(u)).toList();
+      }
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      throw parseError(e);
     }
-    throw Exception('Failed to load users');
   }
 
   Future<void> deleteAppUser(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/users/$id/'), headers: await _getHeaders());
-    if (response.statusCode != 204) throw Exception('Failed to delete user');
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/users/$id/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> deleteMerchant(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/merchants/$id/'), headers: await _getHeaders());
-    if (response.statusCode != 204) throw Exception('Failed to delete merchant');
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/merchants/$id/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> grantPrime(int userId) async {
-    await http.post(Uri.parse('$baseUrl/users/$userId/grant_prime/'), headers: await _getHeaders());
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/$userId/grant_prime/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> revokePrime(int userId) async {
-    await http.post(Uri.parse('$baseUrl/users/$userId/revoke_prime/'), headers: await _getHeaders());
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/$userId/revoke_prime/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> processPayout(int userId, double amount) async {
-    await http.post(Uri.parse('$baseUrl/users/$userId/process_payout/'), headers: await _getHeaders(), body: jsonEncode({'amount': amount}));
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/$userId/process_payout/'), headers: await _getHeaders(), body: jsonEncode({'amount': amount})).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> restoreMerchant(int id) async {
-    await http.post(Uri.parse('$baseUrl/merchants/$id/restore/'), headers: await _getHeaders());
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/merchants/$id/restore/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> updateUserStatus(int id, String status) async {
-    await http.patch(Uri.parse('$baseUrl/users/$id/'), headers: await _getHeaders(), body: jsonEncode({'status': status}));
+    try {
+      final response = await http.patch(Uri.parse('$baseUrl/users/$id/'), headers: await _getHeaders(), body: jsonEncode({'status': status})).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> updateMerchant(int id, Map<String, dynamic> data, {http.MultipartFile? imageFile}) async {
-    if (imageFile != null) {
-      final uri = Uri.parse('$baseUrl/merchants/$id/');
-      final request = http.MultipartRequest('PATCH', uri);
-      
-      final headers = await _getHeaders();
-      headers.remove('Content-Type'); // Let the request set the correct boundary
-      request.headers.addAll(headers);
+    try {
+      if (imageFile != null) {
+        final uri = Uri.parse('$baseUrl/merchants/$id/');
+        final request = http.MultipartRequest('PATCH', uri);
+        
+        final headers = await _getHeaders();
+        headers.remove('Content-Type'); // Let the request set the correct boundary
+        request.headers.addAll(headers);
 
-      data.forEach((key, value) {
-        if (value != null) request.fields[key] = value.toString();
-      });
-      
-      request.files.add(imageFile);
+        data.forEach((key, value) {
+          if (value != null) request.fields[key] = value.toString();
+        });
+        
+        request.files.add(imageFile);
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
-        throw Exception('Failed to update merchant profile image: ${response.statusCode} - ${response.body}');
+        final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+        final response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
+          _handleResponse(response);
+        }
+      } else {
+        final response = await http.patch(
+          Uri.parse('$baseUrl/merchants/$id/'),
+          headers: await _getHeaders(),
+          body: jsonEncode(data),
+        ).timeout(const Duration(seconds: 15));
+        if (response.statusCode != 200 && response.statusCode != 204) {
+          _handleResponse(response);
+        }
       }
-    } else {
-      final response = await http.patch(
-        Uri.parse('$baseUrl/merchants/$id/'),
-        headers: await _getHeaders(),
-        body: jsonEncode(data),
-      );
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to update merchant profile: ${response.statusCode}');
-      }
+    } catch (e) {
+      throw parseError(e);
     }
   }
 
   Future<Map<String, dynamic>> verifyUser(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/merchants/verify_user/?query=$query'), headers: await _getHeaders());
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception('User not found');
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/merchants/verify_user/?query=$query'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      _handleResponse(response);
+      throw AppError('User not found');
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<void> redeem(int userId, double billAmount) async {
-    await http.post(Uri.parse('$baseUrl/merchants/redeem/'), headers: await _getHeaders(), body: jsonEncode({
-      'user_id': userId,
-      'bill_amount': billAmount
-    }));
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/merchants/redeem/'), headers: await _getHeaders(), body: jsonEncode({
+        'user_id': userId,
+        'bill_amount': billAmount
+      })).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<List<dynamic>> getAdminPayments() async {
-    final response = await http.get(Uri.parse('$baseUrl/admin/payments/'), headers: await _getHeaders());
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception('Failed to load payments');
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/payments/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<List<dynamic>> getAdminVouchers() async {
-    final response = await http.get(Uri.parse('$baseUrl/admin/vouchers/'), headers: await _getHeaders());
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception('Failed to load vouchers');
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/vouchers/'), headers: await _getHeaders()).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   // Generic methods
   Future<dynamic> get(String endpoint) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await _getHeaders(),
-    ).timeout(const Duration(seconds: 15));
-    return _handleResponse(response);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await _getHeaders(),
-      body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 15));
-    return _handleResponse(response);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await _getHeaders(),
-      body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 15));
-    return _handleResponse(response);
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
-    final response = await http.patch(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await _getHeaders(),
-      body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 15));
-    return _handleResponse(response);
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> delete(String endpoint) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await _getHeaders(),
-    ).timeout(const Duration(seconds: 15));
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      }
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
     }
-    return _handleResponse(response);
   }
 
   dynamic _handleResponse(http.Response response) {
@@ -330,83 +541,194 @@ class ApiService {
       try {
         return response.body.isNotEmpty ? jsonDecode(response.body) : null;
       } catch (e) {
-        throw Exception('Server returned invalid JSON format');
+        throw AppError('The server returned an invalid format. Please try again.');
       }
     }
-    if (response.statusCode == 401) {
-      throw Exception('UNAUTHORIZED');
+    
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw AppError('Your session has expired or you do not have permission. Please log in again.');
     }
+    
+    if (response.statusCode == 404) {
+      throw AppError('The requested resource could not be found. Please try again later.');
+    }
+
+    if (response.statusCode >= 500) {
+      throw AppError('We are experiencing temporary server difficulties. Please try again shortly.');
+    }
+
     try {
       final errorData = jsonDecode(response.body);
-      throw Exception(errorData['error'] ?? errorData['detail'] ?? 'Request failed (${response.statusCode})');
+      if (errorData is Map) {
+        if (errorData.containsKey('error') && errorData['error'] != null) {
+          throw AppError(_cleanBackendError(errorData['error']));
+        }
+        if (errorData.containsKey('detail') && errorData['detail'] != null) {
+          throw AppError(_cleanBackendError(errorData['detail']));
+        }
+        if (errorData.containsKey('non_field_errors') && errorData['non_field_errors'] != null) {
+          throw AppError(_cleanBackendError(errorData['non_field_errors']));
+        }
+        
+        // Handle generic field errors like {"email": ["Enter a valid email address."]}
+        final List<String> fieldErrors = [];
+        errorData.forEach((key, value) {
+          final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
+          if (value is List) {
+            fieldErrors.add('$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}');
+          } else if (value is Map) {
+            fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+          } else {
+            fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+          }
+        });
+        if (fieldErrors.isNotEmpty) {
+          throw AppError(fieldErrors.join('\n'));
+        }
+      }
+      throw AppError('Request failed (Status: ${response.statusCode})');
     } catch (e) {
-      throw Exception('Request failed with status ${response.statusCode}');
+      if (e is AppError) rethrow;
+      throw AppError('An unexpected issue occurred (Status: ${response.statusCode}). Please try again.');
     }
   }
 
   Future<dynamic> postMultipart(String endpoint, Map<String, dynamic> data, {http.MultipartFile? file}) async {
-    final uri = Uri.parse('$baseUrl$endpoint');
-    final request = http.MultipartRequest('POST', uri);
-    
-    final headers = await _getHeaders();
-    headers.remove('Content-Type'); // Let the request set it for multipart
-    request.headers.addAll(headers);
-    
-    data.forEach((key, value) {
-      if (value != null) request.fields[key] = value.toString();
-    });
-    
-    if (file != null) {
-      request.files.add(file);
+    try {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final request = http.MultipartRequest('POST', uri);
+      
+      final headers = await _getHeaders();
+      headers.remove('Content-Type'); // Let the request set it for multipart
+      request.headers.addAll(headers);
+      
+      data.forEach((key, value) {
+        if (value != null) request.fields[key] = value.toString();
+      });
+      
+      if (file != null) {
+        request.files.add(file);
+      }
+      
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
     }
-    
-    final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
-    final response = await http.Response.fromStream(streamedResponse);
-    return _handleResponse(response);
   }
 
-  Future<dynamic> customerPay(int merchantId, double billAmount) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/merchants/$merchantId/customer_pay/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'bill_amount': billAmount,
-      }),
-    ).timeout(const Duration(seconds: 30));
-    return _handleResponse(response);
+  Future<dynamic> customerPay(int merchantId, double billAmount, {String paymentMethod = 'ONLINE'}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/merchants/$merchantId/customer_pay/'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'bill_amount': billAmount,
+          'payment_method': paymentMethod,
+        }),
+      ).timeout(const Duration(seconds: 30));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> createRazorpayOrder(double amount, {String? purpose}) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/razorpay/create-order/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'amount': amount,
-        if (purpose != null) 'purpose': purpose,
-      }),
-    ).timeout(const Duration(seconds: 30));
-    return _handleResponse(response);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/razorpay/create-order/'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'amount': amount,
+          if (purpose != null) 'purpose': purpose,
+        }),
+      ).timeout(const Duration(seconds: 30));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> verifyRazorpayPayment(String orderId, String paymentId, String signature, {String? referralCode}) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/razorpay/verify/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'razorpay_order_id': orderId,
-        'razorpay_payment_id': paymentId,
-        'razorpay_signature': signature,
-        if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
-      }),
-    ).timeout(const Duration(seconds: 30));
-    return _handleResponse(response);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/razorpay/verify/'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'razorpay_order_id': orderId,
+          'razorpay_payment_id': paymentId,
+          'razorpay_signature': signature,
+          if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
+        }),
+      ).timeout(const Duration(seconds: 30));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 
   Future<dynamic> getCustomerTransactions() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/customer/transactions/'),
-      headers: await _getHeaders(),
-    ).timeout(const Duration(seconds: 30));
-    return _handleResponse(response);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/customer/transactions/'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 30));
+      return _handleResponse(response);
+    } catch (e) {
+      throw parseError(e);
+    }
+  }
+
+  Future<List<HeroBanner>> getHeroBanners() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/hero-banners/'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      final dynamic decoded = _handleResponse(response);
+      if (decoded is List) {
+        return decoded.map((json) => HeroBanner.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      throw parseError(e);
+    }
+  }
+
+  Future<void> uploadHeroBanner(http.MultipartFile imageFile) async {
+    try {
+      final uri = Uri.parse('$baseUrl/hero-banners/');
+      final request = http.MultipartRequest('POST', uri);
+      
+      final headers = await _getHeaders();
+      headers.remove('Content-Type');
+      request.headers.addAll(headers);
+
+      request.files.add(imageFile);
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
+  }
+
+  Future<void> deleteHeroBanner(int bannerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/hero-banners/$bannerId/'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        _handleResponse(response);
+      }
+    } catch (e) {
+      throw parseError(e);
+    }
   }
 }
+

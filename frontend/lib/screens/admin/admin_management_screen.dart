@@ -41,50 +41,96 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     final passController = TextEditingController();
     final emailController = TextEditingController();
     final state = Provider.of<AppState>(context, listen: false);
+    bool showPassword = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        title: Text("Add New ${role == 'admin' ? 'Admin' : 'Staff'}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dialogField(userController, "Username"),
-            _dialogField(passController, "Password", obscure: true),
-            _dialogField(emailController, "Email"),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                if (role == 'admin') {
-                   // This endpoint might need to be created if not exists, for now using createStaff for both for demo
-                   await state.adminCreateStaff({
-                    'username': userController.text,
-                    'password': passController.text,
-                    'email': emailController.text,
-                    'role': 'admin'
-                  });
-                } else {
-                  await state.adminCreateStaff({
-                    'username': userController.text,
-                    'password': passController.text,
-                    'email': emailController.text,
-                    'role': 'staff'
-                  });
-                }
-                Navigator.pop(context);
-                _loadUsers();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-              }
-            },
-            child: const Text("Add"),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1A1A2E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              "Add New ${role == 'admin' ? 'Admin' : 'Staff'}",
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _dialogField(userController, "Username"),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: TextField(
+                    controller: passController,
+                    obscureText: !showPassword,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      labelStyle: const TextStyle(color: Colors.white60),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          showPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          color: AppColors.amber,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            showPassword = !showPassword;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                _dialogField(emailController, "Email"),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    if (role == 'admin') {
+                       await state.adminCreateStaff({
+                        'username': userController.text,
+                        'password': passController.text,
+                        'email': emailController.text,
+                        'role': 'admin'
+                      });
+                    } else {
+                      await state.adminCreateStaff({
+                        'username': userController.text,
+                        'password': passController.text,
+                        'email': emailController.text,
+                        'role': 'staff'
+                      });
+                    }
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      _loadUsers();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.amber,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("Add"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -7,8 +7,10 @@ import 'package:frontend/screens/verification_screen.dart';
 import 'package:frontend/screens/home_screen.dart';
 import 'package:frontend/screens/categories_screen.dart';
 import 'package:frontend/screens/profile_screen.dart';
+import 'package:frontend/screens/transactions_screen.dart';
 import 'package:frontend/screens/merchant/merchant_layout.dart';
 import 'package:frontend/screens/admin/admin_layout.dart';
+import 'package:frontend/widgets/premium_loading.dart';
 
 void main() {
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -104,21 +106,7 @@ class RootScreen extends StatelessWidget {
     }
     
     if (state.isCheckingAuth || (state.isLoggedIn && state.profile == null && state.isLoading)) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF090910),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset('res/images/logo_transparent.png', height: 80),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(color: AppColors.amber),
-              const SizedBox(height: 12),
-              const Text("Syncing your profile...", style: TextStyle(color: Colors.white38, fontSize: 12)),
-            ],
-          ),
-        ),
-      );
+      return const PremiumAppOpeningLoader();
     }
     
     print("RootScreen Build: isLoggedIn=${state.isLoggedIn}, isVerified=${state.isVerified}, role=${state.userRole}");
@@ -152,7 +140,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const CategoriesScreen(),
+    const TransactionsScreen(),
     const ProfileScreen(),
   ];
 
@@ -172,7 +160,7 @@ class _MainLayoutState extends State<MainLayout> {
           unselectedLabelStyle: const TextStyle(fontSize: 10),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'HOME'),
-            BottomNavigationBarItem(icon: Icon(Icons.grid_view_outlined), activeIcon: Icon(Icons.grid_view), label: 'CATEGORIES'),
+            BottomNavigationBarItem(icon: Icon(Icons.history_outlined), activeIcon: Icon(Icons.history), label: 'TRANSACTIONS'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'PROFILE'),
           ],
         ),

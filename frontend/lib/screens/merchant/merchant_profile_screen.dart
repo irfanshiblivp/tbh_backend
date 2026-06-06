@@ -48,13 +48,12 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            _buildImageSections(merchant),
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
             _buildField("Business Name", _nameController, Icons.storefront),
             const SizedBox(height: 16),
             _buildField("Address", _addressController, Icons.location_on_outlined),
             const SizedBox(height: 16),
-            _buildField("Discount Percentage (%)", _discountController, Icons.percent),
+            _buildField("Discount Percentage (%)", _discountController, Icons.percent, readOnly: true),
             const SizedBox(height: 16),
             _buildField("Description", _descController, Icons.description_outlined, maxLines: 3),
             const SizedBox(height: 30),
@@ -64,7 +63,6 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
                   'business_name': _nameController.text,
                   'address': _addressController.text,
                   'description': _descController.text,
-                  'discount_percent': int.parse(_discountController.text),
                 });
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated")));
               },
@@ -83,82 +81,9 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     );
   }
 
-  Widget _buildImageSections(Merchant? merchant) {
-    return Column(
-      children: [
-        const Text("Identity & Branding", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-        const SizedBox(height: 20),
-        _buildPhotoPicker(
-          label: "Cover Card",
-          imageUrl: merchant?.cardImage,
-          isWide: true,
-          onPick: (img) async {
-            final bytes = await img.readAsBytes();
-            final multipartFile = http.MultipartFile.fromBytes(
-              'card_image',
-              bytes,
-              filename: img.name,
-            );
-            final state = Provider.of<AppState>(context, listen: false);
-            await state.updateMerchant(merchant!.id, {}, imageFile: multipartFile);
-          }
-        ),
-      ],
-    );
-  }
 
-  Widget _buildPhotoPicker({required String label, String? imageUrl, required Function(XFile) onPick, bool isWide = false}) {
-    return Column(
-      children: [
-        Stack(
-          children: [
-            Container(
-              height: 100,
-              width: isWide ? 160 : 100,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-                image: imageUrl != null && imageUrl.isNotEmpty
-                  ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                  : null,
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: imageUrl == null || imageUrl.isEmpty
-                ? Icon(isWide ? Icons.image_outlined : Icons.store, size: 32, color: Colors.white10)
-                : null,
-            ),
-            Positioned(
-              bottom: -5,
-              right: -5,
-              child: InkWell(
-                onTap: () async {
-                  final picker = ImagePicker();
-                  final img = await picker.pickImage(source: ImageSource.gallery);
-                  if (img != null) {
-                    try {
-                      await onPick(img);
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$label updated!")));
-                    } catch (e) {
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-                    }
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: AppColors.amber, shape: BoxShape.circle),
-                  child: const Icon(Icons.edit, size: 14, color: Colors.black),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
 
-  Widget _buildField(String label, TextEditingController controller, IconData icon, {int maxLines = 1}) {
+  Widget _buildField(String label, TextEditingController controller, IconData icon, {int maxLines = 1, bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -167,11 +92,12 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
         TextField(
           controller: controller,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white),
+          readOnly: readOnly,
+          style: TextStyle(color: readOnly ? Colors.white54 : Colors.white),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: Colors.white24, size: 20),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: readOnly ? Colors.white.withOpacity(0.02) : Colors.white.withOpacity(0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
           ),
         ),
@@ -224,14 +150,43 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
+              final oldText = oldPass.text.trim();
+              final newText = newPass.text.trim();
+              if (oldText.isEmpty || newText.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("All fields are required!"), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
+              if (newText.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("New password must be at least 6 characters long!"), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
               try {
-                await state.changePassword(oldPass.text, newPass.text);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password changed")));
+                await state.changePassword(oldText, newText);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Password changed successfully!"), backgroundColor: Colors.green),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                if (mounted) {
+                  String errMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Failed to change password:', '').trim();
+                  if (errMsg.toLowerCase().contains('incorrect old password')) {
+                    errMsg = 'The current password you entered is incorrect. Please try again.';
+                  } else if (errMsg.isEmpty) {
+                    errMsg = 'Unable to change password. Please verify your connection and try again.';
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(errMsg), backgroundColor: Colors.redAccent),
+                  );
+                }
               }
             },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
             child: const Text("Change"),
           ),
         ],

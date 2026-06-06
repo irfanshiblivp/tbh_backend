@@ -20,15 +20,17 @@ class _PrimeScreenState extends State<PrimeScreen> {
   String? selectedPlanId;
   double price = 0;
   final TextEditingController _referralController = TextEditingController();
-  late Razorpay _razorpay;
+  Razorpay? _razorpay;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    if (!kIsWeb) {
+      _razorpay = Razorpay();
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = context.read<AppState>();
@@ -50,7 +52,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpay?.clear();
     _referralController.dispose();
     super.dispose();
   }
@@ -168,7 +170,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
           },
         );
       } else {
-        _razorpay.open(options);
+        _razorpay?.open(options);
       }
     } catch (e) {
       debugPrint("Error opening Razorpay checkout: $e");
@@ -352,44 +354,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              TextButton(
-                                onPressed: state.isLoading ? null : () async {
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-                                  );
-                                  
-                                  await Future.delayed(const Duration(seconds: 1));
-                                  if (!mounted) return;
-                                  Navigator.pop(context); // Close loading dialog
-                                  
-                                  bool success = await state.buyPrimeSimulated(referralCode: _referralController.text);
-                                  if (mounted && success) {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => PaymentSuccessScreen(
-                                          amount: price.toStringAsFixed(0),
-                                          message: "Welcome to Prime! Your account has been upgraded.",
-                                          onDone: () {
-                                            state.refreshData();
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: const Text(
-                                  "Simulate Test Purchase (Sandbox)",
-                                  style: TextStyle(
-                                    color: AppColors.amber,
-                                    fontSize: 12,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
+
                               const SizedBox(height: 4),
                               const Text("Cancel anytime · No hidden charges · Auto-renewal", style: TextStyle(color: Colors.white24, fontSize: 10)),
                             ],

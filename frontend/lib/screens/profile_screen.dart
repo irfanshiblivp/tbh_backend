@@ -8,6 +8,8 @@ import 'package:frontend/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'prime_screen.dart';
+
 
 class ProfileScreen extends StatelessWidget {
   // Profile screen display
@@ -67,77 +69,106 @@ class ProfileScreen extends StatelessWidget {
                     profile?.email ?? "",
                     style: GoogleFonts.jost(color: AppColors.text2, fontSize: 13),
                   ),
-                  if (profile?.isPrime == true) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFD4AF37), // Metallic gold
-                            Color(0xFFFFDF73), // Light gold
-                            Color(0xFFAA7C11), // Dark gold
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFD4AF37).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                  (() {
+                    final bool isActivePrime = profile?.isPrime == true;
+                    final bool isExpiredPrime = !isActivePrime && profile?.primeExpiresAt != null;
+                    if (isActivePrime) {
+                      return Column(
                         children: [
-                          const Icon(Icons.star, color: Color(0xFF1A1A2E), size: 16),
-                          const SizedBox(width: 6),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFFD4AF37),
+                                  Color(0xFFFFDF73),
+                                  Color(0xFFAA7C11),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFD4AF37).withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star, color: Color(0xFF1A1A2E), size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "PRIME MEMBER",
+                                  style: GoogleFonts.dmSans(
+                                    color: const Color(0xFF1A1A2E),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                           Text(
-                            "PRIME MEMBER",
-                            style: GoogleFonts.dmSans(
-                              color: const Color(0xFF1A1A2E),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
+                            "Valid till ${_formatDate(profile?.primeExpiresAt)}",
+                            style: GoogleFonts.jost(
+                              color: const Color(0xFFD4AF37).withOpacity(0.85),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Validity: ${_formatDate(profile?.primeStartsAt)} - ${_formatDate(profile?.primeExpiresAt)}",
-                      style: GoogleFonts.jost(
-                        color: const Color(0xFFD4AF37).withOpacity(0.85),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 32),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    decoration: BoxDecoration(
-                      color: AppColors.ink2,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: AppColors.line),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        _buildStatItem("₹${profile?.referralBalance.toStringAsFixed(0) ?? "0"}", "BALANCE"),
-                        Container(width: 1, height: 40, color: AppColors.line),
-                        _buildStatItem("₹${profile?.referralTotalEarned.toStringAsFixed(0) ?? "0"}", "EARNINGS"),
-                      ],
-                    ),
-                  ),
+                      );
+                    } else if (isExpiredPrime) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "MEMBERSHIP EXPIRED",
+                                  style: GoogleFonts.dmSans(
+                                    color: Colors.redAccent,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Expired on ${_formatDate(profile?.primeExpiresAt)}",
+                            style: GoogleFonts.jost(
+                              color: Colors.redAccent.withOpacity(0.75),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  })(),
                 ],
               ),
             ),
@@ -146,57 +177,8 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Referral Section
-                  InkWell(
-                    onTap: () {
-                      final code = profile?.referralCode ?? "TBH000";
-                      final text = "Join The Baron Club and save 1-100% at the finest merchants! Use my referral code: $code\nDownload the app now!";
-                      if (kIsWeb) {
-                        Clipboard.setData(ClipboardData(text: text));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Referral message copied to clipboard!"), backgroundColor: AppColors.amber),
-                        );
-                      } else {
-                        Share.share(text);
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.amber.withOpacity(0.09),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.amber.withOpacity(0.22)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A2E),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.amber.withOpacity(0.22)),
-                            ),
-                            child: const Icon(Icons.share_outlined, color: AppColors.amber),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text("Referral Program", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                                Text("Your Code: ${profile?.referralCode ?? "TBH000"}", style: const TextStyle(color: AppColors.text2, fontSize: 11)),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.copy, color: AppColors.amber, size: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 14),
+                  _buildReferralCard(context, state),
+                  const SizedBox(height: 20),
                   
                   _buildMenuCard([
                     _buildMenuItem(Icons.edit_outlined, "Edit Profile", () {
@@ -277,14 +259,266 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String val, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(val, style: GoogleFonts.dmMono(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 2),
-          Text(label.toUpperCase(), style: const TextStyle(color: Colors.white30, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+  Widget _buildReferralCard(BuildContext context, AppState state) {
+    final profile = state.profile;
+    final bool isPrime = profile?.isPrime ?? false;
+    final bool isExpiredPrime = !isPrime && profile?.primeExpiresAt != null;
+    final String referralCode = profile?.referralCode ?? "TBC000";
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isPrime 
+            ? [const Color(0xFF1C1810), const Color(0xFF0C0C11)]
+            : isExpiredPrime
+              ? [const Color(0xFF1A0A0A), const Color(0xFF0C0C11)]
+              : [const Color(0xFF140E0E), const Color(0xFF0C0C11)],
+        ),
+        border: Border.all(
+          color: isPrime 
+            ? AppColors.amber.withOpacity(0.3) 
+            : isExpiredPrime 
+              ? Colors.redAccent.withOpacity(0.2) 
+              : AppColors.line,
+          width: 1,
+        ),
+        boxShadow: [
+          if (isPrime) BoxShadow(color: AppColors.amber.withOpacity(0.05), blurRadius: 30, spreadRadius: 5),
+          if (isExpiredPrime) BoxShadow(color: Colors.redAccent.withOpacity(0.04), blurRadius: 20, spreadRadius: 3),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "REFERRAL BALANCE",
+                      style: GoogleFonts.jost(
+                        color: AppColors.text2,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "₹${profile?.referralBalance.toStringAsFixed(0) ?? "0"}",
+                      style: GoogleFonts.dmMono(
+                        color: Colors.white,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Icon(
+                    isPrime ? Icons.auto_awesome : Icons.card_giftcard,
+                    color: AppColors.amber,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Middle section: Totals
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "TOTAL EARNED",
+                        style: GoogleFonts.jost(color: AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "₹${profile?.referralTotalEarned.toStringAsFixed(0) ?? "0"}",
+                        style: GoogleFonts.dmMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "TOTAL SAVED",
+                        style: GoogleFonts.jost(color: AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "₹${state.totalSaved.toStringAsFixed(0)}",
+                        style: GoogleFonts.dmMono(color: AppColors.amber, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Referral Code Box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.04),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.confirmation_number_outlined, color: AppColors.amber, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "YOUR REFERRAL CODE",
+                          style: GoogleFonts.jost(
+                            color: AppColors.text2,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          referralCode,
+                          style: GoogleFonts.dmMono(
+                            color: AppColors.amber,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: referralCode));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Referral code \"$referralCode\" copied!"),
+                          backgroundColor: AppColors.amber,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.amber.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                      ),
+                      child: const Icon(Icons.copy_rounded, color: AppColors.amber, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.line, height: 1),
+            const SizedBox(height: 16),
+            // Bottom section: Actions
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Share button
+                TextButton.icon(
+                  onPressed: () {
+                    final text = "Join The Baron Club and save 1-100% at the finest merchants! Use my referral code: $referralCode\nDownload the app now!";
+                    if (kIsWeb) {
+                      Clipboard.setData(ClipboardData(text: text));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Referral message copied to clipboard!"), backgroundColor: AppColors.amber),
+                      );
+                    } else {
+                      Share.share(text);
+                    }
+                  },
+                  icon: const Icon(Icons.share, color: AppColors.amber, size: 16),
+                  label: Text(
+                    "SHARE",
+                    style: GoogleFonts.jost(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    backgroundColor: Colors.white.withOpacity(0.04),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                if (!isPrime && !isExpiredPrime)
+                  ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrimeScreen())),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.amber,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 8,
+                      shadowColor: AppColors.amber.withOpacity(0.4),
+                    ),
+                    child: const Text(
+                      "JOIN PRIME",
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1),
+                    ),
+                  )
+                else if (isExpiredPrime)
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrimeScreen())),
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text(
+                      "RENEW MEMBERSHIP",
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 8,
+                      shadowColor: Colors.redAccent.withOpacity(0.4),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                    ),
+                    child: const Text(
+                      "MEMBERSHIP ACTIVE",
+                      style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold, fontSize: 10),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -694,8 +928,14 @@ class ProfileScreen extends StatelessWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
+                  String errMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Failed to change password:', '').trim();
+                  if (errMsg.toLowerCase().contains('incorrect old password')) {
+                    errMsg = 'The current password you entered is incorrect. Please try again.';
+                  } else if (errMsg.isEmpty) {
+                    errMsg = 'Unable to change password. Please verify your connection and try again.';
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: $e"), backgroundColor: Colors.redAccent),
+                    SnackBar(content: Text(errMsg), backgroundColor: Colors.redAccent),
                   );
                 }
               }

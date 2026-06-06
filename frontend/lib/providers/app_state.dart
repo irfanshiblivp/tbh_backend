@@ -70,6 +70,7 @@ class AppState extends ChangeNotifier {
   
   bool get isVerified {
     if (_profile == null) return false;
+    if (_profile!.role == 'merchant') return true;
     return _profile!.emailVerifiedAt != null;
   }
 
@@ -77,9 +78,9 @@ class AppState extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await _api.post('/auth/resend_verification/', {});
+      await _api.post('/auth/resend-otp/', {});
     } catch (e) {
-      throw Exception('Failed to resend verification: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -97,8 +98,7 @@ class AppState extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      String msg = e.toString().replaceAll('Exception: ', '');
-      throw Exception(msg);
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -111,7 +111,7 @@ class AppState extends ChangeNotifier {
     try {
       await _api.post('/forgot-password/', {'email': email});
     } catch (e) {
-      throw Exception('Failed to send verification code: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -128,7 +128,7 @@ class AppState extends ChangeNotifier {
         'password': newPassword,
       });
     } catch (e) {
-      throw Exception('Failed to reset password: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -137,6 +137,10 @@ class AppState extends ChangeNotifier {
 
   List<Merchant> _merchants = [];
   List<Merchant> get merchants => _merchants;
+
+  List<HeroBanner> _heroBanners = [];
+  List<HeroBanner> get heroBanners => _heroBanners;
+
 
   Position? _devicePosition;
   Position? get devicePosition => _devicePosition;
@@ -207,6 +211,9 @@ class AppState extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  bool _isBlockingLoading = false;
+  bool get isBlockingLoading => _isBlockingLoading;
 
   List<AppSetting> _settings = [];
   List<AppSetting> get settings => _settings;
@@ -346,13 +353,15 @@ class AppState extends ChangeNotifier {
       final profileFuture = _api.getProfile();
       final categoriesFuture = _api.getCategories();
       final merchantsFuture = _api.getMerchants();
+      final heroBannersFuture = _api.getHeroBanners();
       
       // Wait for all to complete
-      final results = await Future.wait([profileFuture, categoriesFuture, merchantsFuture]);
+      final results = await Future.wait([profileFuture, categoriesFuture, merchantsFuture, heroBannersFuture]);
       
       _profile = results[0] as AppUser;
       _categories = results[1] as List<Category>;
       _merchants = results[2] as List<Merchant>;
+      _heroBanners = results[3] as List<HeroBanner>;
       await fetchLocationAndSort();
       
       if (_userRole == 'admin') {
@@ -377,6 +386,7 @@ class AppState extends ChangeNotifier {
                 status: tx['status'] ?? 'completed',
                 timestamp: DateTime.tryParse(tx['timestamp'] ?? '') ?? DateTime.now(),
                 userName: tx['user_name'] ?? 'Customer',
+                paymentMethod: tx['payment_method'] ?? 'CASH',
               ))
               .toList();
           print("Merchant transactions loaded: ${_transactions.length}");
@@ -395,6 +405,7 @@ class AppState extends ChangeNotifier {
                 timestamp: DateTime.tryParse(p['created_at'] ?? '') ?? DateTime.now(),
                 userName: p['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: "Prime Membership Upgrade",
+                paymentMethod: 'ONLINE',
               ));
             }
           }
@@ -409,6 +420,7 @@ class AppState extends ChangeNotifier {
                 timestamp: DateTime.tryParse(v['used_at'] ?? v['created_at'] ?? '') ?? DateTime.now(),
                 userName: v['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",
+                paymentMethod: v['payment_method'] ?? 'ONLINE',
               ));
             }
           }
@@ -496,7 +508,7 @@ class AppState extends ChangeNotifier {
       });
       await loadSettings();
     } catch (e) {
-      throw Exception('Failed to create setting: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -505,7 +517,7 @@ class AppState extends ChangeNotifier {
       await _api.patch('/settings/$id/', {'value': value});
       await loadSettings();
     } catch (e) {
-      throw Exception('Failed to update setting: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -514,7 +526,7 @@ class AppState extends ChangeNotifier {
       await _api.delete('/settings/$id/');
       await loadSettings();
     } catch (e) {
-      throw Exception('Failed to delete setting: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -525,7 +537,7 @@ class AppState extends ChangeNotifier {
       await _api.grantPrime(userId);
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to grant Prime: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -539,7 +551,7 @@ class AppState extends ChangeNotifier {
       await _api.revokePrime(userId);
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to revoke Prime: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -562,7 +574,7 @@ class AppState extends ChangeNotifier {
     try {
       await _api.post('/users/$userId/reset_password/', {'password': newPass});
     } catch (e) {
-      throw Exception('Failed to reset password: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -576,7 +588,7 @@ class AppState extends ChangeNotifier {
         'new_password': newPass,
       });
     } catch (e) {
-      throw Exception('Failed to change password: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -594,6 +606,37 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> uploadHeroBanner(http.MultipartFile imageFile) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.uploadHeroBanner(imageFile);
+      await refreshData();
+    } catch (e) {
+      debugPrint("Error uploading hero banner: $e");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteHeroBanner(int bannerId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.deleteHeroBanner(bannerId);
+      await refreshData();
+    } catch (e) {
+      debugPrint("Error deleting hero banner: $e");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
 
   Future<void> upgradeToPrime(double price, {String? referralCode}) async {
     _isLoading = true;
@@ -645,7 +688,7 @@ class AppState extends ChangeNotifier {
         'message': msg,
       });
     } catch (e) {
-      throw Exception('Failed to send announcement: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -658,7 +701,7 @@ class AppState extends ChangeNotifier {
     try {
       await _api.delete('/admin/notifications/$id/');
     } catch (e) {
-      throw Exception('Failed to delete announcement: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -669,8 +712,38 @@ class AppState extends ChangeNotifier {
     _selectedStateFilter = state;
     _selectedCityFilter = city;
     _isNearMeFilter = nearMe ?? false;
-    _merchants = await _api.getMerchants(category: category);
-    notifyListeners();
+    
+    // 1. Fetch the raw merchants list for this category
+    List<Merchant> fetched = await _api.getMerchants(category: category);
+    
+    // 2. Locally filter by State if selected
+    if (_selectedStateFilter != null && _selectedStateFilter!.isNotEmpty) {
+      final String searchState = _selectedStateFilter!.toLowerCase();
+      fetched = fetched.where((m) {
+        final String mState = m.state.toLowerCase();
+        final String mAddress = m.address.toLowerCase();
+        return mState.contains(searchState) || mAddress.contains(searchState);
+      }).toList();
+    }
+    
+    // 3. Locally filter by City if selected
+    if (_selectedCityFilter != null && _selectedCityFilter!.isNotEmpty) {
+      final String searchCity = _selectedCityFilter!.toLowerCase();
+      fetched = fetched.where((m) {
+        final String mCity = m.city.toLowerCase();
+        final String mAddress = m.address.toLowerCase();
+        return mCity.contains(searchCity) || mAddress.contains(searchCity);
+      }).toList();
+    }
+    
+    _merchants = fetched;
+    
+    // 4. Distance sorting if 'Near Me' filter is active
+    if (_isNearMeFilter) {
+      await fetchLocationAndSort();
+    } else {
+      notifyListeners();
+    }
   }
 
   Future<List<AppUser>> getAppUsers() async {
@@ -687,7 +760,7 @@ class AppState extends ChangeNotifier {
       await _api.delete('/merchants/$id/');
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to delete merchant: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -698,7 +771,7 @@ class AppState extends ChangeNotifier {
       await _api.delete('/users/$id/');
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to delete user: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -710,7 +783,7 @@ class AppState extends ChangeNotifier {
       await _api.post('/users/admin_create_staff/', data);
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to create staff: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -723,7 +796,7 @@ class AppState extends ChangeNotifier {
       }
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to create merchant: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -733,11 +806,11 @@ class AppState extends ChangeNotifier {
     try {
       final users = await getAppUsers();
       final user = users.firstWhere((u) => u.id == id);
-      final newStatus = user.status == 'active' ? 'blocked' : 'active';
+      final newStatus = user.status == 'active' ? 'inactive' : 'active';
       await _api.patch('/users/$id/', {'status': newStatus});
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to toggle user status: $e');
+      throw AppError(ApiService.parseError(e).toString());
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -749,7 +822,7 @@ class AppState extends ChangeNotifier {
       await _api.post('/categories/', {'name': name, 'slug': name.toLowerCase().replaceAll(' ', '-')});
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to add category: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -758,7 +831,7 @@ class AppState extends ChangeNotifier {
       await _api.delete('/categories/$id/');
       await refreshData();
     } catch (e) {
-      throw Exception('Failed to delete category: $e');
+      throw AppError(ApiService.parseError(e).toString());
     }
   }
 
@@ -784,6 +857,7 @@ class AppState extends ChangeNotifier {
           timestamp: DateTime.tryParse(p['created_at'] ?? '') ?? DateTime.now(),
           userName: p['user_name'] ?? "User #${p['user']}",
           merchantName: isPrime ? "System (Prime)" : purpose,
+          paymentMethod: 'ONLINE',
         ));
       }
       
@@ -796,6 +870,7 @@ class AppState extends ChangeNotifier {
           timestamp: DateTime.tryParse(v['used_at'] ?? v['created_at'] ?? '') ?? DateTime.now(),
           userName: v['user_name'] ?? "User #${v['user']}",
           merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",
+          paymentMethod: v['payment_method'] ?? 'ONLINE',
         ));
       }
 
@@ -886,18 +961,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<bool> customerPay(int merchantId, double billAmount) async {
-    _isLoading = true;
+  Future<bool> customerPay(int merchantId, double billAmount, {String paymentMethod = 'ONLINE'}) async {
+    _isBlockingLoading = true;
     notifyListeners();
     try {
-      await _api.customerPay(merchantId, billAmount);
+      await _api.customerPay(merchantId, billAmount, paymentMethod: paymentMethod);
       await refreshData();
       return true;
     } catch (e) {
       debugPrint("Error in customerPay: $e");
       return false;
     } finally {
-      _isLoading = false;
+      _isBlockingLoading = false;
       notifyListeners();
     }
   }}

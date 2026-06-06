@@ -14,31 +14,117 @@ class TransactionsScreen extends StatelessWidget {
     final state = context.watch<AppState>();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text("Transactions", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22)),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: Text("${state.transactions.length} RECORDS", style: const TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+      backgroundColor: const Color(0xFF07070A),
+      body: Stack(
+        children: [
+          // Background ambient light orbs for premium visual depth
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [AppColors.amber.withOpacity(0.15), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 50,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [AppColors.amber2.withOpacity(0.06), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Custom Premium Header Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Transactions",
+                            style: GoogleFonts.playfairDisplay(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "PAST SPENDING & SAVINGS",
+                            style: GoogleFonts.jost(
+                              color: AppColors.text2,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withOpacity(0.06)),
+                        ),
+                        child: Text(
+                          "${state.transactions.length} RECORDS",
+                          style: GoogleFonts.dmMono(
+                            color: AppColors.amber2,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Transactions List
+                Expanded(
+                  child: state.transactions.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          color: AppColors.amber,
+                          backgroundColor: AppColors.ink2,
+                          onRefresh: state.refreshData,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: state.transactions.length,
+                            itemBuilder: (context, index) {
+                              return _buildTransactionItem(state.transactions[index]);
+                            },
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-      body: state.transactions.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: state.refreshData,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                itemCount: state.transactions.length,
-                itemBuilder: (context, index) {
-                  return _buildTransactionItem(state.transactions[index]);
-                },
-              ),
-            ),
     );
   }
 
@@ -48,61 +134,179 @@ class TransactionsScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: 84,
+            height: 84,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.04),
+              color: Colors.white.withOpacity(0.03),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
             ),
-            child: const Icon(Icons.history, size: 36, color: Colors.white12),
+            child: const Icon(Icons.receipt_long_outlined, size: 36, color: Colors.white24),
           ),
-          const SizedBox(height: 16),
-          const Text("No transactions yet", style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
+          Text(
+            "No Transactions Yet",
+            style: GoogleFonts.jost(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
-          const Text("Your spending history will appear here", style: TextStyle(color: AppColors.text2, fontSize: 12)),
+          Text(
+            "Your spending and prime benefits history will appear here",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.jost(
+              color: AppColors.text2,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTransactionItem(Transaction tx) {
+    bool isPrimePayment = tx.merchantName.toLowerCase().contains('prime') || 
+                          tx.merchantName.toLowerCase().contains('upgrade');
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.045),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1.1),
       ),
       child: Row(
         children: [
+          // Elegant Icon Container
           Container(
-            width: 46,
-            height: 46,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppColors.amber.withOpacity(0.11),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: AppColors.amber.withOpacity(0.18)),
+              color: isPrimePayment 
+                  ? const Color(0xFFD4AF37).withOpacity(0.08) 
+                  : AppColors.amber.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: isPrimePayment 
+                    ? const Color(0xFFD4AF37).withOpacity(0.22) 
+                    : AppColors.amber.withOpacity(0.18),
+                width: 1.2,
+              ),
             ),
-            child: const Icon(Icons.shopping_bag_outlined, color: AppColors.amber, size: 24),
+            child: Icon(
+              isPrimePayment ? Icons.stars : Icons.payments_outlined, 
+              color: isPrimePayment ? const Color(0xFFD4AF37) : AppColors.amber, 
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 16),
+
+          // Merchant name and Date
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tx.merchantName, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 3),
-                Text(DateFormat('dd MMM yyyy, hh:mm a').format(tx.timestamp), style: const TextStyle(color: AppColors.text2, fontSize: 10)),
+                Text(
+                  isPrimePayment ? "PRIME CLUB UPGRADE" : tx.merchantName.toUpperCase(), 
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.jost(
+                    color: isPrimePayment ? const Color(0xFFD4AF37) : Colors.white, 
+                    fontSize: 13, 
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      DateFormat('dd MMM yyyy • hh:mm a').format(tx.timestamp).toUpperCase(), 
+                      style: GoogleFonts.dmMono(
+                        color: AppColors.text2.withOpacity(0.7), 
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: tx.paymentMethod.toUpperCase() == 'CASH'
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: tx.paymentMethod.toUpperCase() == 'CASH'
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.blue.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        tx.paymentMethod.toUpperCase(),
+                        style: GoogleFonts.jost(
+                          color: tx.paymentMethod.toUpperCase() == 'CASH'
+                              ? Colors.greenAccent
+                              : Colors.blueAccent,
+                          fontSize: 7,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
+
+          // Pricing Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text("₹${tx.amountPaid.toStringAsFixed(2)}", style: GoogleFonts.dmMono(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              Text("Saved ₹${tx.amountSaved.toStringAsFixed(0)}", style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(
+                "₹${tx.amountPaid.toStringAsFixed(2)}", 
+                style: GoogleFonts.dmMono(
+                  color: Colors.white, 
+                  fontSize: 14, 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              tx.amountSaved > 0
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.withOpacity(0.18)),
+                      ),
+                      child: Text(
+                        "SAVED ₹${tx.amountSaved.toStringAsFixed(0)}", 
+                        style: GoogleFonts.jost(
+                          color: Colors.greenAccent, 
+                          fontSize: 8, 
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      "PRIME ACCESS", 
+                      style: GoogleFonts.jost(
+                        color: const Color(0xFFD4AF37), 
+                        fontSize: 8, 
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
             ],
           ),
         ],

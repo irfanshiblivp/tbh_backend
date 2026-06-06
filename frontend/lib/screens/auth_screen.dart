@@ -23,6 +23,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool termsAccepted = false;
   bool _showPassword = false;
+  bool _showSuggestions = false;
+  List<String> _locationSuggestions = [];
   String selectedState = 'Select State';
   final List<String> states = [
     'Select State',
@@ -293,10 +295,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                           ] else ...[
-                            _buildLabel("Phone Number (Optional)"),
+                            _buildLabel("Phone Number *"),
                             _buildField(
                               _phoneController,
                               placeholder: "+91 00000 00000",
+                              keyboardType: TextInputType.phone,
                             ),
                             const SizedBox(height: 16),
                             _buildLabel("Select State"),
@@ -400,6 +403,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                           );
                                         }
                                       } else {
+                                        if (_userController.text.trim().isEmpty) {
+                                          throw Exception("Please enter your full name");
+                                        }
+                                        if (_emailController.text.trim().isEmpty) {
+                                          throw Exception("Please enter your email address");
+                                        }
                                         if (_passController.text !=
                                             _repeatPassController.text) {
                                           throw Exception(
@@ -410,6 +419,14 @@ class _AuthScreenState extends State<AuthScreen> {
                                           throw Exception(
                                             "The password field must be at least 8 characters.",
                                           );
+                                        }
+                                        final phone = _phoneController.text.trim();
+                                        if (phone.isEmpty) {
+                                          throw Exception("Phone number is required");
+                                        }
+                                        final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+                                        if (digitsOnly.length < 10) {
+                                          throw Exception("Please enter a valid 10-digit phone number");
                                         }
                                         if (selectedState == 'Select State') {
                                           throw Exception(
@@ -423,11 +440,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                         }
 
                                         final success = await state.signup({
-                                          'name': _userController.text,
-                                          'email': _emailController.text,
+                                          'name': _userController.text.trim(),
+                                          'email': _emailController.text.trim(),
                                           'password': _passController.text,
                                           'role': 'customer',
-                                          'phone': _phoneController.text,
+                                          'phone': _phoneController.text.trim(),
                                           'state': selectedState,
                                         });
                                         if (!success && mounted) {
@@ -435,7 +452,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                             context,
                                           ).showSnackBar(
                                             const SnackBar(
-                                              content: Text("Signup failed"),
+                                              content: Text("Signup failed. Please try again."),
+                                              backgroundColor: Colors.redAccent,
                                             ),
                                           );
                                         }
@@ -519,10 +537,12 @@ class _AuthScreenState extends State<AuthScreen> {
     TextEditingController controller, {
     bool isPassword = false,
     String? placeholder,
+    TextInputType? keyboardType,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword && !_showPassword,
+      keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
         hintText: placeholder,

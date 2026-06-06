@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
@@ -14,6 +17,60 @@ class AppUserManagementScreen extends StatefulWidget {
 class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
   List<AppUser> _users = [];
   bool _loading = true;
+  String _activeFilter = 'all'; // 'all', 'direct', 'referral'
+
+  List<AppUser> _getFilteredUsers() {
+    return _users.where((u) {
+      if (_activeFilter == 'direct') {
+        return u.signupMethod == 'Direct';
+      } else if (_activeFilter == 'referral') {
+        return u.signupMethod.startsWith('Referral');
+      }
+      return true;
+    }).toList();
+  }
+
+  void _exportCSV() async {
+    final listToExport = _getFilteredUsers();
+    if (listToExport.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No customers to export in this filter")),
+      );
+      return;
+    }
+
+    String filterTitle = _activeFilter.toUpperCase();
+    String csv = "ID,Name,Email,Phone,Role,Status,Signup Method\n";
+    for (var u in listToExport) {
+      String name = u.username.replaceAll('"', '""');
+      String email = u.email.replaceAll('"', '""');
+      String phone = (u.phone ?? '').replaceAll('"', '""');
+      String method = u.signupMethod.replaceAll('"', '""');
+      csv += '${u.id},"$name","$email","$phone",${u.role},${u.status},"$method"\n';
+    }
+    
+    Clipboard.setData(ClipboardData(text: csv));
+    
+    final bytes = utf8.encode(csv);
+    final base64Csv = base64Encode(bytes);
+    final url = 'data:text/csv;base64,$base64Csv';
+    
+    try {
+      final uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("$filterTitle Customer List Exported successfully! File download started & copied to clipboard.")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("$filterTitle list copied to clipboard! (Download failed)")),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -26,7 +83,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
     try {
       final users = await state.getAppUsers();
       setState(() {
-        _users = users;
+        _users = users.where((u) => u.role == 'customer').toList();
         _loading = false;
       });
     } catch (e) {
@@ -36,12 +93,16 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredUsers = _getFilteredUsers();
+    final directCount = _users.where((u) => u.signupMethod == 'Direct').length;
+    final referralCount = _users.where((u) => u.signupMethod.startsWith('Referral')).length;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
             child: Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -49,25 +110,61 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
               runSpacing: 12,
               children: [
                 const Text("AppUser Management", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                  child: Text("${_users.length} TOTAL USERS", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                      child: Text("${filteredUsers.length} SHOWN", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54)),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: _exportCSV,
+                      icon: const Icon(Icons.download, size: 14, color: Colors.black),
+                      label: Text("Export ${(_activeFilter == 'all' ? 'All' : _activeFilter == 'direct' ? 'Direct' : 'Referrals')} CSV", style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.amber,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+          
+          // Premium Filter Tabs
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip("all", "All Customers (${_users.length})"),
+                  const SizedBox(width: 10),
+                  _buildFilterChip("direct", "Direct ($directCount)"),
+                  const SizedBox(width: 10),
+                  _buildFilterChip("referral", "Referrals ($referralCount)"),
+                ],
+              ),
+            ),
+          ),
+
           Expanded(
             child: _loading 
               ? const Center(child: CircularProgressIndicator(color: AppColors.amber))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: _users.length,
-                  itemBuilder: (context, index) {
-                    final user = _users[index];
-                    return _buildAppUserTile(user);
-                  },
-                ),
+              : filteredUsers.isEmpty
+                  ? const Center(child: Text("No customers match this filter", style: TextStyle(color: Colors.white24)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      itemCount: filteredUsers.length,
+                      itemBuilder: (context, index) {
+                        final user = filteredUsers[index];
+                        return _buildAppUserTile(user);
+                      },
+                    ),
           ),
         ],
       ),
@@ -104,6 +201,8 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                   children: [
                     Text(user.username, style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16)),
                     Text(user.email, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                    const SizedBox(height: 6),
+                    _buildSignupMethodBadge(user.signupMethod),
                   ],
                 ),
               ),
@@ -302,6 +401,65 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
             child: const Text("Reset"),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSignupMethodBadge(String method) {
+    final isReferral = method.startsWith("Referral");
+    final color = isReferral ? AppColors.amber : Colors.white38;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isReferral ? Icons.people_outline : Icons.login_outlined,
+            color: color,
+            size: 10,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            method.toUpperCase(),
+            style: TextStyle(
+              color: isReferral ? Colors.white : Colors.white38,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String filter, String label) {
+    final isSelected = _activeFilter == filter;
+    final color = isSelected ? AppColors.amber : Colors.white38;
+    return InkWell(
+      onTap: () => setState(() => _activeFilter = filter),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.amber.withOpacity(0.08) : Colors.white.withOpacity(0.02),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? AppColors.amber.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
+        ),
+        child: Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white60,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
       ),
     );
   }
