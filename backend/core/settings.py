@@ -188,10 +188,17 @@ MEDIA_URL = '/storage/'
 
 # Dynamically resolve MEDIA_ROOT relative to BASE_DIR so it works on both Windows local dev
 # and Linux production environments.
-POTENTIAL_MEDIA_ROOT = BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage'
-if POTENTIAL_MEDIA_ROOT.exists():
-    MEDIA_ROOT = str(POTENTIAL_MEDIA_ROOT.resolve().as_posix())
-else:
+POTENTIAL_MEDIA_ROOTS = [
+    BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage', # Local dev layout
+    BASE_DIR.parent / 'public_html' / 'storage',                   # Production layout
+]
+MEDIA_ROOT = None
+for pot_root in POTENTIAL_MEDIA_ROOTS:
+    if pot_root.exists():
+        MEDIA_ROOT = str(pot_root.resolve().as_posix())
+        break
+
+if not MEDIA_ROOT:
     MEDIA_ROOT = str((BASE_DIR / 'media').resolve().as_posix())
 
 
@@ -203,7 +210,7 @@ EMAIL_USE_SSL = True
 EMAIL_USE_TLS = False
 EMAIL_HOST_USER = 'info@thebaronclub.com'
 EMAIL_HOST_PASSWORD = '9aH7&!2|Zk'
-DEFAULT_FROM_EMAIL = 'The Baron Club <info@thebaronclub.com>'
+DEFAULT_FROM_EMAIL = 'info@thebaronclub.com'
 EMAIL_TIMEOUT = 30
 
 # Razorpay Credentials (from environment or default test keys)

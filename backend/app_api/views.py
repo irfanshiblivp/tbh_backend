@@ -24,10 +24,8 @@ from .serializers import (
 
 def sync_uploaded_file(saved_path):
     """
-    Syncs/copies an uploaded file to both Laravel storage directories:
-    1. website/baronclub/public/storage
-    2. website/public_html/storage
-    to maintain absolute consistency regardless of settings.MEDIA_ROOT.
+    Syncs/copies an uploaded file to all possible Laravel storage locations that exist
+    on local development or production servers to maintain absolute consistency.
     """
     import os
     import shutil
@@ -37,28 +35,34 @@ def sync_uploaded_file(saved_path):
         src = os.path.abspath(os.path.join(settings.MEDIA_ROOT, saved_path))
         
         backend_root = Path(settings.BASE_DIR)
-        website_dir = backend_root.parent.parent / 'website'
-        if website_dir.exists():
-            destinations = [
-                website_dir / 'baronclub' / 'public' / 'storage' / saved_path,
-                website_dir / 'public_html' / 'storage' / saved_path
-            ]
-            
-            for dst_path in destinations:
-                dst = os.path.abspath(str(dst_path.resolve().as_posix()))
+        
+        # Candidate storage destination directories
+        dest_dirs = [
+            # Local layout
+            backend_root.parent.parent / 'website' / 'baronclub' / 'public' / 'storage',
+            backend_root.parent.parent / 'website' / 'public_html' / 'storage',
+            # Production layout (sibling to tbh_backend)
+            backend_root.parent / 'baronclub' / 'public' / 'storage',
+            backend_root.parent / 'public_html' / 'storage',
+        ]
+        
+        synced = False
+        for dest_dir in dest_dirs:
+            if dest_dir.exists():
+                dst = os.path.abspath(str((dest_dir / saved_path).resolve().as_posix()))
                 if src != dst:
-                    # Ensure destination directory exists
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    # Copy file
                     if os.path.exists(src):
                         shutil.copy2(src, dst)
                         print(f"DEBUG SYNC: Copied {src} to {dst}")
+                        synced = True
                     else:
                         print(f"DEBUG SYNC: Source file {src} not found!")
                 else:
-                    print(f"DEBUG SYNC: Source and destination are the same ({src}), skipping copy.")
-        else:
-            print(f"DEBUG SYNC: Website directory not found at {website_dir}, skipping sync.")
+                    print(f"DEBUG SYNC: Source and destination are the same ({src}), skipping.")
+                    
+        if not synced:
+            print("DEBUG SYNC: No alternative sync destinations were found/processed.")
     except Exception as e:
         print(f"DEBUG SYNC ERROR: Failed to sync file: {e}")
 
@@ -346,6 +350,24 @@ class MerchantViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
+        # Auto-heal any merchant profiles that have NULL or zero coordinates
+        try:
+            from decimal import Decimal
+            null_coords = Merchant.objects.filter(
+                models.Q(latitude__isnull=True) | 
+                models.Q(longitude__isnull=True) |
+                models.Q(latitude=0) |
+                models.Q(longitude=0)
+            )
+            if null_coords.exists():
+                print(f"DEBUG MAP HEAL: Found {null_coords.count()} merchants with NULL/zero coordinates. Auto-assigning defaults...")
+                null_coords.update(
+                    latitude=Decimal('9.9857409'),
+                    longitude=Decimal('76.3096248')
+                )
+        except Exception as e:
+            print(f"DEBUG MAP HEAL ERROR: {e}")
+
         user = self.request.user
         if user.is_authenticated and (user.role == 'admin' or user.is_superuser):
             queryset = Merchant.objects.all()
@@ -854,62 +876,62 @@ class LoginView(views.APIView):
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 from django.core.mail import get_connection, EmailMultiAlternatives
-import threading
 
 def send_async_email_with_fallback(subject, text_content, to_email, html_message=None):
     """
-    Sends an email asynchronously in a daemonized background thread.
-    First attempts using standard settings (Hostinger Port 465 SSL).
-    Falls back to Port 587 TLS if the primary method fails or times out.
+    Sends an email synchronously with short timeouts and failover fallback.
+    First attempts Port 465 (SSL) with a 3-second timeout. If it fails,
+    instantly falls back to Port 587 (TLS) with a 4-second timeout.
+    This prevents Passenger WSGI thread termination while avoiding client timeouts.
     """
-    def _send():
-        from django.conf import settings
-        # Try Port 465 (SSL) first
-        try:
-            print(f"SMTP Thread: Attempting to send email to {to_email} via Port 465 (SSL)...")
-            connection = get_connection(
-                host=settings.EMAIL_HOST,
-                port=settings.EMAIL_PORT, # 465
-                username=settings.EMAIL_HOST_USER,
-                password=settings.EMAIL_HOST_PASSWORD,
-                use_ssl=settings.EMAIL_USE_SSL, # True
-                use_tls=settings.EMAIL_USE_TLS, # False
-                timeout=10,
-            )
-            email = EmailMultiAlternatives(
-                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
-            )
-            if html_message:
-                email.attach_alternative(html_message, "text/html")
-            email.send()
-            print(f"SMTP Thread: Email sent successfully to {to_email} via Port 465 (SSL).")
-            return
-        except Exception as e:
-            print(f"SMTP Thread: Failed to send via Port 465 (SSL): {e}")
+    from django.conf import settings
+    # Try Port 465 (SSL) first
+    try:
+        print(f"SMTP: Attempting to send email to {to_email} via Port 465 (SSL)...")
+        connection = get_connection(
+            host=settings.EMAIL_HOST,
+            port=settings.EMAIL_PORT, # 465
+            username=settings.EMAIL_HOST_USER,
+            password=settings.EMAIL_HOST_PASSWORD,
+            use_ssl=settings.EMAIL_USE_SSL, # True
+            use_tls=settings.EMAIL_USE_TLS, # False
+            timeout=3, # Fail fast if port 465 is blocked
+        )
+        email = EmailMultiAlternatives(
+            subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+        )
+        if html_message:
+            email.attach_alternative(html_message, "text/html")
+        email.send()
+        print(f"SMTP: Email sent successfully to {to_email} via Port 465 (SSL).")
+        return True
+    except Exception as e:
+        print(f"SMTP: Failed to send via Port 465 (SSL): {e}")
 
-        # Fallback to Port 587 (TLS)
-        try:
-            print(f"SMTP Thread: Attempting fallback to send email to {to_email} via Port 587 (TLS)...")
-            connection = get_connection(
-                host=settings.EMAIL_HOST,
-                port=587,
-                username=settings.EMAIL_HOST_USER,
-                password=settings.EMAIL_HOST_PASSWORD,
-                use_ssl=False,
-                use_tls=True,
-                timeout=15,
-            )
-            email = EmailMultiAlternatives(
-                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
-            )
-            if html_message:
-                email.attach_alternative(html_message, "text/html")
-            email.send()
-            print(f"SMTP Thread: Email sent successfully to {to_email} via Port 587 (TLS) fallback.")
-        except Exception as e2:
-            print(f"SMTP Thread ERROR: Fallback to Port 587 (TLS) also failed: {e2}")
-
-    threading.Thread(target=_send, daemon=True).start()
+    # Fallback to Port 587 (TLS)
+    try:
+        print(f"SMTP: Attempting fallback to send email to {to_email} via Port 587 (TLS)...")
+        connection = get_connection(
+            host=settings.EMAIL_HOST,
+            port=587,
+            username=settings.EMAIL_HOST_USER,
+            password=settings.EMAIL_HOST_PASSWORD,
+            use_ssl=False,
+            use_tls=True,
+            timeout=4,
+        )
+        email = EmailMultiAlternatives(
+            subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+        )
+        if html_message:
+            email.attach_alternative(html_message, "text/html")
+        email.send()
+        print(f"SMTP: Email sent successfully to {to_email} via Port 587 (TLS) fallback.")
+        return True
+    except Exception as e2:
+        print(f"SMTP ERROR: Fallback to Port 587 (TLS) also failed: {e2}")
+        
+    return False
 
 def send_verification_email(user):
     subject = 'Verify your email - The Baron Club'
