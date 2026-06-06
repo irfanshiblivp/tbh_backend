@@ -46,7 +46,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
   // Map state
   GoogleMapController? _mapController;
-  LatLng _selectedLatLng = const LatLng(20.5937, 78.9629); // Default center: India
+  LatLng _selectedLatLng = const LatLng(9.9857409, 76.3096248); // Default center: Kochi
   bool _mapHasError = false;
   bool _isGeocoding = false;
 
@@ -213,7 +213,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
     if (m != null) {
       _status = m.status;
-      if (m.latitude != null && m.longitude != null) {
+      if (m.latitude != null && m.longitude != null && m.latitude != 0.0 && m.longitude != 0.0) {
         _selectedLatLng = LatLng(m.latitude!, m.longitude!);
       }
     }

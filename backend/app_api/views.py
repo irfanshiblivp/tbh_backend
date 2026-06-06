@@ -44,6 +44,9 @@ def sync_uploaded_file(saved_path):
             # Production layout (sibling to tbh_backend)
             backend_root.parent / 'baronclub' / 'public' / 'storage',
             backend_root.parent / 'public_html' / 'storage',
+            # Production layout (parent-parent sibling layout)
+            backend_root.parent.parent / 'baronclub' / 'public' / 'storage',
+            backend_root.parent.parent / 'public_html' / 'storage',
         ]
         
         synced = False
@@ -879,59 +882,43 @@ from django.core.mail import get_connection, EmailMultiAlternatives
 
 def send_async_email_with_fallback(subject, text_content, to_email, html_message=None):
     """
-    Sends an email synchronously with short timeouts and failover fallback.
-    First attempts Port 465 (SSL) with a 3-second timeout. If it fails,
-    instantly falls back to Port 587 (TLS) with a 4-second timeout.
-    This prevents Passenger WSGI thread termination while avoiding client timeouts.
+    Spawns a separate detached helper process to send the email asynchronously.
+    This prevents Passenger WSGI thread freezing/killing, avoids app timeout,
+    and handles SMTP delivery reliably.
     """
+    import subprocess
+    import json
+    import sys
+    import os
     from django.conf import settings
-    # Try Port 465 (SSL) first
     try:
-        print(f"SMTP: Attempting to send email to {to_email} via Port 465 (SSL)...")
-        connection = get_connection(
-            host=settings.EMAIL_HOST,
-            port=settings.EMAIL_PORT, # 465
-            username=settings.EMAIL_HOST_USER,
-            password=settings.EMAIL_HOST_PASSWORD,
-            use_ssl=settings.EMAIL_USE_SSL, # True
-            use_tls=settings.EMAIL_USE_TLS, # False
-            timeout=3, # Fail fast if port 465 is blocked
+        helper_path = os.path.abspath(os.path.join(settings.BASE_DIR, 'app_api', 'send_mail_helper.py'))
+        params = {
+            'to': to_email,
+            'subject': subject,
+            'text': text_content,
+            'html': html_message
+        }
+        
+        # Determine start_new_session capability based on platform (Windows vs Linux)
+        kwargs = {}
+        if sys.platform != 'win32':
+            kwargs['start_new_session'] = True
+            
+        p = subprocess.Popen(
+            [sys.executable, helper_path],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            **kwargs
         )
-        email = EmailMultiAlternatives(
-            subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
-        )
-        if html_message:
-            email.attach_alternative(html_message, "text/html")
-        email.send()
-        print(f"SMTP: Email sent successfully to {to_email} via Port 465 (SSL).")
+        p.stdin.write(json.dumps(params).encode('utf-8'))
+        p.stdin.close()
+        print(f"SMTP: Spawned background process to send email to {to_email}")
         return True
     except Exception as e:
-        print(f"SMTP: Failed to send via Port 465 (SSL): {e}")
-
-    # Fallback to Port 587 (TLS)
-    try:
-        print(f"SMTP: Attempting fallback to send email to {to_email} via Port 587 (TLS)...")
-        connection = get_connection(
-            host=settings.EMAIL_HOST,
-            port=587,
-            username=settings.EMAIL_HOST_USER,
-            password=settings.EMAIL_HOST_PASSWORD,
-            use_ssl=False,
-            use_tls=True,
-            timeout=4,
-        )
-        email = EmailMultiAlternatives(
-            subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
-        )
-        if html_message:
-            email.attach_alternative(html_message, "text/html")
-        email.send()
-        print(f"SMTP: Email sent successfully to {to_email} via Port 587 (TLS) fallback.")
-        return True
-    except Exception as e2:
-        print(f"SMTP ERROR: Fallback to Port 587 (TLS) also failed: {e2}")
-        
-    return False
+        print(f"SMTP ERROR: Failed to spawn background process: {e}")
+        return False
 
 def send_verification_email(user):
     subject = 'Verify your email - The Baron Club'

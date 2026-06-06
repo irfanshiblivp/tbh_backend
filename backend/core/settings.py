@@ -190,7 +190,8 @@ MEDIA_URL = '/storage/'
 # and Linux production environments.
 POTENTIAL_MEDIA_ROOTS = [
     BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage', # Local dev layout
-    BASE_DIR.parent / 'public_html' / 'storage',                   # Production layout
+    BASE_DIR.parent / 'public_html' / 'storage',                   # Production layout (sibling)
+    BASE_DIR.parent.parent / 'public_html' / 'storage',            # Production layout (parent-parent)
 ]
 MEDIA_ROOT = None
 for pot_root in POTENTIAL_MEDIA_ROOTS:

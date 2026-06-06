@@ -173,7 +173,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   void initState() {
     super.initState();
     // Default to New Delhi if no initial location is provided
-    _currentLocation = widget.initialLocation ?? const LatLng(28.6139, 77.2090);
+    LatLng initial = widget.initialLocation ?? const LatLng(9.9857409, 76.3096248);
+    if (initial.latitude == 0.0 && initial.longitude == 0.0) {
+      initial = const LatLng(9.9857409, 76.3096248);
+    }
+    _currentLocation = initial;
     _latController = TextEditingController(text: _currentLocation.latitude.toStringAsFixed(6));
     _lngController = TextEditingController(text: _currentLocation.longitude.toStringAsFixed(6));
     _latFocusNode = FocusNode();
