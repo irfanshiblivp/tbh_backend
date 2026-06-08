@@ -121,7 +121,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
               ),
               if (status == 'pending')
                 ElevatedButton(
-                  onPressed: () => _showAccountDetails(context, payout),
+                  onPressed: () => _showAccountDetails(payout),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.amber,
                     foregroundColor: Colors.black,
@@ -156,7 +156,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
     );
   }
 
-  void _showAccountDetails(BuildContext context, dynamic payout) {
+  void _showAccountDetails(dynamic payout) {
     final user = payout['user_details'];
     final int payoutId = payout['id'];
     final List<dynamic> referredUsers = payout['referred_users'] ?? [];
@@ -252,7 +252,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext); // Close details dialog
-              _showDeclineDialog(context, payoutId); // Use outer context
+              _showDeclineDialog(payoutId); // Use outer context
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
             child: const Text("Decline request"),
@@ -262,11 +262,15 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
               final state = Provider.of<AppState>(context, listen: false);
               try {
                 await state.markPayoutCompleted(payoutId);
-                if (context.mounted) Navigator.pop(dialogContext);
+                if (mounted) Navigator.pop(dialogContext);
                 _fetchPayouts();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment marked as completed!")));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment marked as completed!")));
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
@@ -277,7 +281,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
     );
   }
 
-  void _showDeclineDialog(BuildContext context, int payoutId) {
+  void _showDeclineDialog(int payoutId) {
     final remarkController = TextEditingController();
     showDialog(
       context: context,
@@ -318,13 +322,17 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
               final state = Provider.of<AppState>(context, listen: false);
               try {
                 await state.declinePayout(payoutId, remarkController.text);
-                if (context.mounted) {
+                if (mounted) {
                   Navigator.pop(dialogContext); // Pop decline dialog
                 }
                 _fetchPayouts();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Withdrawal request declined successfully!")));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Withdrawal request declined successfully!")));
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
               }
             },
             style: ElevatedButton.styleFrom(

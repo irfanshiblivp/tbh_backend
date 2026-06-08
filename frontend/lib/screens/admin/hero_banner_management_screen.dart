@@ -51,7 +51,7 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
                   ],
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => _showUploadBannerDialog(context, state),
+                  onPressed: () => _showUploadBannerDialog(state),
                   icon: const Icon(Icons.add_photo_alternate_outlined, size: 16, color: Colors.black),
                   label: const Text(
                     "Upload New Banner",
@@ -150,7 +150,7 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
                 borderRadius: BorderRadius.circular(30),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(30),
-                  onTap: () => _confirmDeleteBanner(context, banner, state),
+                  onTap: () => _confirmDeleteBanner(banner, state),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -172,7 +172,7 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
     );
   }
 
-  void _confirmDeleteBanner(BuildContext context, HeroBanner banner, AppState state) {
+  void _confirmDeleteBanner(HeroBanner banner, AppState state) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -217,13 +217,13 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
     );
   }
 
-  void _showUploadBannerDialog(BuildContext context, AppState state) {
+  void _showUploadBannerDialog(AppState state) {
     XFile? pickedImage;
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (statefulContext, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1A2E),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Text("Upload New Hero Banner"),
@@ -274,15 +274,20 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Cancel"),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (pickedImage == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a banner image to upload!")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please select a banner image to upload!")),
+                  );
                   return;
                 }
 
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
 
                 try {
                   http.MultipartFile? imageFile;
@@ -296,20 +301,23 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
 
                   await state.uploadHeroBanner(imageFile);
                   
-                  if (context.mounted) {
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Hero banner uploaded successfully!")),
                     );
                   }
                 } catch (e) {
-                  if (context.mounted) {
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Error uploading banner: $e")),
                     );
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.amber,
+                foregroundColor: Colors.black,
+              ),
               child: const Text("Upload Banner"),
             ),
           ],
