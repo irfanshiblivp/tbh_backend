@@ -93,7 +93,7 @@ DATABASES = {
             'charset': 'utf8mb4',
             'use_unicode': True,
         },
-        'CONN_MAX_AGE': 0,
+        'CONN_MAX_AGE': 600,
         'CONN_HEALTH_CHECKS': True,
     }
 }
