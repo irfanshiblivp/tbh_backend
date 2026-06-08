@@ -31,12 +31,12 @@ class PaymentSuccessScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.green.withOpacity(0.3), width: 2),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.3), width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         blurRadius: 40,
                         spreadRadius: 10,
                       ),
@@ -81,9 +81,9 @@ class PaymentSuccessScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

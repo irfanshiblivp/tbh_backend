@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
-import '../../models/models.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 
 class MerchantProfileScreen extends StatefulWidget {
   const MerchantProfileScreen({super.key});
@@ -97,7 +94,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: Colors.white24, size: 20),
             filled: true,
-            fillColor: readOnly ? Colors.white.withOpacity(0.02) : Colors.white.withOpacity(0.05),
+            fillColor: readOnly ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
           ),
         ),
@@ -121,13 +118,13 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
       onTap: onTap,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: Colors.white54, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontSize: 14)),
       trailing: const Icon(Icons.chevron_right, color: Colors.white24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: Colors.white.withOpacity(0.02),
+      tileColor: Colors.white.withValues(alpha: 0.02),
     );
   }
 

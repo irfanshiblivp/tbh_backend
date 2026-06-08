@@ -219,3 +219,8 @@ RAZORPAY_KEY = os.environ.get('RAZORPAY_KEY', 'rzp_test_Sq5pz3FrwtVkhg')
 RAZORPAY_SECRET = os.environ.get('RAZORPAY_SECRET', '3TgcdmwWvAi8Uj7yGLZ818Z2')
 RAZORPAY_KEY_ID = RAZORPAY_KEY
 
+# REST API Email Settings
+EMAIL_REST_API_URL = os.environ.get('EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
+EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', 'shared_secret_token_12345')
+
+

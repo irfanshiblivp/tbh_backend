@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.amber.withOpacity(0.12),
+                    AppColors.amber.withValues(alpha: 0.12),
                     const Color(0xFF07070A),
                   ],
                 ),
@@ -47,9 +47,9 @@ class ProfileScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.ink2,
                       borderRadius: BorderRadius.circular(35),
-                      border: Border.all(color: AppColors.amber.withOpacity(0.3), width: 2),
+                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.3), width: 2),
                       boxShadow: [
-                        BoxShadow(color: AppColors.amber.withOpacity(0.15), blurRadius: 40, spreadRadius: 5),
+                        BoxShadow(color: AppColors.amber.withValues(alpha: 0.15), blurRadius: 40, spreadRadius: 5),
                       ],
                     ),
                     child: const Icon(Icons.person_outline, size: 48, color: AppColors.amber),
@@ -91,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFD4AF37).withOpacity(0.3),
+                                  color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -118,7 +118,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(
                             "Valid till ${_formatDate(profile?.primeExpiresAt)}",
                             style: GoogleFonts.jost(
-                              color: const Color(0xFFD4AF37).withOpacity(0.85),
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.85),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
@@ -133,9 +133,9 @@ class ProfileScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.15),
+                              color: Colors.red.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -158,7 +158,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(
                             "Expired on ${_formatDate(profile?.primeExpiresAt)}",
                             style: GoogleFonts.jost(
-                              color: Colors.redAccent.withOpacity(0.75),
+                              color: Colors.redAccent.withValues(alpha: 0.75),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
@@ -280,15 +280,15 @@ class ProfileScreen extends StatelessWidget {
         ),
         border: Border.all(
           color: isPrime 
-            ? AppColors.amber.withOpacity(0.3) 
+            ? AppColors.amber.withValues(alpha: 0.3) 
             : isExpiredPrime 
-              ? Colors.redAccent.withOpacity(0.2) 
+              ? Colors.redAccent.withValues(alpha: 0.2) 
               : AppColors.line,
           width: 1,
         ),
         boxShadow: [
-          if (isPrime) BoxShadow(color: AppColors.amber.withOpacity(0.05), blurRadius: 30, spreadRadius: 5),
-          if (isExpiredPrime) BoxShadow(color: Colors.redAccent.withOpacity(0.04), blurRadius: 20, spreadRadius: 3),
+          if (isPrime) BoxShadow(color: AppColors.amber.withValues(alpha: 0.05), blurRadius: 30, spreadRadius: 5),
+          if (isExpiredPrime) BoxShadow(color: Colors.redAccent.withValues(alpha: 0.04), blurRadius: 20, spreadRadius: 3),
         ],
       ),
       child: Padding(
@@ -325,7 +325,7 @@ class ProfileScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.line),
                   ),
@@ -380,9 +380,9 @@ class ProfileScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -428,9 +428,9 @@ class ProfileScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.amber.withOpacity(0.12),
+                        color: AppColors.amber.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(9),
-                        border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
                       ),
                       child: const Icon(Icons.copy_rounded, color: AppColors.amber, size: 16),
                     ),
@@ -465,7 +465,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    backgroundColor: Colors.white.withOpacity(0.04),
+                    backgroundColor: Colors.white.withValues(alpha: 0.04),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -478,7 +478,7 @@ class ProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 8,
-                      shadowColor: AppColors.amber.withOpacity(0.4),
+                      shadowColor: AppColors.amber.withValues(alpha: 0.4),
                     ),
                     child: const Text(
                       "JOIN PRIME",
@@ -499,16 +499,16 @@ class ProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 8,
-                      shadowColor: Colors.redAccent.withOpacity(0.4),
+                      shadowColor: Colors.redAccent.withValues(alpha: 0.4),
                     ),
                   )
                 else
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.1),
+                      color: AppColors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
                     ),
                     child: const Text(
                       "MEMBERSHIP ACTIVE",
@@ -526,9 +526,9 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildMenuCard(List<Widget> items) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.045),
+        color: Colors.white.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
       ),
       child: Column(children: items),
     );
@@ -540,7 +540,7 @@ class ProfileScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.06))),
+          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
         ),
         child: Row(
           children: [
@@ -548,9 +548,9 @@ class ProfileScreen extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isDanger ? Colors.red.withOpacity(0.08) : Colors.white.withOpacity(0.07),
+                color: isDanger ? Colors.red.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: isDanger ? Colors.red.withOpacity(0.14) : Colors.white.withOpacity(0.09)),
+                border: Border.all(color: isDanger ? Colors.red.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.09)),
               ),
               child: Icon(icon, size: 18, color: isDanger ? Colors.redAccent : Colors.white54),
             ),
@@ -558,7 +558,7 @@ class ProfileScreen extends StatelessWidget {
             Expanded(
               child: Text(label, style: TextStyle(color: isDanger ? Colors.redAccent : Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
             ),
-            Icon(Icons.chevron_right, size: 18, color: Colors.white.withOpacity(0.2)),
+            Icon(Icons.chevron_right, size: 18, color: Colors.white.withValues(alpha: 0.2)),
           ],
         ),
       ),
@@ -625,7 +625,7 @@ class ProfileScreen extends StatelessWidget {
             style: const TextStyle(color: Colors.white, fontSize: 14),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
             ),
@@ -819,7 +819,7 @@ class ProfileScreen extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.1),
+                                        color: statusColor.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -840,9 +840,9 @@ class ProfileScreen extends StatelessWidget {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.redAccent.withOpacity(0.05),
+                                      color: Colors.redAccent.withValues(alpha: 0.05),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.redAccent.withOpacity(0.15)),
+                                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.15)),
                                     ),
                                     child: Text(
                                       "Remark: ${p['notes']}",

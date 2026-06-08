@@ -56,11 +56,11 @@ class _StateManagementScreenState extends State<StateManagementScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A1A2E),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: ListView.separated(
                   itemCount: states.length,
-                  separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
+                  separatorBuilder: (context, index) => Divider(color: Colors.white.withValues(alpha: 0.05)),
                   itemBuilder: (context, index) {
                     final s = states[index];
                     return ListTile(

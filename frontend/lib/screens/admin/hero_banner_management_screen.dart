@@ -103,12 +103,12 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
   Widget _buildBannerCard(BuildContext context, HeroBanner banner, AppState state) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -135,8 +135,8 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.05),
-                      Colors.black.withOpacity(0.4),
+                      Colors.black.withValues(alpha: 0.05),
+                      Colors.black.withValues(alpha: 0.4),
                     ],
                   ),
                 ),
@@ -146,7 +146,7 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
               top: 12,
               right: 12,
               child: Material(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(30),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(30),
@@ -240,9 +240,9 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
                     height: 160,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     ),
                     child: pickedImage != null
                         ? ClipRRect(

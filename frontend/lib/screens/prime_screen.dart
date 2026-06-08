@@ -195,7 +195,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.32), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.32), Colors.transparent],
                 ),
               ),
             ),
@@ -215,9 +215,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withOpacity(0.12)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                           ),
                           child: const Icon(Icons.chevron_left, color: Colors.white70),
                         ),
@@ -240,7 +240,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                             color: const Color(0xFF1A1A2E),
                             borderRadius: BorderRadius.circular(26),
                             boxShadow: [
-                              BoxShadow(color: AppColors.amber.withOpacity(0.6), blurRadius: 40, offset: const Offset(0, 10)),
+                              BoxShadow(color: AppColors.amber.withValues(alpha: 0.6), blurRadius: 40, offset: const Offset(0, 10)),
                             ],
                           ),
                           child: Padding(
@@ -258,9 +258,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.055),
+                            color: Colors.white.withValues(alpha: 0.055),
                             borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: Colors.white.withOpacity(0.12)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                           ),
                           child: Column(
                             children: [
@@ -294,11 +294,11 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                   hintText: "Referral Code (Optional)",
                                   hintStyle: const TextStyle(color: Colors.white24),
                                   filled: true,
-                                  fillColor: Colors.white.withOpacity(0.05),
+                                  fillColor: Colors.white.withValues(alpha: 0.05),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(13),
-                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                                   ),
                                   prefixIcon: const Icon(Icons.group_add_outlined, color: AppColors.amber, size: 20),
                                 ),
@@ -330,7 +330,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.amber.withOpacity(0.3),
+                                      color: AppColors.amber.withValues(alpha: 0.3),
                                       blurRadius: 20,
                                       offset: const Offset(0, 10),
                                     ),
@@ -389,14 +389,14 @@ class _PrimeScreenState extends State<PrimeScreen> {
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.amber.withOpacity(0.12) : Colors.white.withOpacity(0.05),
+            color: isSelected ? AppColors.amber.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isSelected ? AppColors.amber : Colors.white.withOpacity(0.12),
+              color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.12),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
-              if (isSelected) BoxShadow(color: AppColors.amber.withOpacity(0.2), blurRadius: 15, spreadRadius: 2),
+              if (isSelected) BoxShadow(color: AppColors.amber.withValues(alpha: 0.2), blurRadius: 15, spreadRadius: 2),
             ],
           ),
           child: Column(
@@ -472,9 +472,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
@@ -483,10 +483,10 @@ class _PrimeScreenState extends State<PrimeScreen> {
               height: 48,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.amber.withOpacity(0.2), AppColors.amber.withOpacity(0.05)],
+                  colors: [AppColors.amber.withValues(alpha: 0.2), AppColors.amber.withValues(alpha: 0.05)],
                 ),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
               ),
               child: Icon(icon, color: AppColors.amber, size: 24),
             ),

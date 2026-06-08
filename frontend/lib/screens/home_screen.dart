@@ -1,13 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/core/app_theme.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import 'merchant_detail_screen.dart';
-import 'prime_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'profile_screen.dart';
 import '../widgets/premium_loading.dart';
@@ -124,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
               expandedHeight: 120,
               floating: false,
               pinned: true,
-              backgroundColor: const Color(0xFF07070A).withOpacity(0.95),
+              backgroundColor: const Color(0xFF07070A).withValues(alpha: 0.95),
               elevation: 0,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
@@ -133,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppColors.amber.withOpacity(0.12),
+                        AppColors.amber.withValues(alpha: 0.12),
                         const Color(0xFF07070A),
                       ],
                     ),
@@ -168,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               shape: BoxShape.circle,
                               border: Border.all(color: AppColors.line),
                               boxShadow: [
-                                BoxShadow(color: AppColors.amber.withOpacity(0.1), blurRadius: 10),
+                                BoxShadow(color: AppColors.amber.withValues(alpha: 0.1), blurRadius: 10),
                               ],
                             ),
                             child: const Icon(Icons.person_outline, color: AppColors.amber, size: 20),
@@ -238,14 +236,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.04),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: _showSuggestions ? AppColors.amber.withOpacity(0.5) : AppColors.line,
+                              color: _showSuggestions ? AppColors.amber.withValues(alpha: 0.5) : AppColors.line,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -298,10 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFF1A1A2E),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                              border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
+                                  color: Colors.black.withValues(alpha: 0.4),
                                   blurRadius: 16,
                                   offset: const Offset(0, 6),
                                 ),
@@ -329,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                     decoration: BoxDecoration(
                                       border: isLast ? null : Border(
-                                        bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+                                        bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
                                       ),
                                     ),
                                     child: Row(
@@ -460,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.search_off_rounded, color: AppColors.amber.withOpacity(0.5), size: 48),
+                        Icon(Icons.search_off_rounded, color: AppColors.amber.withValues(alpha: 0.5), size: 48),
                         const SizedBox(height: 16),
                         Text(
                           "No Merchants Found",
@@ -504,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         borderRadius: BorderRadius.circular(6),
         boxShadow: [
-          BoxShadow(color: AppColors.amber.withOpacity(0.3), blurRadius: 8),
+          BoxShadow(color: AppColors.amber.withValues(alpha: 0.3), blurRadius: 8),
         ],
       ),
       child: const Text(
@@ -536,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
               border: Border.all(color: AppColors.line),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -569,9 +567,9 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 5),
         width: 80,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber.withOpacity(0.08) : Colors.white.withOpacity(0.03),
+          color: isSelected ? AppColors.amber.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isSelected ? AppColors.amber.withOpacity(0.5) : AppColors.line),
+          border: Border.all(color: isSelected ? AppColors.amber.withValues(alpha: 0.5) : AppColors.line),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -634,9 +632,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8),
+                      color: Colors.black.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.amber.withOpacity(0.5)),
+                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       "SAVE ${merchant.discountPercent}%",
@@ -654,7 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.ink2,
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.line, width: 2),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10)],
                     ),
                     child: ClipOval(
                       child: CachedNetworkImage(
@@ -703,9 +701,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.amber.withOpacity(0.08),
+                            color: AppColors.amber.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                            border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -763,7 +761,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(

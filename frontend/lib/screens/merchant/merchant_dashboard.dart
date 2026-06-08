@@ -53,7 +53,7 @@ class MerchantDashboard extends StatelessWidget {
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.amber.withOpacity(0.05), Colors.transparent],
+              colors: [AppColors.amber.withValues(alpha: 0.05), Colors.transparent],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -65,7 +65,7 @@ class MerchantDashboard extends StatelessWidget {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.logout, size: 20, color: Colors.redAccent),
@@ -99,12 +99,12 @@ class MerchantDashboard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +113,7 @@ class MerchantDashboard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 18),
@@ -136,7 +136,7 @@ class MerchantDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF16162A),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.03)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,13 +148,13 @@ class MerchantDashboard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Performance Overview", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text("Redemptions this week", style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+                  Text("Redemptions this week", style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.amber.withOpacity(0.1),
+                  color: AppColors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -193,7 +193,7 @@ class MerchantDashboard extends StatelessWidget {
                     belowBarData: BarAreaData(
                       show: true,
                       gradient: LinearGradient(
-                        colors: [AppColors.amber.withOpacity(0.2), Colors.transparent],
+                        colors: [AppColors.amber.withValues(alpha: 0.2), Colors.transparent],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -246,15 +246,15 @@ class MerchantDashboard extends StatelessWidget {
       padding: const EdgeInsets.all(40),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.01),
+        color: Colors.white.withValues(alpha: 0.01),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.02)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), shape: BoxShape.circle),
             child: const Icon(Icons.receipt_long, color: Colors.white10, size: 40),
           ),
           const SizedBox(height: 16),
@@ -273,7 +273,7 @@ class MerchantDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF16162A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.02)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
       ),
       child: Row(
         children: [
@@ -281,7 +281,7 @@ class MerchantDashboard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]),
+              gradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.05), Colors.white.withValues(alpha: 0.02)]),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.person_outline, color: Colors.white54, size: 20),
@@ -308,7 +308,7 @@ class MerchantDashboard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.greenAccent.withOpacity(0.1),
+                  color: Colors.greenAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text("REDEEMED", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 9)),

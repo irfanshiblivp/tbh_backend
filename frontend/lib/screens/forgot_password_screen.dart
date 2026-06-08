@@ -54,7 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   hintText: "you@example.com",
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   prefixIcon: const Icon(Icons.email_outlined, color: Colors.white24),
                 ),
@@ -87,7 +87,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 8,
-                  shadowColor: AppColors.amber.withOpacity(0.3),
+                  shadowColor: AppColors.amber.withValues(alpha: 0.3),
                 ),
                 child: state.isLoading 
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
@@ -106,7 +106,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   hintText: "000000",
                   hintStyle: const TextStyle(color: Colors.white10, letterSpacing: 12),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 ),
               ),
@@ -120,7 +120,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   hintText: "Min. 8 characters",
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.white24),
                   suffixIcon: IconButton(
@@ -139,7 +139,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   hintText: "Repeat new password",
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   prefixIcon: const Icon(Icons.lock_reset, color: Colors.white24),
                   suffixIcon: IconButton(
@@ -184,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 8,
-                  shadowColor: AppColors.amber.withOpacity(0.3),
+                  shadowColor: AppColors.amber.withValues(alpha: 0.3),
                 ),
                 child: state.isLoading 
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))

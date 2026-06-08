@@ -23,8 +23,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool termsAccepted = false;
   bool _showPassword = false;
-  bool _showSuggestions = false;
-  List<String> _locationSuggestions = [];
+  final bool _showSuggestions = false;
+  final List<String> _locationSuggestions = [];
   String selectedState = 'Select State';
   final List<String> states = [
     'Select State',
@@ -76,7 +76,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.amber.withOpacity(0.3),
+                    AppColors.amber.withValues(alpha: 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -93,7 +93,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blueAccent.withOpacity(0.1),
+                    Colors.blueAccent.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -117,7 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.amber.withOpacity(0.4),
+                            color: AppColors.amber.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -151,10 +151,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       child: Column(
@@ -178,13 +178,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isLogin
-                                            ? AppColors.amber.withOpacity(0.2)
+                                            ? AppColors.amber.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(10),
                                         border: isLogin
                                             ? Border.all(
                                                 color: AppColors.amber
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                               )
                                             : null,
                                       ),
@@ -211,13 +211,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: !isLogin
-                                            ? AppColors.amber.withOpacity(0.2)
+                                            ? AppColors.amber.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(10),
                                         border: !isLogin
                                             ? Border.all(
                                                 color: AppColors.amber
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                               )
                                             : null,
                                       ),
@@ -306,13 +306,13 @@ class _AuthScreenState extends State<AuthScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
+                                color: Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(color: Colors.white10),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedState,
+                                  initialValue: selectedState,
                                   dropdownColor: AppColors.ink,
                                   style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
                                   decoration: const InputDecoration(border: InputBorder.none),
@@ -482,7 +482,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               elevation: 8,
-                              shadowColor: AppColors.amber.withOpacity(0.5),
+                              shadowColor: AppColors.amber.withValues(alpha: 0.5),
                             ),
                             child: state.isLoading
                                 ? const CircularProgressIndicator(
@@ -548,7 +548,7 @@ class _AuthScreenState extends State<AuthScreen> {
         hintText: placeholder,
         hintStyle: const TextStyle(color: Colors.white24),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         suffixIcon: isPassword ? IconButton(
           icon: Icon(
             _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -563,11 +563,11 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
@@ -582,9 +582,9 @@ class _AuthScreenState extends State<AuthScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Text(
           text,

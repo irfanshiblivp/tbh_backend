@@ -170,7 +170,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
                 },
                 child: Text(
                   "Cancel / Go Back",
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                 ),
               ),
             ],
@@ -342,7 +342,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
           // 2. Translucent dark overlay with focus box
           ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.6),
+              Colors.black.withValues(alpha: 0.6),
               BlendMode.srcOut,
             ),
             child: Stack(
@@ -374,7 +374,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
                   // Outer borders
                   Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.amber.withOpacity(0.5), width: 2),
+                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.5), width: 2),
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
@@ -475,10 +475,10 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
                   icon: const Icon(Icons.edit_note, size: 18),
                   label: const Text("ENTER UPI ID MANUALLY"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.08),
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
                     foregroundColor: AppColors.amber,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: BorderSide(color: AppColors.amber.withOpacity(0.2)),
+                    side: BorderSide(color: AppColors.amber.withValues(alpha: 0.2)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                 ),

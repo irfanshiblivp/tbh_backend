@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,11 +14,11 @@ class AppError implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = 'https://api.thebaronclub.com/api'; // ✅ Production
+  // static const String baseUrl = 'https://api.thebaronclub.com/api'; // ✅ Production
 
   // ─── Alternatives (comment in the one you need, comment out the rest) ───────
   // static const String baseUrl = 'http://10.71.54.62:8000/api';  // Local Wi-Fi (laptop IP)
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';    // Desktop / Chrome / Web
+  static const String baseUrl = 'http://127.0.0.1:8000/api';    // Desktop / Chrome / Web
   // static const String baseUrl = 'http://10.0.2.2:8000/api';     // Android Emulator
 
   String? _token;
@@ -134,7 +135,7 @@ class ApiService {
         return true;
       }
     } catch (e) {
-      print("Token refresh error: $e");
+      log("Token refresh error: $e");
     }
     return false;
   }
@@ -641,7 +642,7 @@ class ApiService {
         headers: await _getHeaders(),
         body: jsonEncode({
           'amount': amount,
-          if (purpose != null) 'purpose': purpose,
+          'purpose': ?purpose,
         }),
       ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);

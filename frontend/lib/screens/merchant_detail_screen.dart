@@ -244,9 +244,9 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.amber.withOpacity(0.1),
+                  color: AppColors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                  border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
                 ),
                 child: const Icon(Icons.qr_code_scanner, color: AppColors.amber),
               ),
@@ -277,9 +277,9 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: Colors.white.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: const Icon(Icons.alternate_email, color: AppColors.amber),
               ),
@@ -363,9 +363,9 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withOpacity(0.2)),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
                 ),
                 child: const Icon(Icons.payments_outlined, color: Colors.greenAccent),
               ),
@@ -553,7 +553,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  widget.merchant.cardImage != null && widget.merchant.cardImage.isNotEmpty
+                  widget.merchant.cardImage.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: widget.merchant.cardImage,
                           fit: BoxFit.cover,
@@ -597,7 +597,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, const Color(0xFF07070A).withOpacity(0.95)],
+                        colors: [Colors.transparent, const Color(0xFF07070A).withValues(alpha: 0.95)],
                       ),
                     ),
                   ),
@@ -619,7 +619,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: widget.merchant.logo != null && widget.merchant.logo.isNotEmpty
+                            child: widget.merchant.logo.isNotEmpty
                                 ? CachedNetworkImage(
                                     imageUrl: widget.merchant.logo,
                                     fit: BoxFit.cover,
@@ -749,9 +749,9 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -770,11 +770,11 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
       decoration: BoxDecoration(
         color: AppColors.ink2,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
-          Icon(Icons.lock_person_outlined, size: 48, color: AppColors.amber.withOpacity(0.5)),
+          Icon(Icons.lock_person_outlined, size: 48, color: AppColors.amber.withValues(alpha: 0.5)),
           const SizedBox(height: 24),
           Text(
             "PRIME EXCLUSIVE",

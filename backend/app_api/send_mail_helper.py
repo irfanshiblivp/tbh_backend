@@ -19,8 +19,33 @@ def main():
         subject = params['subject']
         text_content = params['text']
         html_message = params.get('html')
-        
-        # Try Port 465 (SSL) first
+
+        # Try Laravel REST API first
+        try:
+            print(f"REST API Helper: Attempting to send email to {to_email} via REST API...")
+            import requests
+            api_url = getattr(settings, 'EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
+            api_token = getattr(settings, 'EMAIL_REST_API_TOKEN', 'shared_secret_token_12345')
+
+            payload = {
+                'to': to_email,
+                'subject': subject,
+                'text': text_content,
+                'html': html_message,
+                'api_token': api_token
+            }
+
+            # Disable SSL verify if dealing with local self-signed dev certs, but keep timeout short
+            response = requests.post(api_url, json=payload, timeout=12, verify=False)
+            if response.status_code == 200:
+                print("REST API Helper: Email sent successfully via REST API.")
+                return
+            else:
+                print(f"REST API Helper: Failed via REST API (status code {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"REST API Helper: REST API request failed: {e}")
+
+        # Try Port 465 (SSL) first as SMTP fallback
         try:
             print(f"SMTP Helper: Attempting to send email to {to_email} via Port 465 (SSL)...")
             connection = get_connection(

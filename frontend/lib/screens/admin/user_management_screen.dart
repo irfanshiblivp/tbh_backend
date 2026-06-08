@@ -115,7 +115,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
                       child: Text("${filteredUsers.length} SHOWN", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54)),
                     ),
                     const SizedBox(width: 12),
@@ -181,9 +181,9 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -191,7 +191,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
             children: [
               CircleAvatar(
                 radius: isMobile ? 20 : 24,
-                backgroundColor: AppColors.amber.withOpacity(0.1),
+                backgroundColor: AppColors.amber.withValues(alpha: 0.1),
                 child: Text(user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U', style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 16),
@@ -210,7 +210,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(user.role, style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -225,7 +225,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(user.role, style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -411,9 +411,9 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -447,9 +447,9 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber.withOpacity(0.08) : Colors.white.withOpacity(0.02),
+          color: isSelected ? AppColors.amber.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.02),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? AppColors.amber.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isSelected ? AppColors.amber.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.05)),
         ),
         child: Text(
           label.toUpperCase(),

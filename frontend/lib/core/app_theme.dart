@@ -26,7 +26,6 @@ class AppTheme {
       secondary: AppColors.amber2,
       onSecondary: Colors.white,
       surface: AppColors.ink2,
-      background: Color(0xFF07070A),
     ),
     textTheme: TextTheme(
       displayLarge: GoogleFonts.playfairDisplay(

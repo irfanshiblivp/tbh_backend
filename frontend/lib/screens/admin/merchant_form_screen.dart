@@ -488,7 +488,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
   Widget _buildMapFallback() {
     return Container(
-      color: Colors.white.withOpacity(0.02),
+      color: Colors.white.withValues(alpha: 0.02),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -548,9 +548,9 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.amber.withOpacity(0.5)),
+                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
                       ),
                       child: Text(
                         "SAVE ${_discountController.text.isEmpty ? '50' : _discountController.text}%",
@@ -584,7 +584,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
   Widget _placeholderImage() {
     return Container(
-      color: Colors.white.withOpacity(0.04),
+      color: Colors.white.withValues(alpha: 0.04),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -626,7 +626,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.04),
+              color: Colors.white.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.line),
             ),
@@ -690,7 +690,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.12), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.12), Colors.transparent],
                 ),
               ),
             ),
@@ -734,7 +734,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.03),
+                          color: Colors.white.withValues(alpha: 0.03),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.line),
                         ),
@@ -872,13 +872,13 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.04),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: AppColors.line),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedCategory,
+                              initialValue: _selectedCategory,
                               dropdownColor: const Color(0xFF1A1A2E),
                               style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
                               decoration: const InputDecoration(border: InputBorder.none),
@@ -910,13 +910,13 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.04),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: AppColors.line),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButtonFormField<String>(
-                              value: _status,
+                              initialValue: _status,
                               dropdownColor: const Color(0xFF1A1A2E),
                               style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
                               decoration: const InputDecoration(border: InputBorder.none),
@@ -982,7 +982,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                         const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.04),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: AppColors.line),
                           ),
@@ -1051,7 +1051,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                               const SizedBox(height: 8),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.04),
+                                  color: Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: AppColors.line),
                                 ),
@@ -1086,7 +1086,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                               const SizedBox(height: 8),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.04),
+                                  color: Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: AppColors.line),
                                 ),
@@ -1129,7 +1129,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.amber.withOpacity(0.3),
+                            color: AppColors.amber.withValues(alpha: 0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           )

@@ -38,7 +38,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.15), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.15), Colors.transparent],
                 ),
               ),
             ),
@@ -54,9 +54,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.1),
+                      color: AppColors.amber.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
                     ),
                     child: const Icon(Icons.email_outlined, size: 48, color: AppColors.amber),
                   ),
@@ -89,10 +89,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       hintText: "000000",
                       hintStyle: TextStyle(color: Colors.white12, letterSpacing: 16),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
+                      fillColor: Colors.white.withValues(alpha: 0.05),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: AppColors.amber.withOpacity(0.3)),
+                        borderSide: BorderSide(color: AppColors.amber.withValues(alpha: 0.3)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),

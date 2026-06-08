@@ -46,7 +46,7 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.amber.withOpacity(0.1),
+                    color: AppColors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(Icons.workspace_premium, color: AppColors.amber, size: 28),
@@ -97,7 +97,7 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
               onPressed: () => _showPlanDialog(context, state),
               icon: const Icon(Icons.add, size: 16),
               label: const Text("Add Plan"),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber.withOpacity(0.1), foregroundColor: AppColors.amber),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber.withValues(alpha: 0.1), foregroundColor: AppColors.amber),
             ),
           ],
         ),
@@ -108,7 +108,7 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
           ...plans.map((plan) => Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: _buildPlanCard(context, plan, state),
-          )).toList(),
+          )),
       ],
     );
   }
@@ -122,15 +122,15 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.card_membership, color: AppColors.amber),
           ),
           const SizedBox(width: 16),
@@ -203,7 +203,7 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: planType,
+                  initialValue: planType,
                   dropdownColor: const Color(0xFF1A1A2E),
                   decoration: const InputDecoration(labelText: "Plan Type", labelStyle: TextStyle(color: Colors.white60)),
                   items: const [
@@ -266,12 +266,12 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.amber.withOpacity(0.1), AppColors.amber.withOpacity(0.05)],
+          colors: [AppColors.amber.withValues(alpha: 0.1), AppColors.amber.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,7 +310,7 @@ class _PrimeManagementScreenState extends State<PrimeManagementScreen> {
                 Expanded(child: Text(benefit, style: const TextStyle(color: Colors.white, fontSize: 14))),
               ],
             ),
-          )).toList(),
+          )),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,

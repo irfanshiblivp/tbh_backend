@@ -44,7 +44,7 @@ class MerchantTransactionsScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), shape: BoxShape.circle),
             child: const Icon(Icons.receipt_long, color: Colors.white10, size: 64),
           ),
           const SizedBox(height: 16),
@@ -61,9 +61,9 @@ class MerchantTransactionsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
@@ -77,7 +77,7 @@ class MerchantTransactionsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tx.userName ?? "User", style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(tx.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 8,
@@ -88,13 +88,13 @@ class MerchantTransactionsScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: tx.paymentMethod.toUpperCase() == 'CASH'
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.blue.withOpacity(0.1),
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: tx.paymentMethod.toUpperCase() == 'CASH'
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.blue.withOpacity(0.3),
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.blue.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(

@@ -80,7 +80,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                         },
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
+                      fillColor: Colors.white.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
@@ -146,7 +146,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white60),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.05),
+          fillColor: Colors.white.withValues(alpha: 0.05),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
       ),
@@ -206,14 +206,14 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: (isStaff ? Colors.blue : AppColors.amber).withOpacity(0.1),
+            backgroundColor: (isStaff ? Colors.blue : AppColors.amber).withValues(alpha: 0.1),
             child: Text(user.username[0].toUpperCase(), style: TextStyle(color: isStaff ? Colors.blue : AppColors.amber)),
           ),
           const SizedBox(width: 16),
@@ -228,7 +228,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: (isStaff ? Colors.blue : AppColors.amber).withOpacity(0.2),
+                        color: (isStaff ? Colors.blue : AppColors.amber).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(user.role.toUpperCase(), style: TextStyle(fontSize: 8, color: isStaff ? Colors.blue : AppColors.amber, fontWeight: FontWeight.bold)),

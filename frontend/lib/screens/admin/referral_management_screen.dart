@@ -79,7 +79,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withOpacity(0.2)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +97,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -136,9 +136,9 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.05),
+                        color: Colors.redAccent.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.15)),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.15)),
                       ),
                       child: Text(
                         "Remark: ${payout['notes']}",
@@ -188,7 +188,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                   const Text("REFERRED PERSONS", style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                     child: Text("${referredUsers.length}", style: const TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -208,7 +208,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                             decoration: BoxDecoration(
-                              border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.03))),
+                              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.03))),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -225,7 +225,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: (isPrime ? Colors.green : Colors.white10).withOpacity(0.1),
+                                    color: (isPrime ? Colors.green : Colors.white10).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(isPrime ? "PRIME" : "FREE", 
@@ -299,7 +299,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                 labelStyle: const TextStyle(color: Colors.white60),
                 hintText: "e.g., Invalid referral activity / Incorrect bank details",
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: Colors.white.withValues(alpha: 0.05),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
             ),

@@ -29,9 +29,9 @@ class AnalyticsSection extends StatelessWidget {
           height: 300,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: LineChart(_buildRevenueChart(revenueOverTime)),
         ),
@@ -43,7 +43,7 @@ class AnalyticsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -72,7 +72,7 @@ class AnalyticsSection extends StatelessWidget {
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: [AppColors.amber.withOpacity(0.3), AppColors.amber.withOpacity(0)],
+              colors: [AppColors.amber.withValues(alpha: 0.3), AppColors.amber.withValues(alpha: 0)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),

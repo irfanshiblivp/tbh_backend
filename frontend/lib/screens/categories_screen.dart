@@ -36,7 +36,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.18), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.18), Colors.transparent],
                 ),
               ),
             ),
@@ -50,7 +50,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber2.withOpacity(0.08), Colors.transparent],
+                  colors: [AppColors.amber2.withValues(alpha: 0.08), Colors.transparent],
                 ),
               ),
             ),
@@ -80,12 +80,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: state.selectedStateFilter != null || state.isNearMeFilter 
                                   ? AppColors.amber 
-                                  : Colors.white.withOpacity(0.08),
+                                  : Colors.white.withValues(alpha: 0.08),
                             ),
                           ),
                           child: Icon(
@@ -129,21 +129,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                     end: Alignment.bottomRight,
                                   )
                                 : LinearGradient(
-                                    colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)],
+                                    colors: [Colors.white.withValues(alpha: 0.05), Colors.white.withValues(alpha: 0.02)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(
                               color: isSelected 
-                                  ? Colors.white.withOpacity(0.15) 
-                                  : Colors.white.withOpacity(0.08),
+                                  ? Colors.white.withValues(alpha: 0.15) 
+                                  : Colors.white.withValues(alpha: 0.08),
                               width: 1,
                             ),
                             boxShadow: [
                               if (isSelected)
                                 BoxShadow(
-                                  color: AppColors.amber.withOpacity(0.28),
+                                  color: AppColors.amber.withValues(alpha: 0.28),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 )
@@ -195,9 +195,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white.withOpacity(0.06)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                         ),
                         child: Text(
                           "${state.merchants.length} FOUND", 
@@ -256,9 +256,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.035),
+          color: Colors.white.withValues(alpha: 0.035),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.06), width: 1.2),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1.2),
         ),
         child: Row(
           children: [
@@ -270,7 +270,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 color: AppColors.ink2,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.amber.withOpacity(0.18),
+                  color: AppColors.amber.withValues(alpha: 0.18),
                   width: 1.5,
                 ),
               ),
@@ -347,7 +347,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.amber.withOpacity(0.24),
+                          color: AppColors.amber.withValues(alpha: 0.24),
                           blurRadius: 6,
                           offset: const Offset(0, 3),
                         )
@@ -378,7 +378,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
@@ -511,7 +511,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           decoration: BoxDecoration(
                             color: Colors.black26,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withOpacity(0.06)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                           ),
                           child: TextField(
                             controller: locationController,
@@ -563,7 +563,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             decoration: BoxDecoration(
                               color: Colors.black38,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.06)),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                             ),
                             child: ListView.builder(
                               shrinkWrap: true,
@@ -608,7 +608,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           decoration: BoxDecoration(
                             color: Colors.black26,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withOpacity(0.06)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                           ),
                           child: SwitchListTile(
                             title: Text(
@@ -625,7 +625,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               style: GoogleFonts.jost(color: Colors.white38, fontSize: 11),
                             ),
                             value: tempNearMe,
-                            activeColor: AppColors.amber2,
+                            activeThumbColor: AppColors.amber2,
                             onChanged: (val) {
                               setModalState(() {
                                 tempNearMe = val;
@@ -644,7 +644,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.amber.withOpacity(0.3),
+                                color: AppColors.amber.withValues(alpha: 0.3),
                                 blurRadius: 16,
                                 offset: const Offset(0, 8),
                               )

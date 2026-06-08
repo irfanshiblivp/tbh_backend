@@ -224,9 +224,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.amber.withOpacity(0.05),
+                  color: AppColors.amber.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.amber.withOpacity(0.15)),
+                  border: Border.all(color: AppColors.amber.withValues(alpha: 0.15)),
                 ),
                 child: const Icon(
                   Icons.map_outlined,
@@ -361,12 +361,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.ink2.withOpacity(0.9),
+                      color: AppColors.ink2.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.line),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           blurRadius: 10,
                         )
                       ],
@@ -399,12 +399,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.ink2.withOpacity(0.95),
+                color: AppColors.ink2.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: AppColors.line),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 20,
                   )
                 ],
@@ -431,7 +431,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           children: [
                             Text(
                               "LATITUDE",
-                              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 9, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 9, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             TextField(
@@ -460,7 +460,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           children: [
                             Text(
                               "LONGITUDE",
-                              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 9, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 9, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             TextField(

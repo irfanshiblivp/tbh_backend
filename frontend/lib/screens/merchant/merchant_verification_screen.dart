@@ -125,14 +125,14 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.03)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.amber.withOpacity(0.1),
+              color: AppColors.amber.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.qr_code_scanner, color: AppColors.amber, size: 28),
@@ -149,7 +149,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                 const SizedBox(height: 4),
                 Text(
                   "Verify members and redeem discount transactions instantly in real-time.",
-                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
                 ),
               ],
             ),
@@ -164,7 +164,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF16162A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
       ),
       child: TextField(
         controller: _searchController,
@@ -195,11 +195,11 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
         color: const Color(0xFF16162A),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isPrime ? Colors.green.withOpacity(0.2) : Colors.redAccent.withOpacity(0.2),
+          color: isPrime ? Colors.green.withValues(alpha: 0.2) : Colors.redAccent.withValues(alpha: 0.2),
         ),
         gradient: LinearGradient(
           colors: [
-            isPrime ? Colors.green.withOpacity(0.04) : Colors.redAccent.withOpacity(0.04),
+            isPrime ? Colors.green.withValues(alpha: 0.04) : Colors.redAccent.withValues(alpha: 0.04),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -212,7 +212,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: (isPrime ? Colors.green : Colors.redAccent).withOpacity(0.1),
+                backgroundColor: (isPrime ? Colors.green : Colors.redAccent).withValues(alpha: 0.1),
                 child: Icon(
                   isPrime ? Icons.verified_user_rounded : Icons.gpp_bad_rounded,
                   size: 28,
@@ -231,7 +231,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                     const SizedBox(height: 2),
                     Text(
                       user['email'] ?? "",
-                      style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
                     ),
                   ],
                 ),
@@ -239,7 +239,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isPrime ? Colors.green : Colors.redAccent).withOpacity(0.1),
+                  color: (isPrime ? Colors.green : Colors.redAccent).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -386,7 +386,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
             decoration: BoxDecoration(
               color: const Color(0xFF16162A),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.02)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
             ),
             child: Column(
               children: [
@@ -412,14 +412,14 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                 decoration: BoxDecoration(
                   color: const Color(0xFF16162A),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.02)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.greenAccent.withOpacity(0.08),
+                        color: Colors.greenAccent.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 20),
@@ -436,7 +436,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                           const SizedBox(height: 2),
                           Text(
                             DateFormat('MMM d, h:mm a').format(tx.timestamp),
-                            style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11),
                           ),
                         ],
                       ),
@@ -450,7 +450,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Saved ₹${tx.amountSaved?.toStringAsFixed(0) ?? '0'}",
+                          "Saved ₹${tx.amountSaved.toStringAsFixed(0)}",
                           style: GoogleFonts.dmMono(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                       ],

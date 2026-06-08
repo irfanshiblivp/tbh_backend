@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
-import '../../providers/app_state.dart';
 import 'merchant_dashboard.dart';
-import 'merchant_offers_screen.dart';
 import 'merchant_profile_screen.dart';
 import 'merchant_transactions_screen.dart';
 import 'merchant_verification_screen.dart';
@@ -33,7 +30,7 @@ class _MerchantLayoutState extends State<MerchantLayout> {
         body: _pages[_selectedIndex],
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
           ),
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,

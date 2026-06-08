@@ -5,7 +5,6 @@ import 'package:frontend/providers/app_state.dart';
 import 'package:frontend/screens/auth_screen.dart';
 import 'package:frontend/screens/verification_screen.dart';
 import 'package:frontend/screens/home_screen.dart';
-import 'package:frontend/screens/categories_screen.dart';
 import 'package:frontend/screens/profile_screen.dart';
 import 'package:frontend/screens/transactions_screen.dart';
 import 'package:frontend/screens/merchant/merchant_layout.dart';
@@ -70,7 +69,7 @@ class RootScreen extends StatelessWidget {
                 Icon(
                   !state.hasConnection ? Icons.wifi_off : Icons.dns_outlined,
                   size: 80,
-                  color: AppColors.amber.withOpacity(0.5),
+                  color: AppColors.amber.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 32),
                 Text(
@@ -155,7 +154,7 @@ class _MainLayoutState extends State<MainLayout> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.ink2,
           selectedItemColor: AppColors.amber,
-          unselectedItemColor: AppColors.text2.withOpacity(0.5),
+          unselectedItemColor: AppColors.text2.withValues(alpha: 0.5),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
           unselectedLabelStyle: const TextStyle(fontSize: 10),
           items: const [

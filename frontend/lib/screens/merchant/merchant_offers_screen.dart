@@ -52,9 +52,9 @@ class MerchantOffersScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -62,7 +62,7 @@ class MerchantOffersScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
                 child: const Icon(Icons.percent, color: AppColors.amber, size: 20),
               ),
               const SizedBox(width: 16),
@@ -78,7 +78,7 @@ class MerchantOffersScreen extends StatelessWidget {
               Switch(
                 value: offer.isActive,
                 onChanged: (val) {},
-                activeColor: AppColors.amber,
+                activeThumbColor: AppColors.amber,
               ),
             ],
           ),

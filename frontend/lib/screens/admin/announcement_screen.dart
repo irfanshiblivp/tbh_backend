@@ -99,7 +99,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +112,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             child: DropdownButtonHideUnderline(
@@ -141,7 +141,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
               hintText: "Enter a catchy title",
               hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
             onChanged: (_) => setState(() {}),
@@ -158,7 +158,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
               hintText: "What do you want to announce?",
               hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
+              fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
             onChanged: (_) => setState(() {}),
@@ -208,9 +208,9 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +220,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.1),
+                      color: AppColors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.notifications_active, color: AppColors.amber, size: 18),
@@ -263,7 +263,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.02),
+                color: Colors.white.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -288,7 +288,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,9 +343,9 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.02),
+                    color: Colors.white.withValues(alpha: 0.02),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.02)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +353,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: targetColor.withOpacity(0.1),
+                          color: targetColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -378,7 +378,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: targetColor.withOpacity(0.1),
+                                    color: targetColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(

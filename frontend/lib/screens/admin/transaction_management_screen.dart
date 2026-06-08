@@ -13,7 +13,7 @@ class TransactionManagementScreen extends StatefulWidget {
 }
 
 class _TransactionManagementScreenState extends State<TransactionManagementScreen> {
-  String _searchQuery = "";
+  final String _searchQuery = "";
   String _statusFilter = "ALL";
   int? _selectedMerchantId;
   DateTimeRange? _dateRange;
@@ -77,7 +77,7 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
               Container(
                 width: isMobile ? 150 : 200,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int>(
                     isExpanded: true,
@@ -117,10 +117,10 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
                 },
                 icon: const Icon(Icons.calendar_today, size: 14),
                 label: Text(
-                  _dateRange == null ? "Select Date" : "${DateFormat('MMM d').format(_dateRange!.start)}",
+                  _dateRange == null ? "Select Date" : DateFormat('MMM d').format(_dateRange!.start),
                   style: const TextStyle(fontSize: 11),
                 ),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.05), padding: const EdgeInsets.symmetric(horizontal: 12)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.05), padding: const EdgeInsets.symmetric(horizontal: 12)),
               ),
             ],
           ),
@@ -163,7 +163,7 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber : Colors.white.withOpacity(0.05),
+          color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -184,7 +184,7 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
     return Container(
       margin: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
       ),
       child: SingleChildScrollView(
@@ -211,9 +211,9 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
               DataCell(Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                  color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withOpacity(0.3) : Colors.blue.withOpacity(0.3)),
+                  border: Border.all(color: t.paymentMethod.toUpperCase() == 'CASH' ? Colors.green.withValues(alpha: 0.3) : Colors.blue.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   t.paymentMethod.toUpperCase(),
@@ -242,7 +242,7 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }

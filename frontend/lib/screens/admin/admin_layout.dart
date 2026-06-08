@@ -11,7 +11,6 @@ import 'admin_management_screen.dart';
 import 'prime_management_screen.dart';
 import 'transaction_management_screen.dart';
 import 'announcement_screen.dart';
-import 'state_management_screen.dart';
 import 'referral_management_screen.dart';
 import 'hero_banner_management_screen.dart';
 import '../../widgets/premium_loading.dart';
@@ -151,7 +150,7 @@ class _AdminLayoutState extends State<AdminLayout> {
         decoration: BoxDecoration(
           border: isSelected ? Border(left: BorderSide(color: AppColors.amber, width: 4)) : null,
           gradient: isSelected ? LinearGradient(
-            colors: [AppColors.amber.withOpacity(0.1), Colors.transparent],
+            colors: [AppColors.amber.withValues(alpha: 0.1), Colors.transparent],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ) : null,
@@ -185,7 +184,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       padding: EdgeInsets.symmetric(horizontal: 24, vertical: isMobile ? 24 : 16),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
       ),
       child: Row(
         children: [
@@ -233,7 +232,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       width: 300,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const TextField(
@@ -256,7 +255,7 @@ class _AdminLayoutState extends State<AdminLayout> {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppColors.amber.withOpacity(0.1),
+            backgroundColor: AppColors.amber.withValues(alpha: 0.1),
             child: const Icon(Icons.person, color: AppColors.amber, size: 20),
           ),
           const SizedBox(width: 12),

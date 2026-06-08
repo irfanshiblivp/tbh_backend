@@ -27,7 +27,7 @@ class TransactionsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.15), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.15), Colors.transparent],
                 ),
               ),
             ),
@@ -41,7 +41,7 @@ class TransactionsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber2.withOpacity(0.06), Colors.transparent],
+                  colors: [AppColors.amber2.withValues(alpha: 0.06), Colors.transparent],
                 ),
               ),
             ),
@@ -85,9 +85,9 @@ class TransactionsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.04),
+                          color: Colors.white.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white.withOpacity(0.06)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                         ),
                         child: Text(
                           "${state.transactions.length} RECORDS",
@@ -137,9 +137,9 @@ class TransactionsScreen extends StatelessWidget {
             width: 84,
             height: 84,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
+              color: Colors.white.withValues(alpha: 0.03),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
             child: const Icon(Icons.receipt_long_outlined, size: 36, color: Colors.white24),
           ),
@@ -174,9 +174,9 @@ class TransactionsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1.1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1.1),
       ),
       child: Row(
         children: [
@@ -186,13 +186,13 @@ class TransactionsScreen extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: isPrimePayment 
-                  ? const Color(0xFFD4AF37).withOpacity(0.08) 
-                  : AppColors.amber.withOpacity(0.08),
+                  ? const Color(0xFFD4AF37).withValues(alpha: 0.08) 
+                  : AppColors.amber.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
                 color: isPrimePayment 
-                    ? const Color(0xFFD4AF37).withOpacity(0.22) 
-                    : AppColors.amber.withOpacity(0.18),
+                    ? const Color(0xFFD4AF37).withValues(alpha: 0.22) 
+                    : AppColors.amber.withValues(alpha: 0.18),
                 width: 1.2,
               ),
             ),
@@ -229,7 +229,7 @@ class TransactionsScreen extends StatelessWidget {
                     Text(
                       DateFormat('dd MMM yyyy • hh:mm a').format(tx.timestamp).toUpperCase(), 
                       style: GoogleFonts.dmMono(
-                        color: AppColors.text2.withOpacity(0.7), 
+                        color: AppColors.text2.withValues(alpha: 0.7), 
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
                       ),
@@ -238,13 +238,13 @@ class TransactionsScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: tx.paymentMethod.toUpperCase() == 'CASH'
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.blue.withOpacity(0.1),
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: tx.paymentMethod.toUpperCase() == 'CASH'
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.blue.withOpacity(0.3),
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.blue.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -284,9 +284,9 @@ class TransactionsScreen extends StatelessWidget {
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.08),
+                        color: Colors.green.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.withOpacity(0.18)),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.18)),
                       ),
                       child: Text(
                         "SAVED ₹${tx.amountSaved.toStringAsFixed(0)}", 

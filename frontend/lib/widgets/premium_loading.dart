@@ -80,7 +80,7 @@ class _GradientArcPainter extends CustomPainter {
 
     // Background track
     final trackPaint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = Colors.white.withValues(alpha: 0.04)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius, trackPaint);
@@ -93,8 +93,8 @@ class _GradientArcPainter extends CustomPainter {
       startAngle: startAngle,
       endAngle: startAngle + sweepAngle,
       colors: [
-        color.withOpacity(0.0),
-        color.withOpacity(0.4),
+        color.withValues(alpha: 0.0),
+        color.withValues(alpha: 0.4),
         color,
       ],
       stops: const [0.0, 0.6, 1.0],
@@ -121,7 +121,7 @@ class _GradientArcPainter extends CustomPainter {
 
     // Glow around the dot
     final glowPaint = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawCircle(dotCenter, strokeWidth * 1.5, glowPaint);
@@ -298,17 +298,17 @@ class PremiumProcessingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black.withValues(alpha: 0.7),
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
           decoration: BoxDecoration(
             color: const Color(0xFF14141E),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.amber.withOpacity(0.06),
+                color: AppColors.amber.withValues(alpha: 0.06),
                 blurRadius: 40,
                 spreadRadius: 4,
               ),
@@ -395,7 +395,7 @@ class _PremiumLoadingDotsState extends State<PremiumLoadingDots>
               width: widget.dotSize,
               height: widget.dotSize,
               decoration: BoxDecoration(
-                color: dotColor.withOpacity(0.3 + 0.7 * scale),
+                color: dotColor.withValues(alpha: 0.3 + 0.7 * scale),
                 shape: BoxShape.circle,
               ),
             );
@@ -462,7 +462,7 @@ class _PremiumAppOpeningLoaderState extends State<PremiumAppOpeningLoader>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.12), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.12), Colors.transparent],
                 ),
               ),
             ),
@@ -476,7 +476,7 @@ class _PremiumAppOpeningLoaderState extends State<PremiumAppOpeningLoader>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.06), Colors.transparent],
+                  colors: [AppColors.amber.withValues(alpha: 0.06), Colors.transparent],
                 ),
               ),
             ),
@@ -498,7 +498,7 @@ class _PremiumAppOpeningLoaderState extends State<PremiumAppOpeningLoader>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.amber.withOpacity(0.04),
+                            color: AppColors.amber.withValues(alpha: 0.04),
                             blurRadius: 40,
                             spreadRadius: 8,
                           ),

@@ -1,15 +1,8 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'merchant_form_screen.dart';
 
 class MerchantManagementScreen extends StatefulWidget {
@@ -72,7 +65,7 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
 
   Widget _buildToolbar() {
     return const Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Text("Merchant Directory", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
     );
   }
@@ -85,9 +78,9 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -98,7 +91,7 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
                 child: Container(
                   width: 48,
                   height: 48,
-                  color: AppColors.amber.withOpacity(0.1),
+                  color: AppColors.amber.withValues(alpha: 0.1),
                   child: (merchant.logo.isNotEmpty || merchant.cardImage.isNotEmpty)
                     ? Image.network(
                         merchant.logo.isNotEmpty ? merchant.logo : merchant.cardImage,
@@ -121,9 +114,9 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: statusColor.withOpacity(0.2)),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   merchant.status.toUpperCase(), 
@@ -177,7 +170,7 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
