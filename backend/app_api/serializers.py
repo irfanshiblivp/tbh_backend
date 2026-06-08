@@ -126,19 +126,22 @@ class ReferralPayoutSerializer(serializers.ModelSerializer):
         return result
 
 class HeroBannerSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = HeroBanner
         fields = ['id', 'image', 'created_at', 'updated_at']
 
-    def get_image(self, obj):
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        if request:
-            url = request.build_absolute_uri(obj.image.url)
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.image:
+            request = self.context.get('request')
+            if request:
+                url = request.build_absolute_uri(instance.image.url)
+            else:
+                url = f'https://api.thebaronclub.com{instance.image.url}'
+            rep['image'] = url.replace('/storage/', '/app-storage/')
         else:
-            url = f'https://api.thebaronclub.com{obj.image.url}'
-        return url.replace('/storage/', '/app-storage/')
+            rep['image'] = None
+        return rep
 

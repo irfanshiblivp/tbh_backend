@@ -1569,6 +1569,11 @@ class HeroBannerViewSet(viewsets.ModelViewSet):
     serializer_class = HeroBannerSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
     def perform_create(self, serializer):
         instance = serializer.save()
         if instance.image:
