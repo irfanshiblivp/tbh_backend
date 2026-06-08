@@ -36,4 +36,25 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # Workaround for razorpay_flutter Swift header import issue
+  pub_caches = [
+    File.join(Dir.home, '.pub-cache'),
+    File.join(ENV['LOCALAPPDATA'] || '', 'Pub', 'Cache')
+  ]
+  pub_caches.each do |cache_dir|
+    next unless Dir.exist?(cache_dir)
+    Dir.glob(File.join(cache_dir, 'hosted', '*', 'razorpay_flutter-*', 'ios', 'Classes', 'RazorpayFlutterPlugin.m')).each do |file_path|
+      if File.exist?(file_path)
+        text = File.read(file_path)
+        target_import = '#import "razorpay_flutter/razorpay_flutter-Swift.h"'
+        replacement_import = '#import "razorpay_flutter-Swift.h"'
+        if text.include?(target_import)
+          new_text = text.gsub(target_import, replacement_import)
+          File.open(file_path, "w") { |file| file.write(new_text) }
+          puts "Successfully patched razorpay_flutter at: #{file_path}"
+        end
+      end
+    end
+  end
 end
