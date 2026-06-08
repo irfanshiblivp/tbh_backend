@@ -1,20 +1,22 @@
 workflows:
-ios-simulator:
+ios_simulator:
 name: iOS Simulator Build
 
 ```
+instance_type: mac_mini_m2
+
 environment:
   flutter: stable
-  xcode: latest
 
 scripts:
   - flutter pub get
   - flutter clean
   - flutter build ios --simulator
 
-  - |
-    cd build/ios/iphonesimulator
-    zip -r Runner.app.zip Runner.app
+  - name: Create Appetize ZIP
+    script: |
+      cd build/ios/iphonesimulator
+      zip -r Runner.app.zip Runner.app
 
 artifacts:
   - build/ios/iphonesimulator/Runner.app.zip
