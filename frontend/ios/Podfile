@@ -41,28 +41,44 @@ post_install do |installer|
   begin
     require 'json'
     dependencies_file = File.join(__dir__, '..', '.flutter-plugins-dependencies')
-    if File.exist?(dependencies_file)
-      dependencies = JSON.parse(File.read(dependencies_file))
-      ios_plugins = dependencies.dig('plugins', 'ios') || []
-      razorpay_plugin = ios_plugins.find { |p| p['name'] == 'razorpay_flutter' }
-      if razorpay_plugin && razorpay_plugin['path']
-        raw_path = razorpay_plugin['path']
-        normalized_path = raw_path.gsub('\\', '/')
-        file_path = File.join(normalized_path, 'ios', 'Classes', 'RazorpayFlutterPlugin.m')
-        if File.exist?(file_path)
-          text = File.read(file_path)
-          target_import_regex = /#import [<"]razorpay_flutter\/razorpay_flutter-Swift\.h[>"]/
-          replacement_import = '#import "razorpay_flutter-Swift.h"'
-          if text =~ target_import_regex
-            new_text = text.gsub(target_import_regex, replacement_import)
-            File.chmod(0644, file_path) rescue nil
-            File.open(file_path, "w") { |file| file.write(new_text) }
-            puts "Successfully patched razorpay_flutter at: #{file_path}"
-          end
-        end
+    unless File.exist?(dependencies_file)
+      raise "dependencies file not found at: #{dependencies_file}"
+    end
+    
+    dependencies = JSON.parse(File.read(dependencies_file))
+    ios_plugins = dependencies.dig('plugins', 'ios') || []
+    razorpay_plugin = ios_plugins.find { |p| p['name'] == 'razorpay_flutter' }
+    unless razorpay_plugin
+      raise "razorpay_plugin not found in dependencies. ios_plugins: #{ios_plugins.map { |p| p['name'] }.join(', ')}"
+    end
+    
+    unless razorpay_plugin['path']
+      raise "razorpay_plugin path is empty"
+    end
+    
+    raw_path = razorpay_plugin['path']
+    normalized_path = raw_path.gsub('\\', '/')
+    file_path = File.join(normalized_path, 'ios', 'Classes', 'RazorpayFlutterPlugin.m')
+    unless File.exist?(file_path)
+      raise "RazorpayFlutterPlugin.m not found at: #{file_path}"
+    end
+    
+    text = File.read(file_path)
+    target_import_regex = /#import [<"]razorpay_flutter\/razorpay_flutter-Swift\.h[>"]/
+    replacement_import = '#import "razorpay_flutter-Swift.h"'
+    
+    if text =~ target_import_regex
+      new_text = text.gsub(target_import_regex, replacement_import)
+      File.chmod(0644, file_path) rescue nil
+      File.open(file_path, "w") { |file| file.write(new_text) }
+      puts "Successfully patched razorpay_flutter at: #{file_path}"
+    else
+      # Check if it was already patched
+      unless text.include?(replacement_import)
+        raise "Target import statement not found in RazorpayFlutterPlugin.m. File content: #{text[0..200]}"
       end
     end
   rescue => e
-    puts "Error patching razorpay_flutter: #{e.message}"
+    raise "Error patching razorpay_flutter: #{e.message}\nBacktrace: #{e.backtrace.join("\n")}"
   end
 end
