@@ -64,20 +64,7 @@ post_install do |installer|
     end
     
     text = File.read(file_path)
-    target_import_regex = /#import [<"]razorpay_flutter\/razorpay_flutter-Swift\.h[>"]/
-    replacement_import = '#import "razorpay_flutter-Swift.h"'
-    
-    if text =~ target_import_regex
-      new_text = text.gsub(target_import_regex, replacement_import)
-      File.chmod(0644, file_path) rescue nil
-      File.open(file_path, "w") { |file| file.write(new_text) }
-      puts "Successfully patched razorpay_flutter at: #{file_path}"
-    else
-      # Check if it was already patched
-      unless text.include?(replacement_import)
-        raise "Target import statement not found in RazorpayFlutterPlugin.m. File content: #{text[0..200]}"
-      end
-    end
+    raise "DEBUG: file_path: #{file_path}\nFile first 5 lines:\n#{text.lines[0..5].join('')}"
   rescue => e
     raise "Error patching razorpay_flutter: #{e.message}\nBacktrace: #{e.backtrace.join("\n")}"
   end
