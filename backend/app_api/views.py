@@ -882,43 +882,96 @@ from django.core.mail import get_connection, EmailMultiAlternatives
 
 def send_async_email_with_fallback(subject, text_content, to_email, html_message=None):
     """
-    Spawns a separate detached helper process to send the email asynchronously.
+    Spawns a separate daemon thread to send the email asynchronously.
     This prevents Passenger WSGI thread freezing/killing, avoids app timeout,
-    and handles SMTP delivery reliably.
+    supports shared-hosting environment limitations (no subprocess spawning),
+    and handles SMTP delivery reliably with failover fallbacks.
     """
-    import subprocess
-    import json
-    import sys
-    import os
-    from django.conf import settings
-    try:
-        helper_path = os.path.abspath(os.path.join(settings.BASE_DIR, 'app_api', 'send_mail_helper.py'))
-        params = {
-            'to': to_email,
-            'subject': subject,
-            'text': text_content,
-            'html': html_message
-        }
+    import threading
+    
+    def run_email_send():
+        from django.conf import settings
+        from django.core.mail import get_connection, EmailMultiAlternatives
         
-        # Determine start_new_session capability based on platform (Windows vs Linux)
-        kwargs = {}
-        if sys.platform != 'win32':
-            kwargs['start_new_session'] = True
-            
-        p = subprocess.Popen(
-            [sys.executable, helper_path],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            **kwargs
-        )
-        p.stdin.write(json.dumps(params).encode('utf-8'))
-        p.stdin.close()
-        print(f"SMTP: Spawned background process to send email to {to_email}")
+        # 1. Try Laravel REST API first
+        try:
+            print(f"REST API Helper (Thread): Attempting to send email to {to_email} via REST API...")
+            import requests
+            api_url = getattr(settings, 'EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
+            api_token = getattr(settings, 'EMAIL_REST_API_TOKEN', 'shared_secret_token_12345')
+
+            payload = {
+                'to': to_email,
+                'subject': subject,
+                'text': text_content,
+                'html': html_message,
+                'api_token': api_token
+            }
+
+            response = requests.post(api_url, json=payload, timeout=12, verify=False)
+            if response.status_code == 200:
+                print("REST API Helper (Thread): Email sent successfully via REST API.")
+                return
+            else:
+                print(f"REST API Helper (Thread): Failed via REST API (status code {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"REST API Helper (Thread): REST API request failed: {e}")
+
+        # 2. Try Port 465 (SSL) fallback
+        try:
+            print(f"SMTP Helper (Thread): Attempting to send email to {to_email} via Port 465 (SSL)...")
+            connection = get_connection(
+                host=settings.EMAIL_HOST,
+                port=settings.EMAIL_PORT,
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_ssl=settings.EMAIL_USE_SSL,
+                use_tls=settings.EMAIL_USE_TLS,
+                timeout=10,
+            )
+            email = EmailMultiAlternatives(
+                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+            )
+            if html_message:
+                email.attach_alternative(html_message, "text/html")
+            email.send()
+            print("SMTP Helper (Thread): Email sent successfully via Port 465 (SSL).")
+            return
+        except Exception as e:
+            print(f"SMTP Helper (Thread): Failed via Port 465 (SSL): {e}")
+
+        # 3. Fallback to Port 587 (TLS)
+        try:
+            print(f"SMTP Helper (Thread): Attempting fallback to Port 587 (TLS)...")
+            connection = get_connection(
+                host=settings.EMAIL_HOST,
+                port=587,
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_ssl=False,
+                use_tls=True,
+                timeout=15,
+            )
+            email = EmailMultiAlternatives(
+                subject, text_content, settings.DEFAULT_FROM_EMAIL, [to_email], connection=connection
+            )
+            if html_message:
+                email.attach_alternative(html_message, "text/html")
+            email.send()
+            print("SMTP Helper (Thread): Email sent successfully via Port 587 (TLS) fallback.")
+        except Exception as e2:
+            print(f"SMTP Helper (Thread): Fallback to Port 587 (TLS) also failed: {e2}")
+
+    try:
+        t = threading.Thread(target=run_email_send)
+        t.daemon = True
+        t.start()
+        print(f"SMTP: Started background thread to send email to {to_email}")
         return True
     except Exception as e:
-        print(f"SMTP ERROR: Failed to spawn background process: {e}")
+        print(f"SMTP ERROR: Failed to start background thread: {e}")
         return False
+
 
 def send_verification_email(user):
     subject = 'Verify your email - The Baron Club'
