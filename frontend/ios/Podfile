@@ -38,23 +38,31 @@ post_install do |installer|
   end
 
   # Workaround for razorpay_flutter Swift header import issue
-  pub_caches = [
-    File.join(Dir.home, '.pub-cache'),
-    File.join(ENV['LOCALAPPDATA'] || '', 'Pub', 'Cache')
-  ]
-  pub_caches.each do |cache_dir|
-    next unless Dir.exist?(cache_dir)
-    Dir.glob(File.join(cache_dir, 'hosted', '*', 'razorpay_flutter-*', 'ios', 'Classes', 'RazorpayFlutterPlugin.m')).each do |file_path|
-      if File.exist?(file_path)
-        text = File.read(file_path)
-        target_import = '#import "razorpay_flutter/razorpay_flutter-Swift.h"'
-        replacement_import = '#import "razorpay_flutter-Swift.h"'
-        if text.include?(target_import)
-          new_text = text.gsub(target_import, replacement_import)
-          File.open(file_path, "w") { |file| file.write(new_text) }
-          puts "Successfully patched razorpay_flutter at: #{file_path}"
+  begin
+    require 'json'
+    dependencies_file = File.join(__dir__, '..', '.flutter-plugins-dependencies')
+    if File.exist?(dependencies_file)
+      dependencies = JSON.parse(File.read(dependencies_file))
+      ios_plugins = dependencies.dig('plugins', 'ios') || []
+      razorpay_plugin = ios_plugins.find { |p| p['name'] == 'razorpay_flutter' }
+      if razorpay_plugin && razorpay_plugin['path']
+        raw_path = razorpay_plugin['path']
+        normalized_path = raw_path.gsub('\\', '/')
+        file_path = File.join(normalized_path, 'ios', 'Classes', 'RazorpayFlutterPlugin.m')
+        if File.exist?(file_path)
+          text = File.read(file_path)
+          target_import = '#import "razorpay_flutter/razorpay_flutter-Swift.h"'
+          replacement_import = '#import "razorpay_flutter-Swift.h"'
+          if text.include?(target_import)
+            new_text = text.gsub(target_import, replacement_import)
+            File.chmod(0644, file_path) rescue nil
+            File.open(file_path, "w") { |file| file.write(new_text) }
+            puts "Successfully patched razorpay_flutter at: #{file_path}"
+          end
         end
       end
     end
+  rescue => e
+    puts "Error patching razorpay_flutter: #{e.message}"
   end
 end
