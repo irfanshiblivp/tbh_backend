@@ -7,6 +7,19 @@ import 'package:geolocator/geolocator.dart';
 
 class AppState extends ChangeNotifier {
   final ApiService _api = ApiService();
+
+  DateTime _parseDateTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return DateTime.now();
+    try {
+      String formattedStr = dateStr;
+      if (!formattedStr.endsWith('Z') && !formattedStr.contains('+') && !RegExp(r'-\d{2}:\d{2}$').hasMatch(formattedStr)) {
+        formattedStr = formattedStr.endsWith(' ') ? '${formattedStr.trim()}Z' : '${formattedStr}Z';
+      }
+      return DateTime.tryParse(formattedStr)?.toLocal() ?? DateTime.now();
+    } catch (_) {
+      return DateTime.tryParse(dateStr) ?? DateTime.now();
+    }
+  }
   
   // App state management
   AppState() {
@@ -385,7 +398,7 @@ class AppState extends ChangeNotifier {
                 amountPaid: (tx['amount_paid'] ?? 0).toDouble(),
                 amountSaved: (tx['amount_saved'] ?? 0).toDouble(),
                 status: tx['status'] ?? 'completed',
-                timestamp: DateTime.tryParse(tx['timestamp'] ?? '') ?? DateTime.now(),
+                timestamp: _parseDateTime(tx['timestamp']),
                 userName: tx['user_name'] ?? 'Customer',
                 paymentMethod: tx['payment_method'] ?? 'CASH',
               ))
@@ -403,7 +416,7 @@ class AppState extends ChangeNotifier {
                 transactionId: p['razorpay_order_id'] ?? 'TX-${p['id']}',
                 amountPaid: (p['amount'] ?? 0) / 100.0,
                 status: p['status']?.toString().toUpperCase() ?? 'SUCCESS',
-                timestamp: DateTime.tryParse(p['created_at'] ?? '') ?? DateTime.now(),
+                timestamp: _parseDateTime(p['created_at']),
                 userName: p['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: "Prime Membership Upgrade",
                 paymentMethod: 'ONLINE',
@@ -418,7 +431,7 @@ class AppState extends ChangeNotifier {
                 amountPaid: (double.tryParse(v['bill_amount']?.toString() ?? '0') ?? 0),
                 amountSaved: (double.tryParse(v['amount_saved']?.toString() ?? '0') ?? 0),
                 status: v['used_at'] != null ? 'REDEEMED' : 'PENDING',
-                timestamp: DateTime.tryParse(v['used_at'] ?? v['created_at'] ?? '') ?? DateTime.now(),
+                timestamp: _parseDateTime(v['used_at'] ?? v['created_at']),
                 userName: v['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",
                 paymentMethod: v['payment_method'] ?? 'ONLINE',

@@ -67,6 +67,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
     final amountStr = widget.finalAmount.toStringAsFixed(2);
     params['am'] = amountStr;
     params['mam'] = amountStr;
+    params['mode'] = '02';
     final uri = originalUri.replace(queryParameters: params);
     
     // Proactively close the scanner viewport
@@ -285,7 +286,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
                     });
                     
                     String cleanName = widget.businessName.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '');
-                    String generatedUpiUrl = "upi://pay?pa=$val&pn=${Uri.encodeComponent(cleanName)}&am=${widget.finalAmount.toStringAsFixed(2)}&mam=${widget.finalAmount.toStringAsFixed(2)}&cu=INR";
+                    String generatedUpiUrl = "upi://pay?pa=$val&pn=${Uri.encodeComponent(cleanName)}&am=${widget.finalAmount.toStringAsFixed(2)}&mam=${widget.finalAmount.toStringAsFixed(2)}&cu=INR&mode=02";
                     _processUpiPayment(generatedUpiUrl);
                   },
                   style: ElevatedButton.styleFrom(

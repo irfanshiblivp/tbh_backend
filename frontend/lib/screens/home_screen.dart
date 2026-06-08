@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +26,38 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _locationSuggestions = [];
   bool _showSuggestions = false;
 
+  late PageController _pageController;
+  Timer? _bannerTimer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+    _startBannerTimer();
+  }
+
+  void _startBannerTimer() {
+    _bannerTimer?.cancel();
+    _bannerTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      if (!mounted) return;
+      final state = context.read<AppState>();
+      final bannersCount = state.heroBanners.length;
+      if (bannersCount > 1 && _pageController.hasClients) {
+        _currentPage = (_currentPage + 1) % bannersCount;
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _bannerTimer?.cancel();
+    _pageController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -524,6 +555,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return SizedBox(
       height: 180,
       child: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          _currentPage = index;
+        },
         itemCount: activeBanners.length,
         itemBuilder: (context, index) {
           final banner = activeBanners[index];

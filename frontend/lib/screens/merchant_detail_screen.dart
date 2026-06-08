@@ -457,7 +457,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                     Navigator.pop(sheetContext); // Close bottom sheet
                     
                     String cleanName = widget.merchant.businessName.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '');
-                    String generatedUpiUrl = "upi://pay?pa=$val&pn=${Uri.encodeComponent(cleanName)}&am=${finalAmount.toStringAsFixed(2)}&mam=${finalAmount.toStringAsFixed(2)}&cu=INR";
+                    String generatedUpiUrl = "upi://pay?pa=$val&pn=${Uri.encodeComponent(cleanName)}&am=${finalAmount.toStringAsFixed(2)}&mam=${finalAmount.toStringAsFixed(2)}&cu=INR&mode=02";
                     
                     final uri = Uri.parse(generatedUpiUrl);
                     

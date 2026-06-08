@@ -217,10 +217,13 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
       if (m.latitude != null && m.longitude != null && m.latitude != 0.0 && m.longitude != 0.0) {
         _selectedLatLng = LatLng(m.latitude!, m.longitude!);
       }
+      _latController = TextEditingController(text: _selectedLatLng.latitude.toStringAsFixed(6));
+      _lngController = TextEditingController(text: _selectedLatLng.longitude.toStringAsFixed(6));
+    } else {
+      _selectedLatLng = const LatLng(0.0, 0.0);
+      _latController = TextEditingController(text: '0.0');
+      _lngController = TextEditingController(text: '0.0');
     }
-    
-    _latController = TextEditingController(text: _selectedLatLng.latitude.toStringAsFixed(6));
-    _lngController = TextEditingController(text: _selectedLatLng.longitude.toStringAsFixed(6));
 
     // Listeners to trigger reactive changes in live preview card
     _nameController.addListener(() => setState(() {}));
@@ -766,9 +769,16 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                       _buildField(
                         controller: _phoneController,
                         label: "Phone Number",
-                        hint: "e.g. +919876543210",
+                        hint: "e.g. 9876543210",
                         prefixIcon: Icons.phone,
-                        validator: (v) => v == null || v.trim().isEmpty ? "Phone number is required" : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return "Phone number is required";
+                          final digitsOnly = v.replaceAll(RegExp(r'\D'), '');
+                          if (digitsOnly.length != 10) {
+                            return "Phone number must be exactly 10 digits";
+                          }
+                          return null;
+                        },
                       ),
 
                     // Category Dropdown

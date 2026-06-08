@@ -673,9 +673,23 @@ class ProfileScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
+              final phone = phoneController.text.trim();
+              if (phone.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Phone number is required"), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
+              final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+              if (digitsOnly.length != 10) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please enter a valid 10-digit phone number"), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
               await state.updateProfile({
                 'name': nameController.text,
-                'phone': phoneController.text,
+                'phone': phone,
               });
               if (context.mounted) Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated!")));

@@ -425,7 +425,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           throw Exception("Phone number is required");
                                         }
                                         final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
-                                        if (digitsOnly.length < 10) {
+                                        if (digitsOnly.length != 10) {
                                           throw Exception("Please enter a valid 10-digit phone number");
                                         }
                                         if (selectedState == 'Select State') {

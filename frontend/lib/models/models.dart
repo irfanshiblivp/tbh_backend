@@ -32,6 +32,15 @@ String resolveAssetUrl(String? path) {
   return '$baseDomain/storage/$cleanPath';
 }
 
+DateTime? parseLocalTime(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return null;
+  String formattedStr = dateStr;
+  if (!formattedStr.endsWith('Z') && !formattedStr.contains('+') && !RegExp(r'-\d{2}:\d{2}$').hasMatch(formattedStr)) {
+    formattedStr = formattedStr.endsWith(' ') ? '${formattedStr.trim()}Z' : '${formattedStr}Z';
+  }
+  return DateTime.tryParse(formattedStr)?.toLocal();
+}
+
 class Category {
   final int id;
   final String name;
@@ -184,11 +193,11 @@ class AppUser {
       bankUpiId: json['bank_upi_id'],
       customerNumber: json['customer_number'],
       referralCode: json['referral_code'],
-      emailVerifiedAt: DateTime.tryParse(json['email_verified_at'] ?? ''),
+      emailVerifiedAt: parseLocalTime(json['email_verified_at']),
       isPrime: json['is_prime'] ?? false,
       state: json['state'],
-      primeStartsAt: DateTime.tryParse(json['prime_starts_at'] ?? ''),
-      primeExpiresAt: DateTime.tryParse(json['prime_expires_at'] ?? ''),
+      primeStartsAt: parseLocalTime(json['prime_starts_at']),
+      primeExpiresAt: parseLocalTime(json['prime_expires_at']),
       signupMethod: json['signup_method'] ?? 'Direct',
     );
   }
@@ -267,7 +276,7 @@ class AdminLog {
     return AdminLog(
       action: json['action'] ?? 'Unknown Action',
       details: json['details'] ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+      timestamp: parseLocalTime(json['timestamp']) ?? DateTime.now(),
       adminName: json['admin_name'] ?? 'System',
     );
   }
@@ -300,8 +309,8 @@ class PrimeMembership {
       id: json['id'] ?? 0,
       userId: json['user'] ?? 0,
       source: json['source'] ?? 'unknown',
-      startsAt: DateTime.tryParse(json['starts_at'] ?? '') ?? DateTime.now(),
-      expiresAt: DateTime.tryParse(json['expires_at'] ?? '') ?? DateTime.now().add(const Duration(days: 365)),
+      startsAt: parseLocalTime(json['starts_at']) ?? DateTime.now(),
+      expiresAt: parseLocalTime(json['expires_at']) ?? DateTime.now().add(const Duration(days: 365)),
     );
   }
 }

@@ -112,6 +112,18 @@ class _PrimeScreenState extends State<PrimeScreen> {
   }
 
   void _startRazorpayPayment(AppState state) async {
+    final referralInput = _referralController.text.trim().toUpperCase();
+    final ownReferralCode = state.profile?.referralCode?.trim().toUpperCase();
+    if (referralInput.isNotEmpty && ownReferralCode != null && referralInput == ownReferralCode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You cannot use your own referral code for prime membership."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
