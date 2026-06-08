@@ -811,10 +811,9 @@ packages:
   razorpay_flutter:
     dependency: "direct main"
     description:
-      name: razorpay_flutter
-      sha256: a9026acf004df802128be6996a9397f5e9c20f32dd12ab215fd1659e0233c9f0
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/razorpay_flutter"
+      relative: true
+    source: path
     version: "1.4.5"
   record_use:
     dependency: transitive
