@@ -51,10 +51,10 @@ post_install do |installer|
         file_path = File.join(normalized_path, 'ios', 'Classes', 'RazorpayFlutterPlugin.m')
         if File.exist?(file_path)
           text = File.read(file_path)
-          target_import = '#import "razorpay_flutter/razorpay_flutter-Swift.h"'
+          target_import_regex = /#import [<"]razorpay_flutter\/razorpay_flutter-Swift\.h[>"]/
           replacement_import = '#import "razorpay_flutter-Swift.h"'
-          if text.include?(target_import)
-            new_text = text.gsub(target_import, replacement_import)
+          if text =~ target_import_regex
+            new_text = text.gsub(target_import_regex, replacement_import)
             File.chmod(0644, file_path) rescue nil
             File.open(file_path, "w") { |file| file.write(new_text) }
             puts "Successfully patched razorpay_flutter at: #{file_path}"
