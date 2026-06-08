@@ -49,6 +49,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
   LatLng _selectedLatLng = const LatLng(9.9857409, 76.3096248); // Default center: Kochi
   bool _mapHasError = false;
   bool _isGeocoding = false;
+  List<Map<String, dynamic>> _searchResults = [];
 
   static const String _darkMapStyle = '''
   [
@@ -266,87 +267,64 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
     }
   }
 
-  Future<String?> _reverseGeocode(double lat, double lng) async {
-    try {
-      final response = await http.get(Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo'
-      ));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'OK' && data['results'].isNotEmpty) {
-          return data['results'][0]['formatted_address'];
-        }
-      }
-    } catch (e) {
-      debugPrint("Reverse geocode error: $e");
-    }
-    return null;
-  }
-
-  Future<Map<String, dynamic>?> _geocodeAddress(String address) async {
+  Future<List<Map<String, dynamic>>> _geocodeAddress(String address) async {
     try {
       final response = await http.get(Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo'
       ));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == 'OK' && data['results'].isNotEmpty) {
-          final result = data['results'][0];
-          final loc = result['geometry']['location'];
-          return {
-            'lat': loc['lat'],
-            'lng': loc['lng'],
-            'address': result['formatted_address'],
-          };
+        if (data['status'] == 'OK' && data['results'] != null) {
+          final List results = data['results'];
+          return results.map((result) {
+            final loc = result['geometry']['location'];
+            return {
+              'lat': loc['lat'],
+              'lng': loc['lng'],
+              'address': result['formatted_address'] ?? '',
+            };
+          }).toList().cast<Map<String, dynamic>>();
         }
       }
     } catch (e) {
       debugPrint("Geocode error: $e");
     }
-    return null;
+    return [];
   }
 
   Future<void> _searchAddress() async {
     if (_searchController.text.trim().isEmpty) return;
-    setState(() => _isGeocoding = true);
-    final result = await _geocodeAddress(_searchController.text.trim());
-    setState(() => _isGeocoding = false);
+    setState(() {
+      _isGeocoding = true;
+      _searchResults = [];
+    });
+    final results = await _geocodeAddress(_searchController.text.trim());
+    setState(() {
+      _isGeocoding = false;
+      _searchResults = results;
+    });
 
-    if (result != null) {
-      final double lat = result['lat'];
-      final double lng = result['lng'];
-      final String formattedAddress = result['address'];
-
-      setState(() {
-        _selectedLatLng = LatLng(lat, lng);
-        _latController.text = lat.toStringAsFixed(6);
-        _lngController.text = lng.toStringAsFixed(6);
-        _addressController.text = formattedAddress;
-      });
-
-      _mapController?.animateCamera(CameraUpdate.newLatLng(_selectedLatLng));
-    } else {
+    if (results.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Could not find the coordinates for this location search.")),
+          const SnackBar(content: Text("No matching locations found.")),
         );
       }
+    } else if (results.length == 1) {
+      _selectLocation(results.first);
     }
   }
 
-  void _onMapTapped(LatLng pos) async {
+  void _selectLocation(Map<String, dynamic> result) {
     setState(() {
-      _selectedLatLng = pos;
-      _latController.text = pos.latitude.toStringAsFixed(6);
-      _lngController.text = pos.longitude.toStringAsFixed(6);
+      final double lat = result['lat'];
+      final double lng = result['lng'];
+      _selectedLatLng = LatLng(lat, lng);
+      _latController.text = lat.toStringAsFixed(6);
+      _lngController.text = lng.toStringAsFixed(6);
+      _addressController.text = result['address'];
+      _searchResults = [];
     });
-
-    final String? address = await _reverseGeocode(pos.latitude, pos.longitude);
-    if (address != null && mounted) {
-      setState(() {
-        _addressController.text = address;
-      });
-    }
   }
 
   void _onManualCoordsChanged() {
@@ -356,7 +334,6 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
       setState(() {
         _selectedLatLng = LatLng(lat, lng);
       });
-      _mapController?.animateCamera(CameraUpdate.newLatLng(_selectedLatLng));
     }
   }
 
@@ -443,67 +420,6 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
     }
   }
 
-  Widget _buildMap() {
-    if (_mapHasError) {
-      return _buildMapFallback();
-    }
-    
-    try {
-      return GoogleMap(
-        key: const ValueKey('merchant_google_map'),
-        initialCameraPosition: CameraPosition(
-          target: _selectedLatLng,
-          zoom: 14.0,
-        ),
-        markers: {
-          Marker(
-            markerId: const MarkerId('merchant_loc'),
-            position: _selectedLatLng,
-            draggable: true,
-            onDragEnd: (pos) => _onMapTapped(pos),
-          ),
-        },
-        onTap: _onMapTapped,
-        zoomControlsEnabled: true,
-        mapToolbarEnabled: false,
-        onMapCreated: (controller) {
-          _mapController = controller;
-          try {
-            _mapController!.setMapStyle(_darkMapStyle);
-          } catch (e) {
-            debugPrint("Error setting custom map style: $e");
-          }
-        },
-      );
-    } catch (e) {
-      debugPrint("GoogleMap load error: $e");
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _mapHasError = true;
-        });
-      });
-      return _buildMapFallback();
-    }
-  }
-
-  Widget _buildMapFallback() {
-    return Container(
-      color: Colors.white.withValues(alpha: 0.02),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.map_outlined, color: Colors.white24, size: 48),
-            const SizedBox(height: 8),
-            Text(
-              "Map Unavailable (Google Maps SDK is not loaded)",
-              style: GoogleFonts.jost(color: Colors.white30, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildLiveCardPreview() {
     return Container(
@@ -966,71 +882,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Location Search Bar
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "SEARCH LOCATION ADDRESS",
-                          style: GoogleFonts.jost(
-                            color: AppColors.text2,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.line),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
-                            onSubmitted: (_) => _searchAddress(),
-                            decoration: InputDecoration(
-                              hintText: "Enter area, city or landmark...",
-                              hintStyle: GoogleFonts.jost(color: Colors.white30, fontSize: 14),
-                              prefixIcon: const Icon(Icons.search, color: AppColors.amber, size: 20),
-                              suffixIcon: _isGeocoding
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.amber),
-                                    )
-                                  : IconButton(
-                                      icon: const Icon(Icons.arrow_forward, color: AppColors.amber, size: 20),
-                                      onPressed: _searchAddress,
-                                    ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
 
-                    // Inline Google Map Picker Container
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        height: 250,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: _buildMap(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Drag the marker or click on the map to reposition the pin.",
-                      style: GoogleFonts.jost(color: Colors.white30, fontSize: 11),
-                    ),
-                    const SizedBox(height: 20),
 
                     // Manual coordinates
                     Row(

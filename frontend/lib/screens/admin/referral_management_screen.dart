@@ -163,7 +163,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Process Withdrawal Request"),
         content: SingleChildScrollView(
@@ -246,13 +246,13 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("Close", style: TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close details dialog
-              _showDeclineDialog(context, payoutId);
+              Navigator.pop(dialogContext); // Close details dialog
+              _showDeclineDialog(context, payoutId); // Use outer context
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
             child: const Text("Decline request"),
@@ -262,7 +262,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
               final state = Provider.of<AppState>(context, listen: false);
               try {
                 await state.markPayoutCompleted(payoutId);
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) Navigator.pop(dialogContext);
                 _fetchPayouts();
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment marked as completed!")));
               } catch (e) {
@@ -281,7 +281,7 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
     final remarkController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Decline Withdrawal"),
         content: Column(
@@ -306,14 +306,20 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+            ),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
               final state = Provider.of<AppState>(context, listen: false);
               try {
                 await state.declinePayout(payoutId, remarkController.text);
                 if (context.mounted) {
-                  Navigator.pop(context); // Pop decline dialog
+                  Navigator.pop(dialogContext); // Pop decline dialog
                 }
                 _fetchPayouts();
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Withdrawal request declined successfully!")));
@@ -321,7 +327,10 @@ class _ReferralManagementScreenState extends State<ReferralManagementScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text("Decline & Refund"),
           ),
         ],

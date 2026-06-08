@@ -175,16 +175,22 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
   void _confirmDeleteBanner(BuildContext context, HeroBanner banner, AppState state) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Delete Hero Banner?"),
         content: const Text("Are you sure you want to delete this hero banner? This will remove it from the customer homepage slider immediately."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+            ),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               try {
                 await state.deleteHeroBanner(banner.id);
                 if (mounted) {
@@ -200,7 +206,10 @@ class _HeroBannerManagementScreenState extends State<HeroBannerManagementScreen>
                 }
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text("Delete"),
           ),
         ],

@@ -290,6 +290,7 @@ class AppState extends ChangeNotifier {
     try {
       _categories = await _api.getCategories();
       _merchants = await _api.getMerchants();
+      _heroBanners = await _api.getHeroBanners();
       await fetchLocationAndSort();
       notifyListeners();
     } catch (e) {
