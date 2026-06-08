@@ -32,7 +32,8 @@ def serve_media_with_fallback(request, path, document_root=None, **kwargs):
         # and attach CORS headers, rather than issuing a browser-level HTTP redirect.
         url = f"https://thebaronclub.com/storage/{path}"
         try:
-            response = requests.get(url, timeout=15)
+            # allow_redirects=False is CRITICAL to prevent proxying loops if the main domain redirects back to the API domain
+            response = requests.get(url, timeout=8, allow_redirects=False)
             if response.status_code == 200:
                 django_response = HttpResponse(
                     response.content, 
@@ -43,8 +44,8 @@ def serve_media_with_fallback(request, path, document_root=None, **kwargs):
         except Exception as e:
             print(f"DEBUG serve_media_with_fallback PROXY ERROR: {e}")
         
-        # Fallback to redirect if proxying fails
-        return HttpResponseRedirect(url)
+        # If the file is missing on both domains or redirects, return a clean 404 instead of looping redirects
+        raise Http404("Media file not found")
 
 urlpatterns = [
     path('api/', include('app_api.urls')),
