@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186645936047",
+    "project_id": "thebaronclub-5e4b2",
+    "storage_bucket": "thebaronclub-5e4b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186645936047:android:a5908780400789aba6a15a",
+        "android_client_info": {
+          "package_name": "com.loremelevate.thebaronclub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnE3Ej1wHrxhPrIwIbV2bIhTljtMee4dA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

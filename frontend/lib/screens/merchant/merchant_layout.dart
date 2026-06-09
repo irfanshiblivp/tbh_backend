@@ -3,7 +3,6 @@ import '../../core/app_theme.dart';
 import 'merchant_dashboard.dart';
 import 'merchant_profile_screen.dart';
 import 'merchant_transactions_screen.dart';
-import 'merchant_verification_screen.dart';
 
 class MerchantLayout extends StatefulWidget {
   const MerchantLayout({super.key});
@@ -17,7 +16,6 @@ class _MerchantLayoutState extends State<MerchantLayout> {
 
   final List<Widget> _pages = [
     const MerchantDashboard(),
-    const MerchantVerificationScreen(),
     const MerchantTransactionsScreen(),
     const MerchantProfileScreen(),
   ];
@@ -41,7 +39,6 @@ class _MerchantLayoutState extends State<MerchantLayout> {
             type: BottomNavigationBarType.fixed,
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: "Dashboard"),
-              BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner_outlined), activeIcon: Icon(Icons.qr_code_scanner), label: "POS / Redeem"),
               BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long), label: "History"),
               BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
             ],

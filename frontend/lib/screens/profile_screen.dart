@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'prime_screen.dart';
+import 'package:frontend/models/models.dart';
 
 
 class ProfileScreen extends StatelessWidget {
@@ -19,6 +20,12 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final profile = state.profile;
+
+    if (state.settings.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        state.loadSettings();
+      });
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF07070A),
@@ -195,6 +202,9 @@ class ProfileScreen extends StatelessWidget {
                     }),
                     _buildMenuItem(Icons.lock_outline, "Change Password", () {
                       _showChangePasswordDialog(context, state);
+                    }),
+                    _buildMenuItem(Icons.support_agent_outlined, "Contact Us", () {
+                      _showContactUsDialog(context, state);
                     }),
                     _buildMenuItem(Icons.logout, "Logout", () async {
                       final confirm = await showDialog<bool>(
@@ -970,6 +980,98 @@ class ProfileScreen extends StatelessWidget {
     if (date == null) return "N/A";
     final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return "${date.day} ${months[date.month - 1]} ${date.year}";
+  }
+
+  void _showContactUsDialog(BuildContext context, AppState state) {
+    final emailSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_EMAIL', 
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_EMAIL', value: 'info@thebaronclub.com')
+    );
+    final phoneSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_PHONE', 
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_PHONE', value: '+91 99999 99999')
+    );
+    final addressSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_ADDRESS',
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_ADDRESS', value: 'LOREM ELEVATE LLP\nBuilding No.24/1701, Suite No.922, 2nd Floor KC Arcade, Near TV Centre Cochin Special Economic Zone')
+    );
+
+    final String contactEmail = emailSetting.value;
+    final String contactPhone = phoneSetting.value;
+    final String contactAddress = addressSetting.value;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Contact Us",
+          style: GoogleFonts.playfairDisplay(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.email_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Email Support", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactEmail, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl("mailto:$contactEmail");
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.phone_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Call Support", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactPhone, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl("tel:$contactPhone");
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.location_on_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Address", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactAddress, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.4)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close", style: TextStyle(color: AppColors.amber)),
+          ),
+        ],
+      ),
+    );
   }
 }
 

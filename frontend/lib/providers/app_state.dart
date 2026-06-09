@@ -386,7 +386,6 @@ class AppState extends ChangeNotifier {
               .map((log) => AdminLog.fromJson(log))
               .toList();
         }
-        await loadSettings();
       } else if (_userRole == 'merchant') {
         final merchantData = await _api.get('/merchant/dashboard/');
         _dashboardStats = merchantData['stats'];
@@ -446,6 +445,7 @@ class AppState extends ChangeNotifier {
         }
       }
       
+      await loadSettings();
       print("Data refreshed: ${_profile?.username}, ${_categories.length} categories, ${_merchants.length} merchants");
     } catch (e) {
       debugPrint("Error refreshing data: $e");

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
+import '../../models/models.dart';
 
 class MerchantProfileScreen extends StatefulWidget {
   const MerchantProfileScreen({super.key});
@@ -19,11 +22,15 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final merchant = Provider.of<AppState>(context, listen: false).merchantProfile;
+    final state = Provider.of<AppState>(context, listen: false);
+    final merchant = state.merchantProfile;
     _nameController = TextEditingController(text: merchant?.businessName ?? "");
     _addressController = TextEditingController(text: merchant?.address ?? "");
     _descController = TextEditingController(text: merchant?.description ?? "");
     _discountController = TextEditingController(text: merchant?.discountPercent.toString() ?? "50");
+    if (state.settings.isEmpty) {
+      state.loadSettings();
+    }
   }
 
   @override
@@ -70,7 +77,9 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
               ),
               child: const Text("Save Changes", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
+            _buildSupportSection(state),
+            const SizedBox(height: 30),
             _buildSecuritySection(state),
           ],
         ),
@@ -185,6 +194,116 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
             child: const Text("Change"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportSection(AppState state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Help & Support", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20),
+        _buildSettingsTile("Contact Us", Icons.support_agent_outlined, () => _showContactUsDialog(state)),
+      ],
+    );
+  }
+
+  void _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _showContactUsDialog(AppState state) {
+    final emailSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_EMAIL', 
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_EMAIL', value: 'info@thebaronclub.com')
+    );
+    final phoneSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_PHONE', 
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_PHONE', value: '+91 99999 99999')
+    );
+    final addressSetting = state.settings.firstWhere(
+      (s) => s.key == 'CONTACT_ADDRESS',
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_ADDRESS', value: 'LOREM ELEVATE LLP\nBuilding No.24/1701, Suite No.922, 2nd Floor KC Arcade, Near TV Centre Cochin Special Economic Zone')
+    );
+
+    final String contactEmail = emailSetting.value;
+    final String contactPhone = phoneSetting.value;
+    final String contactAddress = addressSetting.value;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Contact Us",
+          style: GoogleFonts.playfairDisplay(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.email_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Email Support", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactEmail, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl("mailto:$contactEmail");
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.phone_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Call Support", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactPhone, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl("tel:$contactPhone");
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.location_on_outlined, color: AppColors.amber),
+              ),
+              title: const Text("Address", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              subtitle: Text(contactAddress, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.4)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close", style: TextStyle(color: AppColors.amber)),
           ),
         ],
       ),

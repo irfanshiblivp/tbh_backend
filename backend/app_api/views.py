@@ -233,12 +233,13 @@ class RazorpayVerifyPaymentView(views.APIView):
             referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
             if referral:
                 referrer = referral.referrer
-                reward_amount = 100
-                referrer.referral_balance = float(referrer.referral_balance or 0) + reward_amount
-                referrer.referral_total_earned = float(referrer.referral_total_earned or 0) + reward_amount
+                from decimal import Decimal
+                reward_amount_dec = Decimal('100.00')
+                referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
+                referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
                 referrer.save()
                 referral.reward_paid_at = timezone.now()
-                referral.reward_amount = reward_amount
+                referral.reward_amount = reward_amount_dec
                 referral.save()
                 
             message = 'Payment verified and Prime membership activated successfully!'
@@ -341,9 +342,9 @@ class MerchantViewSet(viewsets.ModelViewSet):
             from django.db import connection
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute('DELETE FROM app_api_merchant WHERE id = %s', [instance.id])
+                    cursor.execute('DELETE FROM merchant_profiles WHERE id = %s', [instance.id])
                     if user:
-                        cursor.execute('DELETE FROM app_api_user WHERE id = %s', [user.id])
+                        cursor.execute('DELETE FROM users WHERE id = %s', [user.id])
             except Exception as raw_err:
                 print(f"Fallback raw deletion also failed: {raw_err}")
 
@@ -426,6 +427,12 @@ class MerchantViewSet(viewsets.ModelViewSet):
             user = User.objects.get(id=user_id)
         except:
             return Response({'error': 'Invalid user or merchant'}, status=400)
+
+        # Enforce active Prime membership
+        from django.utils import timezone
+        is_prime = PrimeMembership.objects.filter(user=user, expires_at__gt=timezone.now()).exists()
+        if not is_prime:
+            return Response({'error': 'Active Prime membership is required to redeem discounts.'}, status=status.HTTP_400_BAD_REQUEST)
 
         amount_saved = (bill_amount * merchant.discount_percent) / 100.0
         
@@ -543,7 +550,7 @@ class ReferralPayoutViewSet(viewsets.ModelViewSet):
             
             # Refund money back to user referral_balance
             user = payout.user
-            user.referral_balance = float(user.referral_balance) + float(payout.amount)
+            user.referral_balance = user.referral_balance + payout.amount
             user.save()
             
         return Response({'status': 'declined', 'remark': remark})
@@ -675,9 +682,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     path = default_storage.save(filename, ContentFile(image.read()))
                     sync_uploaded_file(path)
                     
-                    # Store in both fields so it shows up in both list and detail views
+                    # Store only in card_image as requested
                     merchant.card_image = path
-                    merchant.logo = path 
                     merchant.save()
             
             # Send welcome email containing login credentials
@@ -757,11 +763,12 @@ class UserViewSet(viewsets.ModelViewSet):
         referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
         if referral:
             referrer = referral.referrer
-            reward_amount = 100
+            from decimal import Decimal
+            reward_amount_dec = Decimal('100.00')
             
-            # Update referrer's balance safely using float
-            referrer.referral_balance = float(referrer.referral_balance or 0) + reward_amount
-            referrer.referral_total_earned = float(referrer.referral_total_earned or 0) + reward_amount
+            # Update referrer's balance safely using Decimal
+            referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
+            referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
             referrer.save()
             
             # Mark referral as paid
@@ -1358,26 +1365,27 @@ class ProfileView(views.APIView):
         if not amount:
             return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
         
+        from decimal import Decimal, InvalidOperation
         try:
-            amount = float(amount)
-        except ValueError:
+            amount_dec = Decimal(str(amount).strip())
+        except (ValueError, TypeError, InvalidOperation):
             return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
             
-        if amount > float(user.referral_balance):
+        if amount_dec > user.referral_balance:
             return Response({'error': 'Insufficient referral balance'}, status=status.HTTP_400_BAD_REQUEST)
             
-        if amount < 100: # Minimum withdrawal
+        if amount_dec < 100: # Minimum withdrawal
             return Response({'error': 'Minimum withdrawal is ₹100'}, status=status.HTTP_400_BAD_REQUEST)
             
         # Create payout record
         ReferralPayout.objects.create(
             user=user,
-            amount=amount,
+            amount=amount_dec,
             status='pending'
         )
         
         # Deduct from balance
-        user.referral_balance = float(user.referral_balance) - amount
+        user.referral_balance = user.referral_balance - amount_dec
         user.save()
         
         return Response({'message': 'Withdrawal request submitted successfully', 'user': UserSerializer(user).data})

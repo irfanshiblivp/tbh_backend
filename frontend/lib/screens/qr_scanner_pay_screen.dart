@@ -144,7 +144,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
                 child: ElevatedButton(
                   onPressed: state.isLoading ? null : () async {
                     Navigator.pop(context); // Close dialog
-                    _recordUpiPaymentAndShowSuccess(paymentMethod: 'CASH');
+                    _recordUpiPaymentAndShowSuccess(paymentMethod: 'ONLINE');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.amber,
