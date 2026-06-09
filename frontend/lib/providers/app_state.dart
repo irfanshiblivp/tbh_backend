@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -448,7 +449,7 @@ class AppState extends ChangeNotifier {
       
       await loadSettings();
       
-      if (_profile != null) {
+      if (_profile != null && !kIsWeb) {
         try {
           final messaging = FirebaseMessaging.instance;
           if (_profile!.role.isNotEmpty) {

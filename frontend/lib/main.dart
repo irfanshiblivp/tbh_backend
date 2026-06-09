@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -33,35 +34,40 @@ void main() async {
       return true;
     };
     
-    // Request permission for push notifications
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-    
-    // Subscribe to default announcements topic
-    await messaging.subscribeToTopic('announcement_both');
+    // Request permission for push notifications (skip on web — topics not supported)
+    if (!kIsWeb) {
+      final messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      
+      // Subscribe to default announcements topic
+      await messaging.subscribeToTopic('announcement_both');
+    }
   } catch (e) {
     // Prevent failure if Firebase config files are missing during testing
     // debugPrint("Firebase initialization failed: $e");
   }
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Material(
-      color: Colors.black,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text(
-            "App Error: ${details.exception}",
-            style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-            textAlign: TextAlign.center,
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Material(
+        color: Colors.black,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Text(
+              "App Error: ${details.exception}",
+              style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
