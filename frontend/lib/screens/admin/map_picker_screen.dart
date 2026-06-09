@@ -205,7 +205,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           CameraUpdate.newLatLng(_currentLocation),
         );
       } catch (e) {
-        debugPrint("Error moving map camera: $e");
+        // debugPrint("Error moving map camera: $e");
       }
     }
   }
@@ -288,7 +288,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           try {
             _mapController!.setMapStyle(_darkMapStyle);
           } catch (e) {
-            debugPrint("Error setting custom map style: $e");
+            // debugPrint("Error setting custom map style: $e");
           }
         },
         onCameraMove: (position) {
@@ -304,7 +304,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         },
       );
     } catch (e) {
-      debugPrint("GoogleMap build crash caught: $e");
+      // debugPrint("GoogleMap build crash caught: $e");
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
           _mapHasError = true;

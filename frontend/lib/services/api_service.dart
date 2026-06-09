@@ -17,11 +17,6 @@ class ApiService {
   static const String baseUrl =
       'https://api.thebaronclub.com/api'; // ✅ Production
 
-  // ─── Alternatives (comment in the one you need, comment out the rest) ───────
-  // static const String baseUrl = 'http://10.71.54.62:8000/api';  // Local Wi-Fi (laptop IP)
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';    // Desktop / Chrome / Web
-  // static const String baseUrl = 'http://10.0.2.2:8000/api';     // Android Emulator
-
   String? _token;
 
   void setToken(String? token) {

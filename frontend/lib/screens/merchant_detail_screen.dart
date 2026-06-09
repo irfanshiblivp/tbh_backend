@@ -178,7 +178,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
         _razorpay?.open(options);
       }
     } catch (e) {
-      debugPrint("Error opening Razorpay: $e");
+      // debugPrint("Error opening Razorpay: $e");
     }
   }
 
@@ -472,7 +472,7 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                     try {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } catch (e) {
-                      debugPrint("Failed to launch UPI URL: $e");
+                      // debugPrint("Failed to launch UPI URL: $e");
                     }
 
                     _recordUpiPaymentAndShowSuccess(state);

@@ -203,6 +203,12 @@ class RazorpayVerifyPaymentView(views.APIView):
                     starts_at=now,
                     expires_at=now + timezone.timedelta(days=365)
                 )
+            
+            # Send notification/email for Prime purchase
+            try:
+                notify_prime_purchase(user)
+            except Exception as fcm_err:
+                print(f"Error triggering notifications on Prime purchase: {fcm_err}")
                 
             # Dynamically process referral code if provided during Prime purchase
             referral_code = request.data.get('referral_code')
@@ -732,6 +738,12 @@ class UserViewSet(viewsets.ModelViewSet):
             expires_at=timezone.now() + timezone.timedelta(days=365)
         )
         
+        # Send notification/email for Prime purchase
+        try:
+            notify_prime_purchase(user)
+        except Exception as fcm_err:
+            print(f"Error triggering notifications on fake Prime purchase: {fcm_err}")
+        
         # Dynamically process referral code if provided during Prime purchase
         referral_code = request.data.get('referral_code')
         if referral_code:
@@ -885,6 +897,42 @@ class LoginView(views.APIView):
         print(f"Login failed for email: {email}")
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+def send_push_notification(topic, title, message):
+    """
+    Sends a push notification to a Firebase Cloud Messaging topic asynchronously.
+    """
+    import threading
+    def run_push():
+        from django.conf import settings
+        import requests
+        
+        fcm_key = getattr(settings, 'FCM_SERVER_KEY', None)
+        if not fcm_key:
+            print("FCM Warning: FCM_SERVER_KEY is not configured. Push notification skipped.")
+            return
+            
+        url = 'https://fcm.googleapis.com/fcm/send'
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'key={fcm_key}'
+        }
+        payload = {
+            'to': f'/topics/{topic}',
+            'notification': {
+                'title': title,
+                'body': message,
+                'sound': 'default'
+            },
+            'priority': 'high'
+        }
+        try:
+            res = requests.post(url, json=payload, headers=headers, timeout=10)
+            print(f"FCM Info: Sent push to topic {topic}. Status: {res.status_code}, Response: {res.text}")
+        except Exception as e:
+            print(f"FCM Error: Failed to send push to topic {topic}: {e}")
+            
+    threading.Thread(target=run_push, daemon=True).start()
+
 from django.core.mail import get_connection, EmailMultiAlternatives
 
 def send_async_email_with_fallback(subject, text_content, to_email, html_message=None):
@@ -978,6 +1026,34 @@ def send_async_email_with_fallback(subject, text_content, to_email, html_message
     except Exception as e:
         print(f"SMTP ERROR: Failed to start background thread: {e}")
         return False
+
+
+def notify_prime_purchase(user):
+    """
+    Sends an email notification and a push notification to admins when a user purchases Prime.
+    """
+    from django.utils import timezone
+    subject = f"Prime Purchase: {user.name or user.email}"
+    text_content = (
+        f"A customer has purchased a Prime Membership.\n\n"
+        f"Customer Details:\n"
+        f"- Name: {user.name}\n"
+        f"- Email: {user.email}\n"
+        f"- Phone: {user.phone}\n"
+        f"- Time: {timezone.now()}"
+    )
+    # Send email
+    send_async_email_with_fallback(
+        subject=subject,
+        text_content=text_content,
+        to_email="loremelevate@gmail.com"
+    )
+    # Send push notification to admins
+    send_push_notification(
+        topic="admin",
+        title="New Prime Purchase",
+        message=f"{user.name or user.email} has purchased Prime membership!"
+    )
 
 
 def send_verification_email(user):
@@ -1429,6 +1505,17 @@ class AdminNotificationView(views.APIView):
             target=target,
             is_auto=False
         )
+
+        # Send push notification to target topic
+        try:
+            topic = f"announcement_{target.lower()}"
+            send_push_notification(
+                topic=topic,
+                title=title,
+                message=message
+            )
+        except Exception as fcm_err:
+            print(f"Error triggering push notification for announcement: {fcm_err}")
 
         return Response({'status': 'success', 'message': 'Announcement broadcasted successfully'})
 

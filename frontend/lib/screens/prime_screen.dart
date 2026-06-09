@@ -185,7 +185,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
         _razorpay?.open(options);
       }
     } catch (e) {
-      debugPrint("Error opening Razorpay checkout: $e");
+      // debugPrint("Error opening Razorpay checkout: $e");
     }
   }
 

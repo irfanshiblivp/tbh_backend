@@ -38,6 +38,6 @@ void openRazorpayWebCheckout({
     rzp.callMethod('open');
   } catch (e) {
     // Falls back gracefully
-    print("Error launching Razorpay Web Checkout: $e");
+    // print("Error launching Razorpay Web Checkout: $e");
   }
 }

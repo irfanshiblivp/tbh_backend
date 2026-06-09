@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:frontend/models/models.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,7 +44,7 @@ class AppState extends ChangeNotifier {
         await loadPublicData();
       }
     } catch (e) {
-      print("Auth check error: $e");
+      // print("Auth check error: $e");
     } finally {
       _isCheckingAuth = false;
       _isInitialized = true;
@@ -162,7 +163,7 @@ class AppState extends ChangeNotifier {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        debugPrint("Location services are disabled.");
+        // debugPrint("Location services are disabled.");
         return;
       }
 
@@ -170,13 +171,13 @@ class AppState extends ChangeNotifier {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          debugPrint("Location permissions are denied.");
+          // debugPrint("Location permissions are denied.");
           return;
         }
       }
       
       if (permission == LocationPermission.deniedForever) {
-        debugPrint("Location permissions are permanently denied.");
+        // debugPrint("Location permissions are permanently denied.");
         return;
       }
 
@@ -186,7 +187,7 @@ class AppState extends ChangeNotifier {
           timeLimit: const Duration(seconds: 5),
         );
       } catch (e) {
-        debugPrint("Timeout fetching location, trying last known position: $e");
+        // debugPrint("Timeout fetching location, trying last known position: $e");
         _devicePosition = await Geolocator.getLastKnownPosition();
       }
 
@@ -212,7 +213,7 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint("Error fetching location or sorting: $e");
+      // debugPrint("Error fetching location or sorting: $e");
     }
   }
 
@@ -307,7 +308,7 @@ class AppState extends ChangeNotifier {
       await fetchLocationAndSort();
       notifyListeners();
     } catch (e) {
-      print("Error loading public data: $e");
+      // print("Error loading public data: $e");
     }
   }
 
@@ -318,7 +319,7 @@ class AppState extends ChangeNotifier {
       _profile = await _api.updateProfile(data);
       notifyListeners();
     } catch (e) {
-      debugPrint("Error updating profile: $e");
+      // debugPrint("Error updating profile: $e");
       rethrow;
     } finally {
       _isLoading = false;
@@ -338,7 +339,7 @@ class AppState extends ChangeNotifier {
     try {
       return await _api.get('/referral-payouts/');
     } catch (e) {
-      print("Error getting payout history: $e");
+      // print("Error getting payout history: $e");
       return [];
     }
   }
@@ -402,7 +403,7 @@ class AppState extends ChangeNotifier {
                 paymentMethod: tx['payment_method'] ?? 'CASH',
               ))
               .toList();
-          print("Merchant transactions loaded: ${_transactions.length}");
+          // print("Merchant transactions loaded: ${_transactions.length}");
         }
       } else if (_userRole == 'customer') {
         try {
@@ -439,16 +440,31 @@ class AppState extends ChangeNotifier {
           }
           all.sort((a, b) => b.timestamp.compareTo(a.timestamp));
           _transactions = all;
-          print("Customer transactions loaded: ${_transactions.length}");
+          // print("Customer transactions loaded: ${_transactions.length}");
         } catch (e) {
-          print("Error fetching customer transactions: $e");
+          // print("Error fetching customer transactions: $e");
         }
       }
       
       await loadSettings();
-      print("Data refreshed: ${_profile?.username}, ${_categories.length} categories, ${_merchants.length} merchants");
+      
+      if (_profile != null) {
+        try {
+          final messaging = FirebaseMessaging.instance;
+          if (_profile!.role.isNotEmpty) {
+            await messaging.subscribeToTopic('announcement_${_profile!.role.toLowerCase()}');
+          }
+          if (_profile!.role == 'admin') {
+            await messaging.subscribeToTopic('admin');
+          }
+        } catch (fcmErr) {
+          // debugPrint("FCM Topic subscription error: $fcmErr");
+        }
+      }
+
+      // print("Data refreshed: ${_profile?.username}, ${_categories.length} categories, ${_merchants.length} merchants");
     } catch (e) {
-      debugPrint("Error refreshing data: $e");
+      // debugPrint("Error refreshing data: $e");
       
       String errorStr = e.toString().toLowerCase();
       if (errorStr.contains('socketexception') || 
@@ -478,7 +494,7 @@ class AppState extends ChangeNotifier {
       _hasConnection = true;
       _serverAvailable = true;
     } catch (e) {
-      debugPrint("Error checkStatus: $e");
+      // debugPrint("Error checkStatus: $e");
       String errorStr = e.toString().toLowerCase();
       if (errorStr.contains('socketexception') || 
           errorStr.contains('network is unreachable') || 
@@ -507,7 +523,7 @@ class AppState extends ChangeNotifier {
       _settings = (data as List).map((s) => AppSetting.fromJson(s)).toList();
       notifyListeners();
     } catch (e) {
-      print("Error loading settings: $e");
+      // print("Error loading settings: $e");
       if (e.toString().contains('UNAUTHORIZED')) {
         await logout();
       }
@@ -613,7 +629,7 @@ class AppState extends ChangeNotifier {
       await _api.updateMerchant(id, data, imageFile: imageFile);
       await refreshData();
     } catch (e) {
-      debugPrint("Error updating merchant: $e");
+      // debugPrint("Error updating merchant: $e");
       rethrow;
     } finally {
       _isLoading = false;
@@ -628,7 +644,7 @@ class AppState extends ChangeNotifier {
       await _api.uploadHeroBanner(imageFile);
       await refreshData();
     } catch (e) {
-      debugPrint("Error uploading hero banner: $e");
+      // debugPrint("Error uploading hero banner: $e");
       rethrow;
     } finally {
       _isLoading = false;
@@ -643,7 +659,7 @@ class AppState extends ChangeNotifier {
       await _api.deleteHeroBanner(bannerId);
       await refreshData();
     } catch (e) {
-      debugPrint("Error deleting hero banner: $e");
+      // debugPrint("Error deleting hero banner: $e");
       rethrow;
     } finally {
       _isLoading = false;
@@ -664,7 +680,7 @@ class AppState extends ChangeNotifier {
         await refreshData();
       }
     } catch (e) {
-      debugPrint('Upgrade error: $e');
+      // debugPrint('Upgrade error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -684,7 +700,7 @@ class AppState extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Simulated purchase error: $e');
+      // debugPrint('Simulated purchase error: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -893,7 +909,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       return all;
     } catch (e) {
-      print("Error fetching transactions: $e");
+      // print("Error fetching transactions: $e");
       return [];
     }
   }
@@ -905,7 +921,7 @@ class AppState extends ChangeNotifier {
       final res = await _api.createRazorpayOrder(amount, purpose: purpose);
       return res;
     } catch (e) {
-      debugPrint("Error creating Razorpay order: $e");
+      // debugPrint("Error creating Razorpay order: $e");
       return null;
     } finally {
       _isLoading = false;
@@ -929,7 +945,7 @@ class AppState extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint("Error verifying payment: $e");
+      // debugPrint("Error verifying payment: $e");
       return false;
     } finally {
       _isLoading = false;
@@ -938,6 +954,20 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    if (_profile != null) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        if (_profile!.role.isNotEmpty) {
+          await messaging.unsubscribeFromTopic('announcement_${_profile!.role.toLowerCase()}');
+        }
+        if (_profile!.role == 'admin') {
+          await messaging.unsubscribeFromTopic('admin');
+        }
+      } catch (fcmErr) {
+        // debugPrint("FCM Topic unsubscribe error: $fcmErr");
+      }
+    }
+    
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     _api.setToken(null);
@@ -983,7 +1013,7 @@ class AppState extends ChangeNotifier {
       await refreshData();
       return true;
     } catch (e) {
-      debugPrint("Error in customerPay: $e");
+      // debugPrint("Error in customerPay: $e");
       return false;
     } finally {
       _isBlockingLoading = false;

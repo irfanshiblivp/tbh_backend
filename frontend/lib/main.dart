@@ -1,5 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:frontend/core/app_theme.dart';
 import 'package:frontend/providers/app_state.dart';
 import 'package:frontend/screens/auth_screen.dart';
@@ -11,7 +16,42 @@ import 'package:frontend/screens/merchant/merchant_layout.dart';
 import 'package:frontend/screens/admin/admin_layout.dart';
 import 'package:frontend/widgets/premium_loading.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp();
+    
+    // Pass all uncaught errors from the framework to Crashlytics.
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+    
+    // Request permission for push notifications
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+    
+    // Subscribe to default announcements topic
+    await messaging.subscribeToTopic('announcement_both');
+  } catch (e) {
+    // Prevent failure if Firebase config files are missing during testing
+    // debugPrint("Firebase initialization failed: $e");
+  }
+
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
       color: Colors.black,
@@ -45,6 +85,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const RootScreen(),
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+      ],
     );
   }
 }
@@ -108,18 +151,14 @@ class RootScreen extends StatelessWidget {
       return const PremiumAppOpeningLoader();
     }
     
-    print("RootScreen Build: isLoggedIn=${state.isLoggedIn}, isVerified=${state.isVerified}, role=${state.userRole}");
-    
     if (!state.isLoggedIn) return const AuthScreen();
     
     // Redirect to verification if not verified (like website)
     if (!state.isVerified) {
-      print("Redirecting to VerificationScreen");
       return const VerificationScreen();
     }
     
     // Using snake_case roles from Laravel DB
-    print("Navigating to Layout for role: ${state.userRole}");
     if (state.userRole == 'merchant') return const MerchantLayout();
     if (state.userRole == 'admin') return const AdminLayout();
 

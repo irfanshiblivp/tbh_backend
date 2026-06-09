@@ -223,4 +223,7 @@ RAZORPAY_KEY_ID = RAZORPAY_KEY
 EMAIL_REST_API_URL = os.environ.get('EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
 EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', 'shared_secret_token_12345')
 
+# Firebase Cloud Messaging Server Key (Legacy FCM API)
+FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY', '')
+
 

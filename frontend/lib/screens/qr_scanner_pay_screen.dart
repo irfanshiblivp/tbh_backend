@@ -49,7 +49,7 @@ class _QRScannerPayScreenState extends State<QRScannerPayScreen> {
     for (final barcode in barcodes) {
       final String? rawValue = barcode.rawValue;
       if (rawValue != null && rawValue.isNotEmpty) {
-        debugPrint('Scanned barcode raw value: $rawValue');
+        // debugPrint('Scanned barcode raw value: $rawValue');
         if (rawValue.toLowerCase().startsWith('upi://')) {
           setState(() {
             _hasProcessed = true;
