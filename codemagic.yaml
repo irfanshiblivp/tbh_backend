@@ -1,0 +1,16 @@
+workflows:
+ios_simulator:
+name: iOS Simulator
+
+```
+environment:
+  flutter: stable
+
+scripts:
+  - flutter pub get
+  - flutter clean
+  - flutter build ios --simulator
+
+artifacts:
+  - build/ios/iphonesimulator/**/*.app
+```
