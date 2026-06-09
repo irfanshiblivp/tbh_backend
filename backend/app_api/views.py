@@ -897,39 +897,47 @@ class LoginView(views.APIView):
         print(f"Login failed for email: {email}")
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+import os
+from django.conf import settings
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Initialize Firebase Admin SDK using Service Account credentials JSON
+cred_path = getattr(settings, 'FIREBASE_CREDENTIALS_PATH', None)
+if cred_path and os.path.exists(cred_path):
+    try:
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            print(f"FCM Info: Firebase Admin initialized successfully using credentials at {cred_path}")
+    except Exception as init_err:
+        print(f"FCM Error: Failed to initialize Firebase Admin SDK: {init_err}")
+else:
+    print(f"FCM Warning: FIREBASE_CREDENTIALS_PATH ({cred_path}) is not configured or JSON file not found. Push notifications will run in mock mode.")
+
+
 def send_push_notification(topic, title, message):
     """
-    Sends a push notification to a Firebase Cloud Messaging topic asynchronously.
+    Sends a push notification to a Firebase Cloud Messaging topic asynchronously using FCM HTTP v1.
     """
     import threading
     def run_push():
-        from django.conf import settings
-        import requests
-        
-        fcm_key = getattr(settings, 'FCM_SERVER_KEY', None)
-        if not fcm_key:
-            print("FCM Warning: FCM_SERVER_KEY is not configured. Push notification skipped.")
+        if not firebase_admin._apps:
+            print("FCM Warning: Firebase Admin is not initialized. Push notification skipped.")
             return
             
-        url = 'https://fcm.googleapis.com/fcm/send'
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'key={fcm_key}'
-        }
-        payload = {
-            'to': f'/topics/{topic}',
-            'notification': {
-                'title': title,
-                'body': message,
-                'sound': 'default'
-            },
-            'priority': 'high'
-        }
         try:
-            res = requests.post(url, json=payload, headers=headers, timeout=10)
-            print(f"FCM Info: Sent push to topic {topic}. Status: {res.status_code}, Response: {res.text}")
+            msg = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=message
+                ),
+                topic=topic
+            )
+            response = messaging.send(msg)
+            print(f"FCM Info: Sent push to topic {topic} successfully via HTTP v1. Response ID: {response}")
         except Exception as e:
-            print(f"FCM Error: Failed to send push to topic {topic}: {e}")
+            print(f"FCM Error: Failed to send push to topic {topic} via HTTP v1: {e}")
             
     threading.Thread(target=run_push, daemon=True).start()
 

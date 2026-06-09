@@ -11,3 +11,4 @@ drf-yasg>=1.21.7
 django-cleanup>=8.0.0
 whitenoise>=6.5.0
 gunicorn>=21.2.0
+firebase-admin>=6.2.0
