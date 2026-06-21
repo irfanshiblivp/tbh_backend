@@ -13,6 +13,7 @@ import 'transaction_management_screen.dart';
 import 'announcement_screen.dart';
 import 'referral_management_screen.dart';
 import 'hero_banner_management_screen.dart';
+import 'free_prime_requests_screen.dart';
 import '../../widgets/premium_loading.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -37,6 +38,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     PrimeManagementScreen(),
     ReferralManagementScreen(),
     HeroBannerManagementScreen(),
+    FreePrimeRequestsScreen(),
   ];
 
 
@@ -105,6 +107,7 @@ class _AdminLayoutState extends State<AdminLayout> {
           _buildSidebarItem(7, Icons.star_outline, Icons.star, "Prime Plan", isExpanded),
           _buildSidebarItem(8, Icons.card_giftcard_outlined, Icons.card_giftcard, "Referrals", isExpanded),
           _buildSidebarItem(9, Icons.view_carousel_outlined, Icons.view_carousel, "Hero Banners", isExpanded),
+          _buildSidebarItem(10, Icons.workspace_premium_outlined, Icons.workspace_premium, "Premium Requests", isExpanded),
           const Spacer(),
 
           const SizedBox(height: 20),

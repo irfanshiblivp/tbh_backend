@@ -146,6 +146,8 @@ class AppUser {
   final DateTime? primeStartsAt;
   final DateTime? primeExpiresAt;
   final String signupMethod;
+  final int referredMembershipCount;
+  final String freePrimeRequested;
 
   AppUser({
     required this.id,
@@ -170,6 +172,8 @@ class AppUser {
     this.primeStartsAt,
     this.primeExpiresAt,
     this.signupMethod = "Direct",
+    this.referredMembershipCount = 0,
+    this.freePrimeRequested = 'none',
   });
 
   // bool get isPrime => role == 'customer' && referralBalance > 0;
@@ -199,6 +203,8 @@ class AppUser {
       primeStartsAt: parseLocalTime(json['prime_starts_at']),
       primeExpiresAt: parseLocalTime(json['prime_expires_at']),
       signupMethod: json['signup_method'] ?? 'Direct',
+      referredMembershipCount: json['referred_membership_count'] ?? 0,
+      freePrimeRequested: json['free_prime_requested'] ?? 'none',
     );
   }
 }

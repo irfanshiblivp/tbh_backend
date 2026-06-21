@@ -265,7 +265,10 @@ class _PrimeScreenState extends State<PrimeScreen> {
                         const SizedBox(height: 8),
                         const Text("Unlock exclusive discounts at premier merchants and local favorites", textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 13, height: 1.7)),
                         const SizedBox(height: 30),
-                        
+                        if (state.profile != null && state.profile!.role == 'customer') ...[
+                          _buildReferralRewardCard(state),
+                          const SizedBox(height: 24),
+                        ],
                         // Sheet
                         Container(
                           padding: const EdgeInsets.all(24),
@@ -331,7 +334,75 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                   ];
                                 })(),
                               const SizedBox(height: 24),
-                              
+                              if (selectedPlanId != null) ...[
+                                (() {
+                                  final selectedPlan = state.settings.firstWhere(
+                                    (s) => s.key == selectedPlanId,
+                                    orElse: () => AppSetting(id: 0, key: '', value: ''),
+                                  );
+                                  final parts = selectedPlan.value.split('|');
+                                  final pOldPrice = (parts.isNotEmpty && parts[0].isNotEmpty) ? parts[0] : "1499";
+                                  final pNewPrice = (parts.length > 1 && parts[1].isNotEmpty) ? parts[1] : pOldPrice;
+                                  
+                                  if (pOldPrice != pNewPrice) {
+                                    final discount = (double.tryParse(pOldPrice) ?? 0) - (double.tryParse(pNewPrice) ?? 0);
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 16),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              "Special Offer Active:",
+                                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "₹$pOldPrice",
+                                                  style: const TextStyle(
+                                                    color: Colors.white54,
+                                                    fontSize: 13,
+                                                    decoration: TextDecoration.lineThrough,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  "₹$pNewPrice",
+                                                  style: const TextStyle(
+                                                    color: AppColors.amber,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.redAccent,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    "Save ₹${discount.toStringAsFixed(0)}",
+                                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                })(),
+                              ],
                               Container(
                                 width: double.infinity,
                                 height: 56,
@@ -442,14 +513,30 @@ class _PrimeScreenState extends State<PrimeScreen> {
               ),
               const SizedBox(height: 12),
               if (originalPriceStr != null && originalPriceStr != priceStr)
-                Text(
-                  originalPriceStr,
-                  style: const TextStyle(
-                    color: Colors.white24,
-                    fontSize: 12,
-                    decoration: TextDecoration.lineThrough,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      originalPriceStr,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 13,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: Colors.redAccent,
+                        decorationThickness: 1.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "ORIGINAL",
+                      style: TextStyle(
+                        color: Colors.white30,
+                        fontSize: 7,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 )
               else
                 const SizedBox(height: 15),
@@ -531,6 +618,219 @@ class _PrimeScreenState extends State<PrimeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReferralRewardCard(AppState state) {
+    final count = state.profile?.referredMembershipCount ?? 0;
+    final status = state.profile?.freePrimeRequested ?? 'none';
+    final double progress = (count / 10).clamp(0.0, 1.0);
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.amber.withValues(alpha: 0.15),
+            Colors.white.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.amber.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.card_giftcard, color: AppColors.amber, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  "Refer 10 Friends & Get Free Prime!",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Get 10 friends to purchase Prime Membership using your referral code (${state.profile?.referralCode ?? ''}) and get 1 year of free premium access.",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Progress: $count / 10 referred",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (progress >= 1.0)
+                const Icon(Icons.check_circle, color: Colors.green, size: 18)
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white10,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.amber),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Button or status
+          if (status == 'pending')
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.blueAccent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Request Pending Admin Approval",
+                    style: TextStyle(
+                      color: Colors.blueAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (status == 'approved')
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.verified, color: Colors.green, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    "Request Approved! Prime Activated",
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            if (count >= 10)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: state.isLoading
+                      ? null
+                      : () async {
+                          try {
+                            await state.requestFreePrime();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Premium request sent successfully!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.amber,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    "Request Free Premium Access",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: const Center(
+                  child: Text(
+                    "Refer more users to unlock free access",
+                    style: TextStyle(
+                      color: Colors.white30,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }

@@ -274,3 +274,15 @@ class HeroBanner(models.Model):
         db_table = 'hero_banners'
         managed = True
 
+
+class FreePrimeRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='free_prime_requests', db_column='user_id', db_constraint=False)
+    status = models.CharField(max_length=20, default='pending') # pending, approved, declined
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'free_prime_requests'
+        managed = True
+
+

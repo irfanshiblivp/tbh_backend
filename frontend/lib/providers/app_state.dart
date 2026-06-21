@@ -986,6 +986,57 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> requestFreePrime() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.post('/free-prime-requests/', {});
+      await refreshData();
+    } catch (e) {
+      throw AppError(ApiService.parseError(e).toString());
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<dynamic>> getFreePrimeRequests() async {
+    try {
+      final response = await _api.get('/free-prime-requests/');
+      return response as List<dynamic>;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> approveFreePrimeRequest(int requestId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.post('/free-prime-requests/$requestId/approve/', {});
+      await refreshData();
+    } catch (e) {
+      throw AppError(ApiService.parseError(e).toString());
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> declineFreePrimeRequest(int requestId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.post('/free-prime-requests/$requestId/decline/', {});
+      await refreshData();
+    } catch (e) {
+      throw AppError(ApiService.parseError(e).toString());
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     if (_profile != null) {
       try {

@@ -13,12 +13,13 @@ from django.utils import timezone
 from django.http import HttpResponse
 from .models import (
     User, Category, Merchant, PrimeMembership, Payment, Voucher, AppSetting,
-    Referral, ReferralLink, SystemAnnouncement, ReferralPayout, HeroBanner
+    Referral, ReferralLink, SystemAnnouncement, ReferralPayout, HeroBanner, FreePrimeRequest
 )
 from .serializers import (
     UserSerializer, CategorySerializer, MerchantSerializer, 
     PrimeMembershipSerializer, PaymentSerializer, ReferralPayoutSerializer,
-    ChangePasswordSerializer, VoucherSerializer, AppSettingSerializer, HeroBannerSerializer
+    ChangePasswordSerializer, VoucherSerializer, AppSettingSerializer, HeroBannerSerializer,
+    FreePrimeRequestSerializer
 )
 
 
@@ -1746,5 +1747,87 @@ class HeroBannerViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         if instance.image:
             sync_uploaded_file(instance.image.name)
+
+
+class FreePrimeRequestViewSet(viewsets.ModelViewSet):
+    queryset = FreePrimeRequest.objects.all().order_by('-created_at')
+    serializer_class = FreePrimeRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == 'admin':
+            return self.queryset
+        return self.queryset.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        
+        # Calculate referred membership count
+        from .models import Referral, PrimeMembership
+        referrals = Referral.objects.filter(referrer=user).select_related('referred')
+        count = 0
+        for ref in referrals:
+            if PrimeMembership.objects.filter(user=ref.referred).exists():
+                count += 1
+                
+        if count < 10:
+            return Response({'error': 'You need at least 10 referrals who purchased membership to request free premium access.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Check if they already have a pending or approved request
+        if FreePrimeRequest.objects.filter(user=user, status='pending').exists():
+            return Response({'error': 'You already have a pending request.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if FreePrimeRequest.objects.filter(user=user, status='approved').exists():
+            return Response({'error': 'You already have an approved request.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        free_req = FreePrimeRequest.objects.create(user=user, status='pending')
+        return Response(FreePrimeRequestSerializer(free_req).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        if request.user.role != 'admin':
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        free_req = self.get_object()
+        if free_req.status != 'pending':
+            return Response({'error': 'Request already processed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.db import transaction
+        with transaction.atomic():
+            free_req.status = 'approved'
+            free_req.save()
+
+            # Grant prime membership for 365 days
+            from django.utils import timezone
+            from .models import PrimeMembership
+            
+            now = timezone.now()
+            active_membership = PrimeMembership.objects.filter(user=free_req.user, expires_at__gt=now).first()
+            if active_membership:
+                active_membership.expires_at = active_membership.expires_at + timezone.timedelta(days=365)
+                active_membership.save()
+            else:
+                PrimeMembership.objects.create(
+                    user=free_req.user,
+                    source='referral_reward',
+                    starts_at=now,
+                    expires_at=now + timezone.timedelta(days=365)
+                )
+
+        return Response({'status': 'approved'})
+
+    @action(detail=True, methods=['post'])
+    def decline(self, request, pk=None):
+        if request.user.role != 'admin':
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        free_req = self.get_object()
+        if free_req.status != 'pending':
+            return Response({'error': 'Request already processed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        free_req.status = 'declined'
+        free_req.save()
+        return Response({'status': 'declined'})
+
 
 

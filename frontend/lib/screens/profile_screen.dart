@@ -395,6 +395,22 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "REFERRED MEMBERS",
+                        style: GoogleFonts.jost(color: AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${profile?.referredMembershipCount ?? 0}",
+                        style: GoogleFonts.dmMono(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 20),

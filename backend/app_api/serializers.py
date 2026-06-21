@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     User, Category, Merchant, PrimeMembership, Payment, Voucher, AppSetting,
-    ReferralPayout, HeroBanner
+    ReferralPayout, HeroBanner, FreePrimeRequest
 )
 from django.utils import timezone
 
@@ -15,6 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
     prime_starts_at = serializers.SerializerMethodField()
     prime_expires_at = serializers.SerializerMethodField()
     signup_method = serializers.SerializerMethodField()
+    referred_membership_count = serializers.SerializerMethodField()
+    free_prime_requested = serializers.SerializerMethodField()
     
     class Meta:
         model = User
@@ -24,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
             'bank_account_holder_name', 'bank_account_number', 'bank_ifsc', 
             'bank_name', 'bank_upi_id', 'customer_number', 'created_at',
             'is_prime', 'prime_starts_at', 'prime_expires_at', 'email_verified_at', 'state',
-            'signup_method'
+            'signup_method', 'referred_membership_count', 'free_prime_requested'
         )
         read_only_fields = ('referral_balance', 'referral_total_earned', 'customer_number')
 
@@ -45,6 +47,22 @@ class UserSerializer(serializers.ModelSerializer):
         if ref:
             return f"Referral ({ref.referrer.referral_code})"
         return "Direct"
+
+    def get_referred_membership_count(self, obj):
+        from .models import Referral, PrimeMembership
+        referrals = Referral.objects.filter(referrer=obj).select_related('referred')
+        count = 0
+        for ref in referrals:
+            if PrimeMembership.objects.filter(user=ref.referred).exists():
+                count += 1
+        return count
+
+    def get_free_prime_requested(self, obj):
+        from .models import FreePrimeRequest
+        req = FreePrimeRequest.objects.filter(user=obj).order_by('-created_at').first()
+        if req:
+            return req.status
+        return 'none'
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -144,4 +162,22 @@ class HeroBannerSerializer(serializers.ModelSerializer):
         else:
             rep['image'] = None
         return rep
+
+
+class FreePrimeRequestSerializer(serializers.ModelSerializer):
+    user_details = UserSerializer(source='user', read_only=True)
+    referred_membership_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FreePrimeRequest
+        fields = '__all__'
+
+    def get_referred_membership_count(self, obj):
+        from .models import Referral, PrimeMembership
+        referrals = Referral.objects.filter(referrer=obj.user).select_related('referred')
+        count = 0
+        for ref in referrals:
+            if PrimeMembership.objects.filter(user=ref.referred).exists():
+                count += 1
+        return count
 
