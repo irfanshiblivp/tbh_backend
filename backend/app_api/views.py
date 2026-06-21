@@ -69,10 +69,66 @@ def sync_uploaded_file(saved_path):
     except Exception as e:
         print(f"DEBUG SYNC ERROR: Failed to sync file: {e}")
 
+def get_google_maps_api_key():
+    import os
+    # Check environment variable first
+    key = os.environ.get('GOOGLE_MAPS_API_KEY')
+    if key:
+        return key
+
+    # Check potential .env paths
+    from pathlib import Path
+    base_dir = Path(__file__).resolve().parent.parent
+    potential_paths = [
+        base_dir.parent.parent / 'website' / '.env',
+        base_dir.parent / 'website' / '.env',
+        base_dir.parent.parent / 'the-baron-club' / '.env',
+        base_dir.parent / 'the-baron-club' / '.env',
+        base_dir / '.env',
+        base_dir.parent / '.env',
+    ]
+    for p in potential_paths:
+        if p.exists():
+            try:
+                with open(p, 'r') as f:
+                    for line in f:
+                        if line.strip().startswith('GOOGLE_MAPS_API_KEY='):
+                            return line.split('=', 1)[1].strip().strip('"').strip("'")
+            except Exception as e:
+                print(f"Error reading .env at {p}: {e}")
+    return "AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo" # fallback to default key if not found
+
 class AppSettingViewSet(viewsets.ModelViewSet):
     queryset = AppSetting.objects.all()
     serializer_class = AppSettingSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        key_val = get_google_maps_api_key()
+        found = False
+        if isinstance(response.data, list):
+            for item in response.data:
+                if item.get('key') == 'GOOGLE_MAPS_API_KEY':
+                    item['value'] = key_val
+                    found = True
+                    break
+            if not found:
+                response.data.append({
+                    'id': 9999,
+                    'key': 'GOOGLE_MAPS_API_KEY',
+                    'value': key_val
+                })
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        if kwargs.get('pk') == '9999' or kwargs.get('pk') == 'GOOGLE_MAPS_API_KEY':
+            return Response({
+                'id': 9999,
+                'key': 'GOOGLE_MAPS_API_KEY',
+                'value': get_google_maps_api_key()
+            })
+        return super().retrieve(request, *args, **kwargs)
 
 class AdminPaymentListView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]

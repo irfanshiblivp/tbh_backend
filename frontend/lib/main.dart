@@ -17,11 +17,15 @@ import 'package:frontend/screens/merchant/merchant_layout.dart';
 import 'package:frontend/screens/admin/admin_layout.dart';
 import 'package:frontend/widgets/premium_loading.dart';
 
+/// Tracks whether Firebase was successfully initialized.
+bool _firebaseInitialized = false;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
     await Firebase.initializeApp();
+    _firebaseInitialized = true;
     
     // Pass all uncaught errors from the framework to Crashlytics.
     FlutterError.onError = (errorDetails) {
@@ -51,6 +55,7 @@ void main() async {
       await messaging.subscribeToTopic('announcement_both');
     }
   } catch (e) {
+    _firebaseInitialized = false;
     // Prevent failure if Firebase config files are missing during testing
     // debugPrint("Firebase initialization failed: $e");
   }
@@ -92,7 +97,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.darkTheme,
       home: const RootScreen(),
       navigatorObservers: [
-        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+        if (_firebaseInitialized)
+          FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
       ],
     );
   }

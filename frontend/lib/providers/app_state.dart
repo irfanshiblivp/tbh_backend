@@ -885,24 +885,56 @@ class AppState extends ChangeNotifier {
           transactionId: p['razorpay_order_id'] ?? 'TX-${p['id']}',
           amountPaid: (p['amount'] ?? 0) / 100.0,
           status: p['status']?.toString().toUpperCase() ?? 'SUCCESS',
-          timestamp: DateTime.tryParse(p['created_at'] ?? '') ?? DateTime.now(),
+          timestamp: _parseDateTime(p['created_at']),
           userName: p['user_name'] ?? "User #${p['user']}",
           merchantName: isPrime ? "System (Prime)" : purpose,
           paymentMethod: 'ONLINE',
+          merchantId: null,
         ));
       }
       
       for (var v in vouchersJson) {
+        final mProfile = v['merchant_profile'];
+        int? vMerchantId;
+        if (mProfile is int) {
+          vMerchantId = mProfile;
+        } else if (mProfile is Map) {
+          vMerchantId = mProfile['id'];
+        } else if (mProfile != null) {
+          vMerchantId = int.tryParse(mProfile.toString());
+        }
+
         all.add(Transaction(
           transactionId: v['code'] ?? 'VC-${v['id']}',
           amountPaid: double.tryParse(v['bill_amount']?.toString() ?? '0') ?? 0.0,
           amountSaved: double.tryParse(v['amount_saved']?.toString() ?? '0') ?? 0.0,
           status: v['used_at'] != null ? 'REDEEMED' : 'PENDING',
-          timestamp: DateTime.tryParse(v['used_at'] ?? v['created_at'] ?? '') ?? DateTime.now(),
+          timestamp: _parseDateTime(v['used_at'] ?? v['created_at']),
           userName: v['user_name'] ?? "User #${v['user']}",
           merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",
           paymentMethod: v['payment_method'] ?? 'ONLINE',
+          merchantId: vMerchantId,
         ));
+      }
+
+      if (dateFrom != null && dateFrom.isNotEmpty) {
+        final fromDate = DateTime.tryParse(dateFrom);
+        if (fromDate != null) {
+          final startOfDay = DateTime(fromDate.year, fromDate.month, fromDate.day);
+          all = all.where((tx) => tx.timestamp.isAfter(startOfDay) || tx.timestamp.isAtSameMomentAs(startOfDay)).toList();
+        }
+      }
+      
+      if (dateTo != null && dateTo.isNotEmpty) {
+        final toDate = DateTime.tryParse(dateTo);
+        if (toDate != null) {
+          final endOfDay = DateTime(toDate.year, toDate.month, toDate.day, 23, 59, 59, 999);
+          all = all.where((tx) => tx.timestamp.isBefore(endOfDay) || tx.timestamp.isAtSameMomentAs(endOfDay)).toList();
+        }
+      }
+      
+      if (merchantId != null) {
+        all = all.where((tx) => tx.merchantId == merchantId).toList();
       }
 
       all.sort((a, b) => b.timestamp.compareTo(a.timestamp));

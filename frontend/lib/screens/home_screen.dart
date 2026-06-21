@@ -35,7 +35,119 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _pageController = PageController(initialPage: 0);
     _startBannerTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLocationService();
+    });
   }
+
+  Future<void> _checkLocationService() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _showLocationDialog(
+        title: "Location Services Disabled",
+        message: "Please turn on Location Services in your settings to view nearby merchants.",
+      );
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showLocationDialog(
+          title: "Location Permission Denied",
+          message: "Please grant location permissions to view nearby merchants.",
+        );
+        return;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      _showLocationDialog(
+        title: "Location Permission Permanently Denied",
+        message: "Location permissions are permanently denied. Please enable them in your app settings to view nearby merchants.",
+        openSettings: true,
+      );
+      return;
+    }
+
+    if (mounted) {
+      final state = Provider.of<AppState>(context, listen: false);
+      await state.fetchLocationAndSort();
+    }
+  }
+
+  void _showLocationDialog({
+    required String title,
+    required String message,
+    bool openSettings = false,
+  }) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.location_off, color: AppColors.amber),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.jost(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: GoogleFonts.jost(color: Colors.white70, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                if (openSettings) {
+                  await Geolocator.openAppSettings();
+                } else {
+                  await Geolocator.openLocationSettings();
+                }
+                // Recheck after returning
+                Future.delayed(const Duration(seconds: 2), () {
+                  _checkLocationService();
+                });
+              },
+              child: Text(
+                openSettings ? "OPEN APP SETTINGS" : "TURN ON LOCATION",
+                style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "RETRY",
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   void _startBannerTimer() {
     _bannerTimer?.cancel();
@@ -406,14 +518,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.5,
-                          ),
-                        ),
-                        Text(
-                          "VIEW ALL",
-                          style: GoogleFonts.jost(
-                            color: AppColors.amber,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],

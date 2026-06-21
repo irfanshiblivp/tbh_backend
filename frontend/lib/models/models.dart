@@ -212,6 +212,7 @@ class Transaction {
   final String userName;
   final String merchantName;
   final String paymentMethod;
+  final int? merchantId;
 
   Transaction({
     required this.transactionId,
@@ -222,6 +223,7 @@ class Transaction {
     this.userName = '',
     this.merchantName = '',
     this.paymentMethod = 'ONLINE',
+    this.merchantId,
   });
 }
 

@@ -11,6 +11,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import 'map_picker_screen.dart';
 
 class MerchantFormScreen extends StatefulWidget {
   final Merchant? merchant;
@@ -272,8 +273,17 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
   Future<List<Map<String, dynamic>>> _geocodeAddress(String address) async {
     try {
+      final state = Provider.of<AppState>(context, listen: false);
+      String apiKey = "AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo"; // Default fallback
+      try {
+        final keySetting = state.settings.firstWhere((s) => s.key == 'GOOGLE_MAPS_API_KEY');
+        if (keySetting.value.isNotEmpty) {
+          apiKey = keySetting.value;
+        }
+      } catch (_) {}
+
       final response = await http.get(Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo'
+        'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$apiKey'
       ));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -294,6 +304,152 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
     }
     return [];
   }
+
+  Future<void> _reverseGeocode(LatLng latLng) async {
+    try {
+      final state = Provider.of<AppState>(context, listen: false);
+      String apiKey = "AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo"; // Default fallback
+      try {
+        final keySetting = state.settings.firstWhere((s) => s.key == 'GOOGLE_MAPS_API_KEY');
+        if (keySetting.value.isNotEmpty) {
+          apiKey = keySetting.value;
+        }
+      } catch (_) {}
+
+      final response = await http.get(Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=${latLng.latitude},${latLng.longitude}&key=$apiKey'
+      ));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'OK' && data['results'] != null && data['results'].isNotEmpty) {
+          final String formattedAddress = data['results'][0]['formatted_address'] ?? '';
+          if (formattedAddress.isNotEmpty) {
+            setState(() {
+              _addressController.text = formattedAddress;
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Widget _buildMiniMapPreview(AppState state) {
+    final LatLng displayLatLng = (_selectedLatLng.latitude == 0.0 && _selectedLatLng.longitude == 0.0)
+        ? const LatLng(9.9857409, 76.3096248)
+        : _selectedLatLng;
+
+    return Container(
+      height: 200,
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            GoogleMap(
+              key: ValueKey('${displayLatLng.latitude}_${displayLatLng.longitude}'),
+              initialCameraPosition: CameraPosition(
+                target: displayLatLng,
+                zoom: 15,
+              ),
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+              compassEnabled: false,
+              mapToolbarEnabled: false,
+              rotateGesturesEnabled: false,
+              scrollGesturesEnabled: false,
+              tiltGesturesEnabled: false,
+              zoomGesturesEnabled: false,
+              onMapCreated: (controller) {
+                try {
+                  controller.setMapStyle(_darkMapStyle);
+                } catch (_) {}
+              },
+              markers: {
+                Marker(
+                  markerId: const MarkerId('merchant_pin'),
+                  position: displayLatLng,
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+                ),
+              },
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.6),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: InkWell(
+                onTap: () async {
+                  final LatLng? result = await Navigator.push<LatLng>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MapPickerScreen(
+                        initialLocation: _selectedLatLng,
+                      ),
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _selectedLatLng = result;
+                      _latController.text = result.latitude.toStringAsFixed(6);
+                      _lngController.text = result.longitude.toStringAsFixed(6);
+                    });
+                    _reverseGeocode(result);
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.amber.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.map_outlined, color: Colors.black, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        "CHANGE LOCATION ON MAP",
+                        style: GoogleFonts.jost(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Future<void> _searchAddress() async {
     if (_searchController.text.trim().isEmpty) return;
@@ -894,81 +1050,8 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
 
 
 
-                    // Manual coordinates
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "LATITUDE",
-                                style: GoogleFonts.jost(
-                                  color: AppColors.text2,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.04),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.line),
-                                ),
-                                child: TextField(
-                                  controller: _latController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                  style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
-                                  onChanged: (_) => _onManualCoordsChanged(),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "LONGITUDE",
-                                style: GoogleFonts.jost(
-                                  color: AppColors.text2,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.04),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.line),
-                                ),
-                                child: TextField(
-                                  controller: _lngController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                  style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
-                                  onChanged: (_) => _onManualCoordsChanged(),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                    // Interactive Google Map Picker Preview
+                    _buildMiniMapPreview(state),
 
                     _buildField(
                       controller: _addressController,

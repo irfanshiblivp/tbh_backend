@@ -76,6 +76,18 @@ class ProfileScreen extends StatelessWidget {
                     profile?.email ?? "",
                     style: GoogleFonts.jost(color: AppColors.text2, fontSize: 13),
                   ),
+                  if (profile?.customerNumber != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      "CUSTOMER ID: TBC${profile!.customerNumber}",
+                      style: GoogleFonts.dmMono(
+                        color: AppColors.amber,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
                   (() {
                     final bool isActivePrime = profile?.isPrime == true;
                     final bool isExpiredPrime = !isActivePrime && profile?.primeExpiresAt != null;

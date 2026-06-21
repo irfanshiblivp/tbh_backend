@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../utils/file_saver.dart';
 
 class AppUserManagementScreen extends StatefulWidget {
   const AppUserManagementScreen({super.key});
@@ -51,22 +52,19 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
     
     Clipboard.setData(ClipboardData(text: csv));
     
-    final bytes = utf8.encode(csv);
-    final base64Csv = base64Encode(bytes);
-    final url = 'data:text/csv;base64,$base64Csv';
-    
     try {
-      final uri = Uri.parse(url);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final filename = 'customers_${filterTitle.toLowerCase()}.csv';
+      await saveAndShareCSV(csv, filename);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$filterTitle Customer List Exported successfully! File download started & copied to clipboard.")),
+          SnackBar(content: Text("$filterTitle Customer List exported & copied to clipboard successfully!")),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$filterTitle list copied to clipboard! (Download failed)")),
+          SnackBar(content: Text("$filterTitle list copied to clipboard! (Download failed: $e)")),
         );
       }
     }
@@ -201,6 +199,13 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                   children: [
                     Text(user.username, style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16)),
                     Text(user.email, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                    if (user.customerNumber != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "Customer ID: TBC${user.customerNumber}",
+                        style: const TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     _buildSignupMethodBadge(user.signupMethod),
                   ],

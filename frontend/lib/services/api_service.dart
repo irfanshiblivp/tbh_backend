@@ -645,24 +645,6 @@ class ApiService {
       }
     }
 
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      throw AppError(
-        'Your session has expired or you do not have permission. Please log in again.',
-      );
-    }
-
-    if (response.statusCode == 404) {
-      throw AppError(
-        'The requested resource could not be found. Please try again later.',
-      );
-    }
-
-    if (response.statusCode >= 500) {
-      throw AppError(
-        'We are experiencing temporary server difficulties. Please try again shortly.',
-      );
-    }
-
     try {
       final errorData = jsonDecode(response.body);
       if (errorData is Map) {
@@ -695,13 +677,29 @@ class ApiService {
           throw AppError(fieldErrors.join('\n'));
         }
       }
-      throw AppError('Request failed (Status: ${response.statusCode})');
-    } catch (e) {
-      if (e is AppError) rethrow;
+    } catch (_) {
+      // Ignore JSON parse errors here, let standard status checks run
+    }
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
       throw AppError(
-        'An unexpected issue occurred (Status: ${response.statusCode}). Please try again.',
+        'Your session has expired or you do not have permission. Please log in again.',
       );
     }
+
+    if (response.statusCode == 404) {
+      throw AppError(
+        'The requested resource could not be found. Please try again later.',
+      );
+    }
+
+    if (response.statusCode >= 500) {
+      throw AppError(
+        'We are experiencing temporary server difficulties. Please try again shortly.',
+      );
+    }
+
+    throw AppError('Request failed (Status: ${response.statusCode})');
   }
 
   Future<dynamic> postMultipart(
