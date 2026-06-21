@@ -79,7 +79,7 @@ class ProfileScreen extends StatelessWidget {
                   if (profile?.customerNumber != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      "CUSTOMER ID: TBC${profile!.customerNumber}",
+                      "CUSTOMER ID: ${profile!.customerNumber}",
                       style: GoogleFonts.dmMono(
                         color: AppColors.amber,
                         fontSize: 12,

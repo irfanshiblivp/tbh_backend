@@ -202,7 +202,7 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
                     if (user.customerNumber != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        "Customer ID: TBC${user.customerNumber}",
+                        "Customer ID: ${user.customerNumber}",
                         style: const TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
