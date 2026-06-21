@@ -881,8 +881,11 @@ class LoginView(views.APIView):
             # Manually check password to see if it matches
             match = db_user.check_password(password)
             print(f"DEBUG: Manual check_password match: {match}")
+            if not match:
+                return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
         except User.DoesNotExist:
             print(f"DEBUG: No user found in DB with email: {email}")
+            return Response({'error': 'Email not registered'}, status=status.HTTP_401_UNAUTHORIZED)
             
         user = authenticate(username=email, password=password)
         if user:
