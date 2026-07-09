@@ -359,7 +359,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         const Icon(Icons.offline_bolt_outlined, color: Colors.white, size: 10),
                         const SizedBox(width: 4),
                         Text(
-                          "PRIME ${m.discountPercentage}% OFF", 
+                          "PRIME ${m.discountText.toUpperCase()}", 
                           style: GoogleFonts.dmMono(
                             color: Colors.white, 
                             fontSize: 9, 

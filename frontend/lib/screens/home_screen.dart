@@ -776,7 +776,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
                     ),
                     child: Text(
-                      "SAVE ${merchant.discountPercent}%",
+                      merchant.saveBadgeText,
                       style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold, fontSize: 10),
                     ),
                   ),

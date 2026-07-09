@@ -172,6 +172,7 @@ class Merchant(models.Model):
     logo = models.CharField(max_length=255, blank=True, null=True)
     card_image = models.CharField(max_length=255, blank=True, null=True)
     discount_percent = models.IntegerField(default=50)
+    discount_type = models.CharField(max_length=20, default='percentage')
     status = models.CharField(max_length=20, default='active')
     latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)

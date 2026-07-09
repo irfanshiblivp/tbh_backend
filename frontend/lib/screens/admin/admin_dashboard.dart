@@ -7,8 +7,41 @@ import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import 'activity_feed.dart';
 
-class AdminDashboard extends StatelessWidget {
+import '../../models/models.dart';
+
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  List<AppUser> _staffUsers = [];
+  bool _loadingStaff = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStaff();
+  }
+
+  Future<void> _loadStaff() async {
+    final state = Provider.of<AppState>(context, listen: false);
+    try {
+      final users = await state.getAppUsers();
+      if (mounted) {
+        setState(() {
+          _staffUsers = users.where((u) => u.role == 'staff').toList();
+          _loadingStaff = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingStaff = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,62 +51,215 @@ class AdminDashboard extends StatelessWidget {
     final isMobile = screenWidth < 700;
     final isSmall = screenWidth < 450;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await state.refreshData();
+        await _loadStaff();
+      },
+      color: AppColors.amber,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Platform Insights", style: GoogleFonts.dmSans(fontSize: 24, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                      const Text("Real-time performance overview", style: TextStyle(color: Colors.white30, fontSize: 12), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 14, color: AppColors.amber),
+                      const SizedBox(width: 8),
+                      Text(DateFormat('MMMM yyyy').format(DateTime.now()), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            FadeInDown(
+              delay: const Duration(milliseconds: 100),
+              child: _buildSummaryGrid(stats, isMobile, isSmall),
+            ),
+            SizedBox(height: isMobile ? 24 : 40),
+            FadeInDown(
+              delay: const Duration(milliseconds: 200),
+              child: _buildPlansSummary(context, state),
+            ),
+            SizedBox(height: isMobile ? 24 : 40),
+            FadeInUp(
+              child: _buildStaffSection(context, state),
+            ),
+            SizedBox(height: isMobile ? 24 : 40),
+            const Text("Recent System Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            FadeInUp(
+              child: ActivityFeed(logs: state.adminActivity),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStaffSection(BuildContext context, AppState state) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    if (_loadingStaff) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(child: CircularProgressIndicator(color: AppColors.amber)),
+      );
+    }
+
+    if (_staffUsers.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: const Center(
+          child: Text(
+            "No staff accounts registered yet.",
+            style: TextStyle(color: Colors.white30, fontSize: 13),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(isMobile ? 16 : 24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
+          const Text("Staff Registration Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _staffUsers.length,
+            itemBuilder: (context, index) {
+              final staff = _staffUsers[index];
+              final addedMerchants = state.merchants.where((m) => m.addedBy == staff.id).toList();
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Platform Insights", style: GoogleFonts.dmSans(fontSize: 24, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-                    const Text("Real-time performance overview", style: TextStyle(color: Colors.white30, fontSize: 12), overflow: TextOverflow.ellipsis),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          child: Text(
+                            staff.username.isEmpty ? "S" : staff.username.substring(0, 1).toUpperCase(),
+                            style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(staff.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              const SizedBox(height: 2),
+                              Text(staff.email, style: const TextStyle(color: Colors.white30, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.amber.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                          ),
+                          child: Text(
+                            "${addedMerchants.length} Added",
+                            style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (addedMerchants.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      const Text(
+                        "Registered Businesses:",
+                        style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: addedMerchants.map((m) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.storefront, size: 12, color: AppColors.amber2),
+                                const SizedBox(width: 6),
+                                Text(
+                                  m.businessName,
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                                ),
+                                if (m.categoryName.isNotEmpty) ...[
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "(${m.categoryName})",
+                                    style: const TextStyle(color: Colors.white30, fontSize: 9),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 14, color: AppColors.amber),
-                    const SizedBox(width: 8),
-                    Text(DateFormat('MMMM yyyy').format(DateTime.now()), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          FadeInDown(
-            delay: const Duration(milliseconds: 100),
-            child: _buildSummaryGrid(stats, isMobile, isSmall),
-          ),
-          SizedBox(height: isMobile ? 24 : 40),
-          FadeInDown(
-            delay: const Duration(milliseconds: 200),
-            child: _buildPlansSummary(context, state),
-          ),
-          SizedBox(height: isMobile ? 24 : 40),
-          const Text("Recent System Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          FadeInUp(
-            child: ActivityFeed(logs: state.adminActivity),
+              );
+            },
           ),
         ],
       ),
     );
   }
-
-
 
   Widget _buildSummaryGrid(Map<String, dynamic>? stats, bool isMobile, bool isSmall) {
     return GridView.count(
@@ -99,9 +285,9 @@ class AdminDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,9 +306,9 @@ class AdminDashboard extends StatelessWidget {
                     margin: const EdgeInsets.only(right: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.1),
+                      color: AppColors.amber.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
+                      border: Border.all(color: AppColors.amber.withOpacity(0.2)),
                     ),
                     child: Column(
                       children: [
@@ -143,12 +329,12 @@ class AdminDashboard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.05),
+            color: color.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -163,7 +349,7 @@ class AdminDashboard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(isMobile ? 8 : 12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: color, size: isMobile ? 18 : 24),
@@ -198,35 +384,33 @@ class AdminDashboard extends StatelessWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1A2E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text("Create Announcement"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Broadcast Message", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButton<String>(
+              DropdownButtonFormField<String>(
                 value: target,
                 dropdownColor: const Color(0xFF1A1A2E),
-                isExpanded: true,
                 style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: "Target Audience"),
                 items: const [
                   DropdownMenuItem(value: "BOTH", child: Text("All Users")),
                   DropdownMenuItem(value: "CUSTOMER", child: Text("Customers Only")),
                   DropdownMenuItem(value: "MERCHANT", child: Text("Merchants Only")),
                 ],
-                onChanged: (val) => setDialogState(() => target = val!),
+                onChanged: (val) => setDialogState(() => target = val ?? "BOTH"),
               ),
-              const SizedBox(height: 16),
               TextField(
                 controller: titleController,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Title", labelStyle: TextStyle(color: Colors.white60)),
+                decoration: const InputDecoration(labelText: "Title"),
               ),
-              const SizedBox(height: 16),
               TextField(
                 controller: messageController,
-                maxLines: 3,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Message", labelStyle: TextStyle(color: Colors.white60)),
+                decoration: const InputDecoration(labelText: "Message"),
+                maxLines: 3,
               ),
             ],
           ),
@@ -250,5 +434,3 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 }
-
-

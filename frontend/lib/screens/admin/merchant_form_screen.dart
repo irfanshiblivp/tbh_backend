@@ -44,6 +44,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
   bool _isSaving = false;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
+  String _discountType = 'percentage';
 
   // Map state
   GoogleMapController? _mapController;
@@ -209,6 +210,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
     _confirmPasswordController = TextEditingController(text: '');
     _phoneController = TextEditingController(text: '');
     _discountController = TextEditingController(text: m?.discountPercent.toString() ?? '50');
+    _discountType = m?.discountType ?? 'percentage';
     _addressController = TextEditingController(text: m?.address ?? '');
     _descriptionController = TextEditingController(text: m?.description ?? '');
     _searchController = TextEditingController();
@@ -536,6 +538,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
           'description': _descriptionController.text.trim(),
           'status': _status,
           'discount_percent': int.tryParse(_discountController.text.trim()) ?? 50,
+          'discount_type': _discountType,
           'latitude': double.tryParse(_latController.text.trim()),
           'longitude': double.tryParse(_lngController.text.trim()),
         };
@@ -555,6 +558,7 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
           'description': _descriptionController.text.trim(),
           'status': _status,
           'discount_percent': int.tryParse(_discountController.text.trim()) ?? 50,
+          'discount_type': _discountType,
           'latitude': double.tryParse(_latController.text.trim()),
           'longitude': double.tryParse(_lngController.text.trim()),
         };
@@ -628,7 +632,9 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                         border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
                       ),
                       child: Text(
-                        "SAVE ${_discountController.text.isEmpty ? '50' : _discountController.text}%",
+                        _discountType == 'flat'
+                            ? "SAVE ₹${_discountController.text.isEmpty ? '100' : _discountController.text}"
+                            : "SAVE ${_discountController.text.isEmpty ? '50' : _discountController.text}%",
                         style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold, fontSize: 10),
                       ),
                     ),
@@ -1014,16 +1020,64 @@ class _MerchantFormScreenState extends State<MerchantFormScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    const SizedBox(height: 20),
+
+                    Text(
+                      "DISCOUNT TYPE",
+                      style: GoogleFonts.jost(
+                        color: Colors.white60,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _discountType,
+                          dropdownColor: const Color(0xFF1A1A2E),
+                          style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
+                          decoration: const InputDecoration(border: InputBorder.none),
+                          items: const [
+                            DropdownMenuItem(value: "percentage", child: Text("PERCENTAGE DISCOUNT (%)")),
+                            DropdownMenuItem(value: "flat", child: Text("FLAT AMOUNT DISCOUNT (₹)")),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _discountType = val!;
+                              if (_discountType == 'flat') {
+                                if (int.tryParse(_discountController.text) == 50) {
+                                  _discountController.text = '100';
+                                }
+                              } else {
+                                if (int.tryParse(_discountController.text) == 100) {
+                                  _discountController.text = '50';
+                                }
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     _buildField(
                       controller: _discountController,
-                      label: "Discount Percentage (%)",
-                      hint: "e.g. 50",
-                      prefixIcon: Icons.percent,
+                      label: _discountType == 'flat' ? "Discount Amount (₹)" : "Discount Percentage (%)",
+                      hint: _discountType == 'flat' ? "e.g. 150" : "e.g. 50",
+                      prefixIcon: _discountType == 'flat' ? Icons.wallet_giftcard : Icons.percent,
                       isNumber: true,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return "Discount percent is required";
+                        if (v == null || v.trim().isEmpty) return "Discount value is required";
                         final val = int.tryParse(v.trim());
-                        if (val == null || val < 1 || val > 100) return "Enter a value between 1 and 100";
+                        if (val == null || val < 1) return "Enter a valid positive number";
+                        if (_discountType == 'percentage' && val > 100) return "Percentage cannot exceed 100%";
                         return null;
                       },
                     ),

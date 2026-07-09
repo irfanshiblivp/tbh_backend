@@ -74,6 +74,9 @@ class Merchant {
   final String categoryName;
   final double? latitude;
   final double? longitude;
+  final int? addedBy;
+  final String? addedByName;
+  final String discountType;
 
   Merchant({
     required this.id,
@@ -90,6 +93,9 @@ class Merchant {
     this.categoryName = '',
     this.latitude,
     this.longitude,
+    this.addedBy,
+    this.addedByName,
+    this.discountType = 'percentage',
   });
 
   // Legacy field aliases for backward compatibility
@@ -102,6 +108,20 @@ class Merchant {
   String? get category => categoryName;
   double get rating => 4.5;
   List<Offer> get offers => [];
+
+  String get discountText {
+    if (discountType == 'flat') {
+      return "₹$discountPercent OFF";
+    }
+    return "$discountPercent% OFF";
+  }
+
+  String get saveBadgeText {
+    if (discountType == 'flat') {
+      return "SAVE ₹$discountPercent";
+    }
+    return "SAVE $discountPercent%";
+  }
 
   factory Merchant.fromJson(Map<String, dynamic> json) {
     return Merchant(
@@ -119,6 +139,9 @@ class Merchant {
       categoryName: json['category_name'] ?? '',
       latitude: json['latitude'] is num ? (json['latitude'] as num).toDouble() : double.tryParse(json['latitude']?.toString() ?? ''),
       longitude: json['longitude'] is num ? (json['longitude'] as num).toDouble() : double.tryParse(json['longitude']?.toString() ?? ''),
+      addedBy: json['added_by'] is int ? json['added_by'] : null,
+      addedByName: json['added_by_name'],
+      discountType: json['discount_type'] ?? 'percentage',
     );
   }
 }

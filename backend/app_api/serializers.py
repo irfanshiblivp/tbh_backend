@@ -92,7 +92,7 @@ class MerchantSerializer(serializers.ModelSerializer):
         model = Merchant
         fields = [
             'id', 'user', 'business_name', 'category', 'description', 
-            'address', 'logo', 'card_image', 'discount_percent', 
+            'address', 'logo', 'card_image', 'discount_percent', 'discount_type',
             'status', 'created_at', 'updated_at', 'category_name', 'owner_name',
             'latitude', 'longitude', 'license_document', 'state', 'city',
             'added_by', 'added_by_name'

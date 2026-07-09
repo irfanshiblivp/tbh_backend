@@ -60,10 +60,14 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
     }
   }
 
-  void _calculateAmounts(double percent) {
+  void _calculateAmounts(double value, String type) {
     setState(() {
       _billAmount = double.tryParse(_billController.text) ?? 0;
-      _discountAmount = (_billAmount * percent) / 100;
+      if (type == 'flat') {
+        _discountAmount = _billAmount.clamp(0.0, value);
+      } else {
+        _discountAmount = (_billAmount * value) / 100;
+      }
       _finalAmount = _billAmount - _discountAmount;
     });
   }
@@ -262,7 +266,7 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
               controller: _billController,
               keyboardType: TextInputType.number,
               style: GoogleFonts.dmMono(color: Colors.white, fontSize: 16),
-              onChanged: (_) => _calculateAmounts(discountPercent),
+              onChanged: (_) => _calculateAmounts(discountPercent, merchant?.discountType ?? 'percentage'),
               decoration: InputDecoration(
                 labelText: "ENTER TOTAL BILL AMOUNT",
                 labelStyle: const TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5),
@@ -285,7 +289,13 @@ class _MerchantVerificationScreenState extends State<MerchantVerificationScreen>
                   children: [
                     _buildCalcRow("Total Bill Amount", "₹${_billAmount.toStringAsFixed(2)}", Colors.white70),
                     const SizedBox(height: 8),
-                    _buildCalcRow("Prime Discount (${discountPercent.toStringAsFixed(0)}%)", "-₹${_discountAmount.toStringAsFixed(2)}", AppColors.amber),
+                    _buildCalcRow(
+                      merchant?.discountType == 'flat'
+                          ? "Prime Discount (Flat)"
+                          : "Prime Discount (${discountPercent.toStringAsFixed(0)}%)",
+                      "-₹${_discountAmount.toStringAsFixed(2)}",
+                      AppColors.amber,
+                    ),
                     const SizedBox(height: 12),
                     const Divider(color: Colors.white10),
                     const SizedBox(height: 12),

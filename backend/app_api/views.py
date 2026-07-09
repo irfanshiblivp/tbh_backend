@@ -781,6 +781,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     description=data.get('description'),
                     status=init_status,
                     discount_percent=data.get('discount_percent', 50),
+                    discount_type=data.get('discount_type', 'percentage'),
                     latitude=latitude,
                     longitude=longitude,
                     added_by=request.user

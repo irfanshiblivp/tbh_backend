@@ -697,7 +697,11 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                   // Badges
                   Row(
                     children: [
-                      _buildInfoBadge(Icons.percent, "${widget.merchant.discountPercent}% OFF", AppColors.amber),
+                      _buildInfoBadge(
+                        widget.merchant.discountType == 'flat' ? Icons.wallet_giftcard : Icons.percent,
+                        widget.merchant.discountText,
+                        AppColors.amber,
+                      ),
                       const SizedBox(width: 12),
                       _buildInfoBadge(Icons.star_rounded, "4.8 RATING", Colors.white38),
                       const SizedBox(width: 12),
@@ -836,13 +840,18 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                 onChanged: (v) {
                   setState(() {
                     finalAmount = double.tryParse(v) ?? 0;
-                    double discountPercent = widget.merchant.discountPercent.toDouble();
-                    if (discountPercent >= 100) {
-                      discountAmount = 0;
-                      billAmount = finalAmount;
-                    } else {
-                      discountAmount = finalAmount * (discountPercent / (100 - discountPercent));
+                    if (widget.merchant.discountType == 'flat') {
+                      discountAmount = widget.merchant.discountPercent.toDouble();
                       billAmount = finalAmount + discountAmount;
+                    } else {
+                      double discountPercent = widget.merchant.discountPercent.toDouble();
+                      if (discountPercent >= 100) {
+                        discountAmount = 0;
+                        billAmount = finalAmount;
+                      } else {
+                        discountAmount = finalAmount * (discountPercent / (100 - discountPercent));
+                        billAmount = finalAmount + discountAmount;
+                      }
                     }
                   });
                 },
