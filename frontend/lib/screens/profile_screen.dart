@@ -1013,19 +1013,14 @@ class ProfileScreen extends StatelessWidget {
   void _showContactUsDialog(BuildContext context, AppState state) {
     final emailSetting = state.settings.firstWhere(
       (s) => s.key == 'CONTACT_EMAIL', 
-      orElse: () => AppSetting(id: 0, key: 'CONTACT_EMAIL', value: 'info@thebaronclub.com')
-    );
-    final phoneSetting = state.settings.firstWhere(
-      (s) => s.key == 'CONTACT_PHONE', 
-      orElse: () => AppSetting(id: 0, key: 'CONTACT_PHONE', value: '+91 99999 99999')
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_EMAIL', value: 'contact@thebaronclub.com')
     );
     final addressSetting = state.settings.firstWhere(
       (s) => s.key == 'CONTACT_ADDRESS',
-      orElse: () => AppSetting(id: 0, key: 'CONTACT_ADDRESS', value: 'LOREM ELEVATE LLP\nBuilding No.24/1701, Suite No.922, 2nd Floor KC Arcade, Near TV Centre Cochin Special Economic Zone')
+      orElse: () => AppSetting(id: 0, key: 'CONTACT_ADDRESS', value: '24/1701, 2nd Floor, KC Arcade, Near CSEZ , Kakkanad,Ernakulam- 682037, Kerala')
     );
 
     final String contactEmail = emailSetting.value;
-    final String contactPhone = phoneSetting.value;
     final String contactAddress = addressSetting.value;
 
     showDialog(
@@ -1058,23 +1053,6 @@ class ProfileScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 _launchUrl("mailto:$contactEmail");
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.amber.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.phone_outlined, color: AppColors.amber),
-              ),
-              title: const Text("Call Support", style: TextStyle(color: Colors.white70, fontSize: 12)),
-              subtitle: Text(contactPhone, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              onTap: () {
-                Navigator.pop(context);
-                _launchUrl("tel:$contactPhone");
               },
             ),
             const SizedBox(height: 8),
