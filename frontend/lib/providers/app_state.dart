@@ -795,6 +795,34 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> approveMerchant(int id) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.post('/merchants/$id/approve/', {});
+      await refreshData();
+    } catch (e) {
+      throw AppError(ApiService.parseError(e).toString());
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> rejectMerchant(int id) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _api.post('/merchants/$id/reject/', {});
+      await refreshData();
+    } catch (e) {
+      throw AppError(ApiService.parseError(e).toString());
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteAppUser(int id) async {
     _isLoading = true;
     notifyListeners();

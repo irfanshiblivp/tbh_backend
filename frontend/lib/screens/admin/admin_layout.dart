@@ -14,6 +14,7 @@ import 'announcement_screen.dart';
 import 'referral_management_screen.dart';
 import 'hero_banner_management_screen.dart';
 import 'free_prime_requests_screen.dart';
+import 'staff_performance_screen.dart';
 import '../../widgets/premium_loading.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -35,7 +36,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     CategoryManagementScreen(),
     AnnouncementScreen(),
     AdminManagementScreen(roleFilter: 'admin'),
-    AdminManagementScreen(roleFilter: 'staff'),
+    StaffPerformanceScreen(),
     PrimeManagementScreen(),
     ReferralManagementScreen(),
     HeroBannerManagementScreen(),
