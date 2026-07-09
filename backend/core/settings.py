@@ -189,9 +189,11 @@ MEDIA_URL = '/storage/'
 # Dynamically resolve MEDIA_ROOT relative to BASE_DIR so it works on both Windows local dev
 # and Linux production environments.
 POTENTIAL_MEDIA_ROOTS = [
-    BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage', # Local dev layout
-    BASE_DIR.parent / 'public_html' / 'storage',                   # Production layout (sibling)
-    BASE_DIR.parent.parent / 'public_html' / 'storage',            # Production layout (parent-parent)
+    BASE_DIR.parent.parent / 'website code' / 'public_html' / 'storage', # Local dev layout
+    BASE_DIR.parent.parent / 'website' / 'public_html' / 'storage',      # Local dev layout (alt)
+    Path('/home/u470165908/public_html/storage'),                        # Production Hostinger absolute path
+    BASE_DIR.parent / 'public_html' / 'storage',                         # Production layout (sibling)
+    BASE_DIR.parent.parent / 'public_html' / 'storage',                  # Production layout (parent-parent)
 ]
 MEDIA_ROOT = None
 for pot_root in POTENTIAL_MEDIA_ROOTS:
@@ -221,7 +223,7 @@ RAZORPAY_KEY_ID = RAZORPAY_KEY
 
 # REST API Email Settings
 EMAIL_REST_API_URL = os.environ.get('EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
-EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', 'shared_secret_token_12345')
+EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', '7ssBK5w5s136WbAnIBFmEm8Qakyxkj8n')
 
 # Firebase Cloud Messaging Credentials Path (HTTP v1 API)
 FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', str(BASE_DIR / 'firebase-credentials.json'))

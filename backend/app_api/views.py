@@ -40,8 +40,13 @@ def sync_uploaded_file(saved_path):
         # Candidate storage destination directories
         dest_dirs = [
             # Local layout
+            backend_root.parent.parent / 'website code' / 'baronclub' / 'public' / 'storage',
+            backend_root.parent.parent / 'website code' / 'public_html' / 'storage',
             backend_root.parent.parent / 'website' / 'baronclub' / 'public' / 'storage',
             backend_root.parent.parent / 'website' / 'public_html' / 'storage',
+            # Production layout (absolute path)
+            Path('/home/u470165908/baronclub/public/storage'),
+            Path('/home/u470165908/public_html/storage'),
             # Production layout (sibling to tbh_backend)
             backend_root.parent / 'baronclub' / 'public' / 'storage',
             backend_root.parent / 'public_html' / 'storage',
@@ -1194,40 +1199,11 @@ def send_otp_email(user, otp, expiry_str):
     )
 
 def send_welcome_email(user, password):
-    subject = 'Welcome to The Baron Club - Account Created'
-    role_name = 'Administrator' if user.role == 'admin' else 'Staff Member' if user.role == 'staff' else 'Merchant Partner'
-    
-    html_message = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://thebaronclub.com/logo-01.png" alt="The Baron Club" style="height: 80px;">
-        </div>
-        <h2 style="color: #333; text-align: center;">Account Created Successfully</h2>
-        <p style="color: #555; font-size: 16px; line-height: 1.5;">
-            Hello {user.name},<br><br>
-            An account has been created for you as a <strong>{role_name}</strong> on The Baron Club.<br>
-            Here are your login credentials:
-        </p>
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #eee;">
-            <p style="margin: 5px 0; font-size: 15px;"><strong>Email / Username:</strong> {user.email}</p>
-            <p style="margin: 5px 0; font-size: 15px;"><strong>Password:</strong> {password}</p>
-        </div>
-        <p style="color: #555; font-size: 15px; line-height: 1.5;">
-            Please log in to the app and change your password as soon as possible for security reasons.
-        </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="color: #aaa; font-size: 12px; text-align: center;">
-            © 2026 The Baron Club. All rights reserved.
-        </p>
-    </div>
     """
-    print(f"DEBUG: Triggering welcome email to {user.email} (Role: {user.role}, Password: {password})")
-    send_async_email_with_fallback(
-        subject,
-        f'Welcome to The Baron Club. Your account has been created. Username: {user.email}, Password: {password}',
-        user.email,
-        html_message=html_message
-    )
+    Disabled welcome emails to prevent sending sensitive credential data (like passwords) via email.
+    """
+    print(f"DEBUG: Welcome email to {user.email} (Role: {user.role}, Password: {password}) was requested but skipped for security.")
+    pass
 
 class SignupView(views.APIView):
     permission_classes = [permissions.AllowAny]
