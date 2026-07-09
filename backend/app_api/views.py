@@ -180,6 +180,9 @@ class RazorpayCreateOrderView(views.APIView):
         if amount <= 0:
             return Response({'error': 'Amount must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
             
+        if purpose == 'prime_membership':
+            amount = amount * 1.18
+            
         try:
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
             # Amount in Razorpay is in paise (cents), so multiply by 100
@@ -462,6 +465,45 @@ class MerchantViewSet(viewsets.ModelViewSet):
         merchant.save()
         return Response({'status': 'Merchant restored'})
 
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        if self.request.user.role != 'admin' and not self.request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        merchant = self.get_object()
+        with transaction.atomic():
+            merchant.status = 'active'
+            merchant.save()
+            user = merchant.user
+            if user:
+                user.status = 'active'
+                user.save()
+        return Response({'status': 'Merchant approved successfully'})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        if self.request.user.role != 'admin' and not self.request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        merchant = self.get_object()
+        with transaction.atomic():
+            merchant.status = 'rejected'
+            merchant.save()
+            user = merchant.user
+            if user:
+                user.status = 'inactive'
+                user.save()
+        return Response({'status': 'Merchant rejected successfully'})
+
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        if self.request.user.role != 'admin' and not self.request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            
+        queryset = Merchant.objects.filter(status='pending').order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'])
     def verify_user(self, request):
         query = request.query_params.get('query')
@@ -674,7 +716,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def admin_create_merchant(self, request):
-        if self.request.user.role != 'admin' and not self.request.user.is_superuser:
+        if self.request.user.role not in ('admin', 'staff') and not self.request.user.is_superuser:
             return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
         
         data = request.data
@@ -715,6 +757,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 longitude = Decimal('76.3096248')
 
             with transaction.atomic():
+                is_staff_creator = request.user.role == 'staff'
+                init_status = 'pending' if is_staff_creator else 'active'
+                
                 # 1. Create the User
                 from django.utils import timezone
                 user = User.objects.create_user(
@@ -723,6 +768,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     name=data.get('business_name'),
                     phone=phone,
                     role='merchant',
+                    status=init_status,
                     email_verified_at=timezone.now() # Auto-verify for admin-created users to allow website login
                 )
                 
@@ -733,10 +779,11 @@ class UserViewSet(viewsets.ModelViewSet):
                     category=data.get('category'),
                     address=data.get('address'),
                     description=data.get('description'),
-                    status=data.get('status', 'active'),
+                    status=init_status,
                     discount_percent=data.get('discount_percent', 50),
                     latitude=latitude,
                     longitude=longitude,
+                    added_by=request.user
                 )
 
                 # 3. Handle File Upload (Image)

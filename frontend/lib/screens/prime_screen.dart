@@ -374,7 +374,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  "₹$pNewPrice",
+                                                  "₹$pNewPrice + GST",
                                                   style: const TextStyle(
                                                     color: AppColors.amber,
                                                     fontSize: 15,
@@ -428,7 +428,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
                                   child: Text(
-                                    "GET PRIME NOW — ₹${price.toStringAsFixed(0)}",
+                                    "GET PRIME NOW — ₹${price.toStringAsFixed(0)} + GST",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w900,
                                       fontSize: 15,
@@ -547,6 +547,15 @@ class _PrimeScreenState extends State<PrimeScreen> {
                   color: isSelected ? AppColors.amber : Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                "+ GST",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),

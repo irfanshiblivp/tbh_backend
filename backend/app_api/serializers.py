@@ -85,6 +85,7 @@ class MerchantSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category')
     owner_name = serializers.ReadOnlyField(source='user.name')
     state = serializers.ReadOnlyField(source='user.state')
+    added_by_name = serializers.ReadOnlyField(source='added_by.name')
     city = serializers.SerializerMethodField()
     
     class Meta:
@@ -93,9 +94,10 @@ class MerchantSerializer(serializers.ModelSerializer):
             'id', 'user', 'business_name', 'category', 'description', 
             'address', 'logo', 'card_image', 'discount_percent', 
             'status', 'created_at', 'updated_at', 'category_name', 'owner_name',
-            'latitude', 'longitude', 'license_document', 'state', 'city'
+            'latitude', 'longitude', 'license_document', 'state', 'city',
+            'added_by', 'added_by_name'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name', 'state', 'user', 'logo', 'card_image', 'license_document']
+        read_only_fields = ['created_at', 'updated_at', 'category_name', 'owner_name', 'state', 'user', 'logo', 'card_image', 'license_document', 'added_by', 'added_by_name']
 
     def get_city(self, obj):
         if not obj.address:
