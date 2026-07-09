@@ -196,61 +196,60 @@ class _PrimeScreenState extends State<PrimeScreen> {
       height: 190,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFE5A93B),
-            Color(0xFF9E6E1D),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.ink2,
+        border: Border.all(color: AppColors.amber.withOpacity(0.4), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF9E6E1D).withValues(alpha: 0.4),
+            color: AppColors.amber.withOpacity(0.18),
             blurRadius: 25,
             offset: const Offset(0, 10),
+            spreadRadius: -2,
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Background subtle pattern or circles
+          // Radial glow behind card details
           Positioned(
-            right: -20,
-            bottom: -20,
+            right: -30,
+            bottom: -30,
             child: Container(
-              width: 150,
-              height: 150,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
+                gradient: RadialGradient(
+                  colors: [AppColors.amber.withOpacity(0.12), Colors.transparent],
+                ),
               ),
             ),
           ),
           Positioned(
-            right: 40,
+            left: -20,
             top: -20,
             child: Container(
               width: 100,
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.04),
+                gradient: RadialGradient(
+                  colors: [AppColors.amber2.withOpacity(0.08), Colors.transparent],
+                ),
               ),
             ),
           ),
-          // Chip outline
+          // Metallic Gold SIM Chip pattern
           Positioned(
             left: 24,
             top: 24,
             child: Container(
-              width: 45,
-              height: 35,
+              width: 44,
+              height: 34,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white38, width: 1.5),
+                border: Border.all(color: AppColors.amber2.withOpacity(0.5), width: 1.5),
                 gradient: LinearGradient(
-                  colors: [Colors.white.withValues(alpha: 0.2), Colors.transparent],
+                  colors: [AppColors.amber2.withOpacity(0.3), Colors.transparent],
                 ),
               ),
             ),
@@ -264,20 +263,20 @@ class _PrimeScreenState extends State<PrimeScreen> {
               children: [
                 Text(
                   "THE BARON CLUB",
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
+                  style: GoogleFonts.playfairDisplay(
+                    color: AppColors.cream,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
                     letterSpacing: 2,
                   ),
                 ),
                 Text(
                   "EST. 2026",
-                  style: GoogleFonts.outfit(
-                    color: Colors.white60,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1,
+                  style: GoogleFonts.jost(
+                    color: AppColors.text2,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ],
@@ -286,12 +285,12 @@ class _PrimeScreenState extends State<PrimeScreen> {
           // Prime Pass Watermark
           Positioned(
             left: 24,
-            bottom: 60,
+            bottom: 62,
             child: Text(
               "PRIME MEMBERSHIP",
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 18,
+              style: GoogleFonts.jost(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 3,
               ),
@@ -304,19 +303,20 @@ class _PrimeScreenState extends State<PrimeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "CARD HOLDER",
-                  style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 8,
-                    letterSpacing: 1,
+                  style: GoogleFonts.jost(
+                    color: AppColors.text2,
+                    fontSize: 9,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   name.toUpperCase(),
                   style: GoogleFonts.dmMono(
-                    color: Colors.white,
+                    color: AppColors.text,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -332,11 +332,12 @@ class _PrimeScreenState extends State<PrimeScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.amber.withOpacity(0.12),
+                border: Border.all(color: AppColors.amber.withOpacity(0.3)),
               ),
               child: const Icon(
                 Icons.workspace_premium,
-                color: Colors.white,
+                color: AppColors.amber2,
                 size: 24,
               ),
             ),
@@ -354,32 +355,31 @@ class _PrimeScreenState extends State<PrimeScreen> {
       backgroundColor: AppColors.ink,
       body: Stack(
         children: [
-          // Background top orb
+          // Background ambient orbs using brand colors
           Positioned(
-            top: -100,
-            left: -80,
+            top: -120,
+            left: -100,
             child: Container(
-              width: 360,
-              height: 360,
+              width: 380,
+              height: 380,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.amber.withValues(alpha: 0.32), Colors.transparent],
+                  colors: [AppColors.amber.withOpacity(0.24), Colors.transparent],
                 ),
               ),
             ),
           ),
-          // Background bottom orb for dual glow
           Positioned(
-            bottom: -150,
-            right: -100,
+            bottom: -160,
+            right: -120,
             child: Container(
-              width: 400,
-              height: 400,
+              width: 420,
+              height: 420,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [const Color(0xFF9E6E1D).withValues(alpha: 0.2), Colors.transparent],
+                  colors: [AppColors.amber2.withOpacity(0.14), Colors.transparent],
                 ),
               ),
             ),
@@ -399,9 +399,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: Colors.white.withOpacity(0.06),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                            border: Border.all(color: Colors.white.withOpacity(0.08)),
                           ),
                           child: const Icon(Icons.chevron_left, color: Colors.white70),
                         ),
@@ -417,10 +417,25 @@ class _PrimeScreenState extends State<PrimeScreen> {
                       children: [
                         const SizedBox(height: 10),
                         _buildVIPCard(state),
-                        const SizedBox(height: 24),
-                        Text("Prime Membership", style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 26, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 28),
+                        Text(
+                          "Prime Membership", 
+                          style: GoogleFonts.playfairDisplay(
+                            color: AppColors.text,
+                            fontSize: 28, 
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        const Text("Unlock exclusive discounts at premier merchants and local favorites", textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 13, height: 1.6)),
+                        Text(
+                          "Unlock exclusive discounts at premier merchants and local favorites", 
+                          textAlign: TextAlign.center, 
+                          style: GoogleFonts.jost(
+                            color: AppColors.text2, 
+                            fontSize: 13, 
+                            height: 1.6,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         if (state.profile != null && state.profile!.role == 'customer') ...[
                           _buildReferralRewardCard(state),
@@ -430,9 +445,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
+                            color: AppColors.ink2,
                             borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                            border: Border.all(color: Colors.white.withOpacity(0.05)),
                           ),
                           child: Column(
                             children: [
@@ -461,16 +476,20 @@ class _PrimeScreenState extends State<PrimeScreen> {
                               const SizedBox(height: 24),
                               TextField(
                                 controller: _referralController,
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
                                 decoration: InputDecoration(
                                   hintText: "Referral Code (Optional)",
-                                  hintStyle: const TextStyle(color: Colors.white24),
+                                  hintStyle: GoogleFonts.jost(color: Colors.white30),
                                   filled: true,
-                                  fillColor: Colors.white.withValues(alpha: 0.05),
+                                  fillColor: Colors.white.withOpacity(0.03),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(13),
-                                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(color: AppColors.amber),
                                   ),
                                   prefixIcon: const Icon(Icons.group_add_outlined, color: AppColors.amber, size: 20),
                                 ),
@@ -508,23 +527,23 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: Colors.redAccent.withValues(alpha: 0.1),
+                                          color: Colors.redAccent.withOpacity(0.08),
                                           borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                                          border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
                                         ),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Text(
+                                            Text(
                                               "Special Offer Active:",
-                                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                              style: GoogleFonts.jost(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                             ),
                                             Row(
                                               children: [
                                                 Text(
                                                   "₹$pOldPrice",
-                                                  style: const TextStyle(
-                                                    color: Colors.white54,
+                                                  style: GoogleFonts.dmMono(
+                                                    color: Colors.white38,
                                                     fontSize: 13,
                                                     decoration: TextDecoration.lineThrough,
                                                   ),
@@ -532,8 +551,8 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                                 const SizedBox(width: 8),
                                                 Text(
                                                   "₹$pNewPrice + GST",
-                                                  style: const TextStyle(
-                                                    color: AppColors.amber,
+                                                  style: GoogleFonts.dmMono(
+                                                    color: AppColors.amber2,
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.bold,
                                                   ),
@@ -547,7 +566,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                                   ),
                                                   child: Text(
                                                     "Save ₹${discount.toStringAsFixed(0)}",
-                                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                                    style: GoogleFonts.jost(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                                   ),
                                                 ),
                                               ],
@@ -565,12 +584,12 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                 height: 56,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [AppColors.amber, Color(0xFFFF9D00)],
+                                    colors: [AppColors.amber, AppColors.amber2],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.amber.withValues(alpha: 0.3),
+                                      color: AppColors.amber.withOpacity(0.3),
                                       blurRadius: 20,
                                       offset: const Offset(0, 10),
                                     ),
@@ -586,17 +605,17 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                   ),
                                   child: Text(
                                     "GET PRIME NOW — ₹${price.toStringAsFixed(0)} + GST",
-                                    style: const TextStyle(
+                                    style: GoogleFonts.jost(
                                       fontWeight: FontWeight.w900,
                                       fontSize: 15,
-                                      letterSpacing: 1,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ),
                               ),
 
                               const SizedBox(height: 8),
-                              const Text("Cancel anytime · No hidden charges · Auto-renewal", style: TextStyle(color: Colors.white24, fontSize: 10)),
+                              Text("Cancel anytime · No hidden charges · Auto-renewal", style: GoogleFonts.jost(color: AppColors.text2.withOpacity(0.4), fontSize: 10)),
                             ],
                           ),
                         ),
@@ -642,14 +661,14 @@ class _PrimeScreenState extends State<PrimeScreen> {
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.amber.withOpacity(0.08) : Colors.white.withOpacity(0.03),
+            color: isSelected ? AppColors.amber.withOpacity(0.08) : Colors.white.withOpacity(0.02),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isSelected ? AppColors.amber : Colors.white.withOpacity(0.08),
+              color: isSelected ? AppColors.amber : Colors.white.withOpacity(0.06),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
-              if (isSelected) BoxShadow(color: AppColors.amber.withOpacity(0.15), blurRadius: 15, spreadRadius: 2),
+              if (isSelected) BoxShadow(color: AppColors.amber.withOpacity(0.15), blurRadius: 15),
             ],
           ),
           child: Column(
@@ -665,10 +684,10 @@ class _PrimeScreenState extends State<PrimeScreen> {
                   ),
                   child: Text(
                     isSelected ? "SELECTED" : "BEST VALUE",
-                    style: TextStyle(
+                    style: GoogleFonts.jost(
                       color: isSelected ? Colors.black : Colors.white60,
                       fontSize: 8,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -678,10 +697,10 @@ class _PrimeScreenState extends State<PrimeScreen> {
               // Plan Name
               Text(
                 name.toUpperCase(),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white38,
+                style: GoogleFonts.jost(
+                  color: isSelected ? Colors.white : AppColors.text2,
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
                 ),
               ),
@@ -690,13 +709,13 @@ class _PrimeScreenState extends State<PrimeScreen> {
               // Original Price - SHOWN BIG
               Text(
                 displayOriginal,
-                style: GoogleFonts.outfit(
-                  color: isSelected ? Colors.white30 : Colors.white24,
-                  fontSize: 28,
+                style: GoogleFonts.playfairDisplay(
+                  color: isSelected ? Colors.white38 : Colors.white24,
+                  fontSize: 32,
                   fontWeight: FontWeight.w900,
                   decoration: TextDecoration.lineThrough,
-                  decorationColor: Colors.redAccent.withOpacity(0.8),
-                  decorationThickness: 2.5,
+                  decorationColor: AppColors.amber,
+                  decorationThickness: 2.0,
                 ),
               ),
               const SizedBox(height: 6),
@@ -705,26 +724,29 @@ class _PrimeScreenState extends State<PrimeScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.amber.withOpacity(0.18) : Colors.white.withOpacity(0.06),
+                  gradient: isSelected 
+                      ? const LinearGradient(colors: [AppColors.amber, AppColors.amber2])
+                      : null,
+                  color: isSelected ? null : Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? AppColors.amber.withOpacity(0.4) : Colors.white10,
+                    color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.06),
                   ),
                 ),
                 child: Column(
                   children: [
                     Text(
                       displayDiscount,
-                      style: GoogleFonts.outfit(
-                        color: isSelected ? AppColors.amber : Colors.white,
+                      style: GoogleFonts.dmMono(
+                        color: isSelected ? Colors.white : AppColors.text,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const Text(
+                    Text(
                       "+ GST",
-                      style: TextStyle(
-                        color: Colors.white54,
+                      style: GoogleFonts.jost(
+                        color: isSelected ? Colors.white60 : AppColors.text2,
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
@@ -745,7 +767,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                   ),
                   child: Text(
                     "SAVE $discountPct%",
-                    style: const TextStyle(
+                    style: GoogleFonts.jost(
                       color: Colors.greenAccent,
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
@@ -756,8 +778,8 @@ class _PrimeScreenState extends State<PrimeScreen> {
               // Billing cycle
               Text(
                 "billed $sub".toLowerCase(),
-                style: TextStyle(
-                  color: isSelected ? Colors.white60 : AppColors.text2,
+                style: GoogleFonts.jost(
+                  color: isSelected ? AppColors.text : AppColors.text2,
                   fontSize: 10,
                   fontStyle: FontStyle.italic,
                 ),
@@ -775,9 +797,9 @@ class _PrimeScreenState extends State<PrimeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: Colors.white.withOpacity(0.02),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Row(
           children: [
@@ -786,12 +808,12 @@ class _PrimeScreenState extends State<PrimeScreen> {
               height: 44,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.amber.withValues(alpha: 0.15), AppColors.amber.withValues(alpha: 0.03)],
+                  colors: [AppColors.amber.withOpacity(0.15), AppColors.amber.withOpacity(0.02)],
                 ),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.25)),
+                border: Border.all(color: AppColors.amber.withOpacity(0.2)),
               ),
-              child: Icon(icon, color: AppColors.amber, size: 20),
+              child: Icon(icon, color: AppColors.amber2, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -800,20 +822,20 @@ class _PrimeScreenState extends State<PrimeScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                    style: GoogleFonts.jost(
+                      color: AppColors.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   if (desc.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(
                       desc,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 11,
-                        height: 1.3,
+                      style: GoogleFonts.jost(
+                        color: AppColors.text2,
+                        fontSize: 12,
+                        height: 1.4,
                       ),
                     ),
                   ],
