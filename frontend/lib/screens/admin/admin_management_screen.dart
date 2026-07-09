@@ -5,7 +5,8 @@ import '../../providers/app_state.dart';
 import '../../models/models.dart';
 
 class AdminManagementScreen extends StatefulWidget {
-  const AdminManagementScreen({super.key});
+  final String roleFilter;
+  const AdminManagementScreen({super.key, required this.roleFilter});
 
   @override
   State<AdminManagementScreen> createState() => _AdminManagementScreenState();
@@ -27,7 +28,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       final users = await state.getAppUsers();
       if (mounted) {
         setState(() {
-          _users = users.where((u) => u.role == 'admin' || u.role == 'staff').toList();
+          _users = users.where((u) => u.role == widget.roleFilter).toList();
           _loading = false;
         });
       }
@@ -155,6 +156,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String displayRole = widget.roleFilter == 'admin' ? 'Admin' : 'Staff';
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
@@ -164,16 +166,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("User Management", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _showAddUserDialog('staff'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                      child: const Text("Add Staff", style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
+                Text("$displayRole Management", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -192,10 +185,10 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddUserDialog('admin'),
+        onPressed: () => _showAddUserDialog(widget.roleFilter),
         backgroundColor: AppColors.amber,
         icon: const Icon(Icons.add, color: Colors.black),
-        label: const Text("Add Admin", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        label: Text("Add $displayRole", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -214,7 +207,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         children: [
           CircleAvatar(
             backgroundColor: (isStaff ? Colors.blue : AppColors.amber).withValues(alpha: 0.1),
-            child: Text(user.username[0].toUpperCase(), style: TextStyle(color: isStaff ? Colors.blue : AppColors.amber)),
+            child: Text(user.username.isEmpty ? "?" : user.username[0].toUpperCase(), style: TextStyle(color: isStaff ? Colors.blue : AppColors.amber)),
           ),
           const SizedBox(width: 16),
           Expanded(

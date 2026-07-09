@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!6-j94snb$+z-2oxe!ry9&(_0*a$43xxgqv6@a-bvf)rg)j*kq'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-!6-j94snb$+z-2oxe!ry9&(_0*a$43xxgqv6@a-bvf)rg)j*kq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'api.thebaronclub.com,thebaronclub.com,localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -80,14 +80,20 @@ pymysql.install_as_MySQLdb()
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+DB_NAME = os.environ.get('DB_NAME', 'u470165908_tbc')
+DB_USER = os.environ.get('DB_USER', 'u470165908_tbc')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '2!sFuN$:@Ph')
+DB_HOST = os.environ.get('DB_HOST', '145.79.25.233')
+DB_PORT = os.environ.get('DB_PORT', '3306')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'u470165908_tbc',
-        'USER': 'u470165908_tbc',
-        'PASSWORD': '2!sFuN$:@Ph',
-        'HOST': '145.79.25.233',
-        'PORT': '3306',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -173,7 +179,11 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
+cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS')
+if cors_origins:
+    CORS_ALLOWED_ORIGINS = cors_origins.split(',')
+    CORS_ALLOW_ALL_ORIGINS = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -207,14 +217,14 @@ if not MEDIA_ROOT:
 
 # Email Settings (Hostinger SMTP with SSL on port 465)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.hostinger.com'
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_USE_TLS = False
-EMAIL_HOST_USER = 'info@thebaronclub.com'
-EMAIL_HOST_PASSWORD = '9aH7&!2|Zk'
-DEFAULT_FROM_EMAIL = 'info@thebaronclub.com'
-EMAIL_TIMEOUT = 30
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.hostinger.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 465))
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True').lower() in ('true', '1', 't')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() in ('true', '1', 't')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'info@thebaronclub.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '9aH7&!2|Zk')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'info@thebaronclub.com')
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 30))
 
 # Razorpay Credentials (from environment or default test keys)
 RAZORPAY_KEY = os.environ.get('RAZORPAY_KEY', 'rzp_test_Sq5pz3FrwtVkhg')
@@ -227,5 +237,15 @@ EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', '7ssBK5w5s136WbAnI
 
 # Firebase Cloud Messaging Credentials Path (HTTP v1 API)
 FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', str(BASE_DIR / 'firebase-credentials.json'))
+
+# Production Security Headers (enabled only when DEBUG is False)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
