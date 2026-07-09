@@ -11,12 +11,24 @@ class AppSettingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
+    referral_code = serializers.SerializerMethodField()
     is_prime = serializers.SerializerMethodField()
     prime_starts_at = serializers.SerializerMethodField()
     prime_expires_at = serializers.SerializerMethodField()
     signup_method = serializers.SerializerMethodField()
     referred_membership_count = serializers.SerializerMethodField()
     free_prime_requested = serializers.SerializerMethodField()
+    
+    def get_referral_code(self, obj):
+        if obj.role == 'customer' and not obj.referral_code:
+            import random
+            while True:
+                code = f"TBC{random.randint(100000, 999999)}"
+                if not User.objects.filter(referral_code=code).exists():
+                    obj.referral_code = code
+                    User.objects.filter(id=obj.id).update(referral_code=code)
+                    break
+        return obj.referral_code
     
     class Meta:
         model = User

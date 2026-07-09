@@ -276,25 +276,26 @@ class RazorpayVerifyPaymentView(views.APIView):
             referral_code = request.data.get('referral_code')
             if referral_code:
                 try:
-                    clean_code = ''.join(c for c in str(referral_code) if c.isdigit())
-                    if clean_code:
-                        referrer = User.objects.filter(customer_number=int(clean_code)).first()
-                        if referrer and referrer != user:
-                            if not Referral.objects.filter(referred=user).exists():
-                                import random, string
-                                link, _ = ReferralLink.objects.get_or_create(
-                                    user=referrer,
-                                    defaults={
-                                        'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                        'expires_at': timezone.now() + timezone.timedelta(days=365)
-                                    }
-                                )
-                                Referral.objects.create(
-                                    referrer=referrer,
-                                    referred=user,
-                                    referral_link=link
-                                )
-                                print(f"Created dynamic referral record via verify_payment: {referrer.email} referred {user.email}")
+                    code_str = str(referral_code).strip().upper()
+                    if not code_str.startswith('TBC'):
+                        code_str = f"TBC{code_str}"
+                    referrer = User.objects.filter(referral_code=code_str).first()
+                    if referrer and referrer != user:
+                        if not Referral.objects.filter(referred=user).exists():
+                            import random, string
+                            link, _ = ReferralLink.objects.get_or_create(
+                                user=referrer,
+                                defaults={
+                                    'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                                    'expires_at': timezone.now() + timezone.timedelta(days=365)
+                                }
+                            )
+                            Referral.objects.create(
+                                referrer=referrer,
+                                referred=user,
+                                referral_link=link
+                            )
+                            print(f"Created dynamic referral record via verify_payment: {referrer.email} referred {user.email}")
                 except Exception as e:
                     print(f"Error processing dynamic referral code via verify_payment: {e}")
                 
@@ -810,25 +811,26 @@ class UserViewSet(viewsets.ModelViewSet):
         referral_code = request.data.get('referral_code')
         if referral_code:
             try:
-                clean_code = ''.join(c for c in str(referral_code) if c.isdigit())
-                if clean_code:
-                    referrer = User.objects.filter(customer_number=int(clean_code)).first()
-                    if referrer and referrer != user:
-                        if not Referral.objects.filter(referred=user).exists():
-                            import random, string
-                            link, _ = ReferralLink.objects.get_or_create(
-                                user=referrer,
-                                defaults={
-                                    'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                    'expires_at': timezone.now() + timezone.timedelta(days=365)
-                                }
-                            )
-                            Referral.objects.create(
-                                referrer=referrer,
-                                referred=user,
-                                referral_link=link
-                            )
-                            print(f"Created dynamic referral record: {referrer.email} referred {user.email}")
+                code_str = str(referral_code).strip().upper()
+                if not code_str.startswith('TBC'):
+                    code_str = f"TBC{code_str}"
+                referrer = User.objects.filter(referral_code=code_str).first()
+                if referrer and referrer != user:
+                    if not Referral.objects.filter(referred=user).exists():
+                        import random, string
+                        link, _ = ReferralLink.objects.get_or_create(
+                            user=referrer,
+                            defaults={
+                                'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                                'expires_at': timezone.now() + timezone.timedelta(days=365)
+                            }
+                        )
+                        Referral.objects.create(
+                            referrer=referrer,
+                            referred=user,
+                            referral_link=link
+                        )
+                        print(f"Created dynamic referral record: {referrer.email} referred {user.email}")
             except Exception as e:
                 print(f"Error processing dynamic referral code: {e}")
         
@@ -1251,24 +1253,24 @@ class SignupView(views.APIView):
         referral_code = data.get('referral_code')
         if referral_code and role == 'customer':
             try:
-                # Extract only digit characters to match integer customer_number safely
-                clean_code = ''.join(c for c in str(referral_code) if c.isdigit())
-                if clean_code:
-                    referrer = User.objects.filter(customer_number=int(clean_code)).first()
-                    if referrer:
-                        # Find or create a referral link for the referrer
-                        # In Laravel, these are typically pre-generated or created on first use
-                        link, _ = ReferralLink.objects.get_or_create(
-                            user=referrer,
-                            defaults={'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)), 'expires_at': timezone.now() + timezone.timedelta(days=365)}
-                        )
-                        
-                        Referral.objects.create(
-                            referrer=referrer,
-                            referred=user,
-                            referral_link=link
-                        )
-                        print(f"Created referral record: {referrer.email} referred {user.email}")
+                code_str = str(referral_code).strip().upper()
+                if not code_str.startswith('TBC'):
+                    code_str = f"TBC{code_str}"
+                referrer = User.objects.filter(referral_code=code_str).first()
+                if referrer:
+                    # Find or create a referral link for the referrer
+                    # In Laravel, these are typically pre-generated or created on first use
+                    link, _ = ReferralLink.objects.get_or_create(
+                        user=referrer,
+                        defaults={'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)), 'expires_at': timezone.now() + timezone.timedelta(days=365)}
+                    )
+                    
+                    Referral.objects.create(
+                        referrer=referrer,
+                        referred=user,
+                        referral_link=link
+                    )
+                    print(f"Created referral record: {referrer.email} referred {user.email}")
             except Exception as e:
                 print(f"Error processing referral code: {e}")
         

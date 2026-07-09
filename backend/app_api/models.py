@@ -46,16 +46,11 @@ class User(AbstractBaseUser):
     bank_upi_id = models.CharField(max_length=255, blank=True, null=True)
     
     customer_number = models.IntegerField(unique=True, null=True, blank=True)
+    referral_code = models.CharField(max_length=50, unique=True, null=True, blank=True)
     state = models.CharField(max_length=255, blank=True, null=True)
     
     # Laravel created_at
     created_at = models.DateTimeField(auto_now_add=True, null=True)
-
-    @property
-    def referral_code(self):
-        if self.customer_number:
-            return f"TBC{self.customer_number}"
-        return f"TBC{self.id + 1000}"
 
     # Virtual updated_at property for code compatibility
     @property
@@ -123,13 +118,34 @@ class User(AbstractBaseUser):
         return django_check_password(raw_password, self.password)
 
     def save(self, *args, **kwargs):
-        if not self.customer_number:
-            import random
-            while True:
-                new_number = random.randint(100000, 999999)
-                if not User.objects.filter(customer_number=new_number).exists():
-                    self.customer_number = new_number
-                    break
+        if self.role == 'customer':
+            # 1. Handle sequential customer_number
+            if not self.customer_number:
+                from django.db import transaction
+                from django.db.models import Max
+                from .models import AppSetting
+                
+                with transaction.atomic():
+                    setting = AppSetting.objects.select_for_update().filter(key='last_customer_number').first()
+                    if setting:
+                        next_num = int(setting.value) + 1
+                        setting.value = str(next_num)
+                        setting.save()
+                    else:
+                        max_num = User.objects.filter(role='customer', customer_number__isnull=False).aggregate(max_val=Max('customer_number'))['max_val'] or 0
+                        next_num = max_num + 1
+                        AppSetting.objects.create(key='last_customer_number', value=str(next_num))
+                    self.customer_number = next_num
+
+            # 2. Handle random 6-digit referral_code
+            if not self.referral_code:
+                import random
+                while True:
+                    code = f"TBC{random.randint(100000, 999999)}"
+                    if not User.objects.filter(referral_code=code).exists():
+                        self.referral_code = code
+                        break
+                        
         super().save(*args, **kwargs)
 
     class Meta:
