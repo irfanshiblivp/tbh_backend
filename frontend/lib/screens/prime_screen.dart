@@ -189,164 +189,6 @@ class _PrimeScreenState extends State<PrimeScreen> {
     }
   }
 
-  Widget _buildVIPCard(AppState state) {
-    final name = state.profile?.username ?? "MEMBER";
-    return Container(
-      width: double.infinity,
-      height: 190,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: AppColors.ink2,
-        border: Border.all(color: AppColors.amber.withOpacity(0.4), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.amber.withOpacity(0.18),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-            spreadRadius: -2,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Radial glow behind card details
-          Positioned(
-            right: -30,
-            bottom: -30,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [AppColors.amber.withOpacity(0.12), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            top: -20,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [AppColors.amber2.withOpacity(0.08), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          // Metallic Gold SIM Chip pattern
-          Positioned(
-            left: 24,
-            top: 24,
-            child: Container(
-              width: 44,
-              height: 34,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.amber2.withOpacity(0.5), width: 1.5),
-                gradient: LinearGradient(
-                  colors: [AppColors.amber2.withOpacity(0.3), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          // Logo & Club Name
-          Positioned(
-            right: 24,
-            top: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  "THE BARON CLUB",
-                  style: GoogleFonts.playfairDisplay(
-                    color: AppColors.cream,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
-                Text(
-                  "EST. 2026",
-                  style: GoogleFonts.jost(
-                    color: AppColors.text2,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Prime Pass Watermark
-          Positioned(
-            left: 24,
-            bottom: 62,
-            child: Text(
-              "PRIME MEMBERSHIP",
-              style: GoogleFonts.jost(
-                color: Colors.white.withOpacity(0.85),
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
-              ),
-            ),
-          ),
-          // Member Name
-          Positioned(
-            left: 24,
-            bottom: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "CARD HOLDER",
-                  style: GoogleFonts.jost(
-                    color: AppColors.text2,
-                    fontSize: 9,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  name.toUpperCase(),
-                  style: GoogleFonts.dmMono(
-                    color: AppColors.text,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // VIP Seal/Crown Icon
-          Positioned(
-            right: 24,
-            bottom: 24,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.amber.withOpacity(0.12),
-                border: Border.all(color: AppColors.amber.withOpacity(0.3)),
-              ),
-              child: const Icon(
-                Icons.workspace_premium,
-                color: AppColors.amber2,
-                size: 24,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -416,13 +258,17 @@ class _PrimeScreenState extends State<PrimeScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 10),
-                        _buildVIPCard(state),
-                        const SizedBox(height: 28),
+                        Image.asset(
+                          'res/images/logo_transparent.png', 
+                          height: 70, 
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 16),
                         Text(
                           "Prime Membership", 
                           style: GoogleFonts.playfairDisplay(
                             color: AppColors.text,
-                            fontSize: 28, 
+                            fontSize: 26, 
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -531,13 +377,14 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                           borderRadius: BorderRadius.circular(12),
                                           border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               "Special Offer Active:",
                                               style: GoogleFonts.jost(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                             ),
+                                            const SizedBox(height: 6),
                                             Row(
                                               children: [
                                                 Text(
