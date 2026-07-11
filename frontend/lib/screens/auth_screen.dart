@@ -178,7 +178,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isLogin
-                                            ? AppColors.amber.withValues(alpha: 0.2)
+                                            ? AppColors.amber.withValues(
+                                                alpha: 0.2,
+                                              )
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(10),
                                         border: isLogin
@@ -211,7 +213,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: !isLogin
-                                            ? AppColors.amber.withValues(alpha: 0.2)
+                                            ? AppColors.amber.withValues(
+                                                alpha: 0.2,
+                                              )
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(10),
                                         border: !isLogin
@@ -248,10 +252,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                           ] else ...[
                             _buildLabel("Full Name"),
-                            _buildField(
-                              _userController,
-                              placeholder: "e.g. John Doe",
-                            ),
+                            _buildField(_userController, placeholder: "name"),
                             const SizedBox(height: 16),
                             _buildLabel("Email"),
                             _buildField(
@@ -304,7 +305,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             const SizedBox(height: 16),
                             _buildLabel("Select State"),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(16),
@@ -314,15 +317,22 @@ class _AuthScreenState extends State<AuthScreen> {
                                 child: DropdownButtonFormField<String>(
                                   initialValue: selectedState,
                                   dropdownColor: AppColors.ink,
-                                  style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
-                                  decoration: const InputDecoration(border: InputBorder.none),
+                                  style: GoogleFonts.jost(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                  ),
                                   items: states.map((String stateName) {
                                     return DropdownMenuItem<String>(
                                       value: stateName,
                                       child: Text(
                                         stateName,
                                         style: TextStyle(
-                                          color: stateName == 'Select State' ? Colors.white38 : Colors.white,
+                                          color: stateName == 'Select State'
+                                              ? Colors.white38
+                                              : Colors.white,
                                         ),
                                       ),
                                     );
@@ -346,29 +356,47 @@ class _AuthScreenState extends State<AuthScreen> {
                                   onChanged: (val) =>
                                       setState(() => termsAccepted = val!),
                                 ),
-                                 Expanded(
+                                Expanded(
                                   child: Wrap(
                                     children: [
                                       const Text(
                                         "I agree to the ",
-                                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                       GestureDetector(
-                                        onTap: () => _launchUrl("https://thebaronclub.com/legal#terms"),
+                                        onTap: () => _launchUrl(
+                                          "https://thebaronclub.com/legal#terms",
+                                        ),
                                         child: const Text(
                                           "Terms & Conditions",
-                                          style: TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            color: AppColors.amber,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                       const Text(
                                         " and ",
-                                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                       GestureDetector(
-                                        onTap: () => _launchUrl("http://thebaronclub.com/legal#privacy"),
+                                        onTap: () => _launchUrl(
+                                          "http://thebaronclub.com/legal#privacy",
+                                        ),
                                         child: const Text(
                                           "Privacy Policy",
-                                          style: TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            color: AppColors.amber,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -403,11 +431,19 @@ class _AuthScreenState extends State<AuthScreen> {
                                           );
                                         }
                                       } else {
-                                        if (_userController.text.trim().isEmpty) {
-                                          throw Exception("Please enter your full name");
+                                        if (_userController.text
+                                            .trim()
+                                            .isEmpty) {
+                                          throw Exception(
+                                            "Please enter your full name",
+                                          );
                                         }
-                                        if (_emailController.text.trim().isEmpty) {
-                                          throw Exception("Please enter your email address");
+                                        if (_emailController.text
+                                            .trim()
+                                            .isEmpty) {
+                                          throw Exception(
+                                            "Please enter your email address",
+                                          );
                                         }
                                         if (_passController.text !=
                                             _repeatPassController.text) {
@@ -420,13 +456,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                             "The password field must be at least 8 characters.",
                                           );
                                         }
-                                        final phone = _phoneController.text.trim();
+                                        final phone = _phoneController.text
+                                            .trim();
                                         if (phone.isEmpty) {
-                                          throw Exception("Phone number is required");
+                                          throw Exception(
+                                            "Phone number is required",
+                                          );
                                         }
-                                        final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+                                        final digitsOnly = phone.replaceAll(
+                                          RegExp(r'\D'),
+                                          '',
+                                        );
                                         if (digitsOnly.length != 10) {
-                                          throw Exception("Please enter a valid 10-digit phone number");
+                                          throw Exception(
+                                            "Please enter a valid 10-digit phone number",
+                                          );
                                         }
                                         if (selectedState == 'Select State') {
                                           throw Exception(
@@ -452,7 +496,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                             context,
                                           ).showSnackBar(
                                             const SnackBar(
-                                              content: Text("Signup failed. Please try again."),
+                                              content: Text(
+                                                "Signup failed. Please try again.",
+                                              ),
                                               backgroundColor: Colors.redAccent,
                                             ),
                                           );
@@ -482,7 +528,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               elevation: 8,
-                              shadowColor: AppColors.amber.withValues(alpha: 0.5),
+                              shadowColor: AppColors.amber.withValues(
+                                alpha: 0.5,
+                              ),
                             ),
                             child: state.isLoading
                                 ? const CircularProgressIndicator(
@@ -549,14 +597,18 @@ class _AuthScreenState extends State<AuthScreen> {
         hintStyle: const TextStyle(color: Colors.white24),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.05),
-        suffixIcon: isPassword ? IconButton(
-          icon: Icon(
-            _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.white38,
-            size: 20,
-          ),
-          onPressed: () => setState(() => _showPassword = !_showPassword),
-        ) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _showPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.white38,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _showPassword = !_showPassword),
+              )
+            : null,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -598,6 +650,7 @@ class _AuthScreenState extends State<AuthScreen> {
       ),
     );
   }
+
   void _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {

@@ -260,6 +260,27 @@ class TransactionsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(tx.status).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: _getStatusColor(tx.status).withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        tx.status.toUpperCase(),
+                        style: GoogleFonts.jost(
+                          color: _getStatusColor(tx.status),
+                          fontSize: 7,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -312,5 +333,21 @@ class TransactionsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status.startsWith('REDEEMED')) {
+      return Colors.blueAccent;
+    }
+    switch (status.toUpperCase()) {
+      case 'SUCCESS':
+      case 'PAID':
+        return Colors.greenAccent;
+      case 'FAILED':
+        return Colors.redAccent;
+      case 'PENDING':
+      default:
+        return Colors.orangeAccent;
+    }
   }
 }

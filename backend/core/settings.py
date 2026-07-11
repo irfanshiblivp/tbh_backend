@@ -12,16 +12,20 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-!6-j94snb$+z-2oxe!ry9&(_0*a$43xxgqv6@a-bvf)rg)j*kq')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 't')
@@ -80,10 +84,10 @@ pymysql.install_as_MySQLdb()
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DB_NAME = os.environ.get('DB_NAME', 'u470165908_tbc')
-DB_USER = os.environ.get('DB_USER', 'u470165908_tbc')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', '2!sFuN$:@Ph')
-DB_HOST = os.environ.get('DB_HOST', '145.79.25.233')
+DB_NAME = os.environ.get('DB_NAME')
+DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+DB_HOST = os.environ.get('DB_HOST')
 DB_PORT = os.environ.get('DB_PORT', '3306')
 
 DATABASES = {
@@ -172,7 +176,7 @@ REST_FRAMEWORK = {
 
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=365),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -217,30 +221,30 @@ if not MEDIA_ROOT:
 
 # Email Settings (Hostinger SMTP with SSL on port 465)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.hostinger.com')
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 465))
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True').lower() in ('true', '1', 't')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() in ('true', '1', 't')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'info@thebaronclub.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '9aH7&!2|Zk')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'info@thebaronclub.com')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 30))
 
 # Razorpay Credentials (from environment or default test keys)
-RAZORPAY_KEY = os.environ.get('RAZORPAY_KEY', 'rzp_test_Sq5pz3FrwtVkhg')
-RAZORPAY_SECRET = os.environ.get('RAZORPAY_SECRET', '3TgcdmwWvAi8Uj7yGLZ818Z2')
+RAZORPAY_KEY = os.environ.get('RAZORPAY_KEY')
+RAZORPAY_SECRET = os.environ.get('RAZORPAY_SECRET')
 RAZORPAY_KEY_ID = RAZORPAY_KEY
 
 # REST API Email Settings
 EMAIL_REST_API_URL = os.environ.get('EMAIL_REST_API_URL', 'https://thebaronclub.com/api/send-email')
-EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN', '7ssBK5w5s136WbAnIBFmEm8Qakyxkj8n')
+EMAIL_REST_API_TOKEN = os.environ.get('EMAIL_REST_API_TOKEN')
 
 # Firebase Cloud Messaging Credentials Path (HTTP v1 API)
 FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', str(BASE_DIR / 'firebase-credentials.json'))
 
 # Production Security Headers (enabled only when DEBUG is False)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 't')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True

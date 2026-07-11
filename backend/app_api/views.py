@@ -23,6 +23,19 @@ from .serializers import (
 )
 
 
+from rest_framework import serializers
+
+
+def validate_image_file(file_obj):
+    if not file_obj:
+        return
+    ext = file_obj.name.split('.')[-1].lower()
+    if ext not in ['png', 'jpg', 'jpeg', 'webp', 'heic']:
+        raise serializers.ValidationError(f"Invalid image extension: .{ext}. Allowed: png, jpg, jpeg, webp, heic")
+    if file_obj.size > 5 * 1024 * 1024:
+        raise serializers.ValidationError("Image file size exceeds 5MB limit.")
+
+
 def sync_uploaded_file(saved_path):
     """
     Syncs/copies an uploaded file to all possible Laravel storage locations that exist
@@ -86,6 +99,8 @@ def get_google_maps_api_key():
     from pathlib import Path
     base_dir = Path(__file__).resolve().parent.parent
     potential_paths = [
+        base_dir.parent.parent / 'website code' / 'baronclub' / '.env',
+        base_dir.parent / 'website code' / 'baronclub' / '.env',
         base_dir.parent.parent / 'website' / '.env',
         base_dir.parent / 'website' / '.env',
         base_dir.parent.parent / 'the-baron-club' / '.env',
@@ -102,12 +117,32 @@ def get_google_maps_api_key():
                             return line.split('=', 1)[1].strip().strip('"').strip("'")
             except Exception as e:
                 print(f"Error reading .env at {p}: {e}")
-    return "AIzaSyBgG_yjXNZCsTq3FZRhGgaa_MI61KCmLjo" # fallback to default key if not found
+    return "AIzaSyBgNWuakomNiOKFqBgqB9Wylau8KAILS2M" # fallback to default key if not found
 
 class AppSettingViewSet(viewsets.ModelViewSet):
     queryset = AppSetting.objects.all()
     serializer_class = AppSettingSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -349,15 +384,48 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
-        if request.user.role != 'admin':
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
 class MerchantViewSet(viewsets.ModelViewSet):
     queryset = Merchant.objects.all()
     serializer_class = MerchantSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role != 'admin' and not request.user.is_superuser and instance.user != request.user:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role != 'admin' and not request.user.is_superuser and instance.user != request.user:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role != 'admin' and not request.user.is_superuser and instance.user != request.user:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         if self.request.user.role != 'admin' and not getattr(self.request.user, 'is_superuser', False):
@@ -374,6 +442,7 @@ class MerchantViewSet(viewsets.ModelViewSet):
 
         if 'logo' in self.request.FILES:
             image = self.request.FILES['logo']
+            validate_image_file(image)
             path = default_storage.save(f"merchant-logos/{uuid.uuid4()}.{image.name.split('.')[-1]}", ContentFile(image.read()))
             instance.logo = path
             updated = True
@@ -381,6 +450,7 @@ class MerchantViewSet(viewsets.ModelViewSet):
             
         if 'profile_photo' in self.request.FILES: # Compatibility with frontend param name
             image = self.request.FILES['profile_photo']
+            validate_image_file(image)
             path = default_storage.save(f"merchant-logos/{uuid.uuid4()}.{image.name.split('.')[-1]}", ContentFile(image.read()))
             instance.logo = path
             updated = True
@@ -388,6 +458,7 @@ class MerchantViewSet(viewsets.ModelViewSet):
 
         if 'card_image' in self.request.FILES:
             image = self.request.FILES['card_image']
+            validate_image_file(image)
             path = default_storage.save(f"merchant-cards/{uuid.uuid4()}.{image.name.split('.')[-1]}", ContentFile(image.read()))
             instance.card_image = path
             updated = True
@@ -445,10 +516,12 @@ class MerchantViewSet(viewsets.ModelViewSet):
             print(f"DEBUG MAP HEAL ERROR: {e}")
 
         user = self.request.user
-        if user.is_authenticated and (user.role == 'admin' or user.is_superuser):
+        if self.action == 'restore':
             queryset = Merchant.objects.all()
+        elif user.is_authenticated and (user.role == 'admin' or user.is_superuser):
+            queryset = Merchant.objects.filter(deleted_at__isnull=True)
         else:
-            queryset = Merchant.objects.filter(status='active')
+            queryset = Merchant.objects.filter(status='active', deleted_at__isnull=True)
             
         category = self.request.query_params.get('category')
         if category:
@@ -462,6 +535,7 @@ class MerchantViewSet(viewsets.ModelViewSet):
             
         merchant = self.get_object()
         merchant.status = 'active'
+        merchant.deleted_at = None
         merchant.save()
         return Response({'status': 'Merchant restored'})
 
@@ -631,6 +705,26 @@ class ReferralPayoutViewSet(viewsets.ModelViewSet):
             return self.queryset
         return self.queryset.filter(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden. Please request withdrawals via the profile endpoint.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def mark_completed(self, request, pk=None):
         if request.user.role != 'admin':
@@ -674,8 +768,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.role == 'admin' or self.request.user.is_superuser:
-            return User.objects.all().order_by('-created_at')
-        return User.objects.filter(id=self.request.user.id)
+            return User.objects.filter(deleted_at__isnull=True).order_by('-created_at')
+        return User.objects.filter(id=self.request.user.id, deleted_at__isnull=True)
 
     @action(detail=False, methods=['post'])
     def admin_create_staff(self, request):
@@ -731,10 +825,10 @@ class UserViewSet(viewsets.ModelViewSet):
                     print(f"DEBUG: Field {field} is MISSING or empty")
                     return Response({'error': f'{field.replace("_", " ").title()} is mandatory'}, status=status.HTTP_400_BAD_REQUEST)
 
-            email = data.get('email')
+            email = data.get('email', '').strip().lower()
             phone = data.get('phone')
             
-            if User.objects.filter(email=email).exists():
+            if User.objects.filter(email__iexact=email).exists():
                 return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
                 
             if User.objects.filter(phone=phone).exists():
@@ -794,6 +888,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     import uuid
                     
                     image = request.FILES['card_image']
+                    validate_image_file(image)
                     ext = image.name.split('.')[-1]
                     filename = f"merchant-cards/{uuid.uuid4()}.{ext}"
                     path = default_storage.save(filename, ContentFile(image.read()))
@@ -1459,7 +1554,8 @@ class ForgotPasswordView(views.APIView):
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            user = User.objects.get(email=email)
+            email_clean = str(email).strip().lower()
+            user = User.objects.get(email__iexact=email_clean)
             otp = str(random.randint(100000, 999999))
             cache.set(f'otp_{email}', otp, timeout=600) # 10 minutes
             
@@ -1485,6 +1581,7 @@ class ResetPasswordView(views.APIView):
         if not email or not otp or not password:
             return Response({'error': 'Email, OTP and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
             
+        cached_otp = cache.get(f'otp_{email}')
         is_test_domain = any(str(email).endswith(dom) for dom in ['@4nly.com', '@test.com', '@example.com'])
         if (cached_otp and str(cached_otp) == str(otp)) or (is_test_domain and str(otp) == '123456'):
             try:
@@ -1637,8 +1734,8 @@ class AdminDashboardView(views.APIView):
         total_revenue = Payment.objects.filter(status='success').aggregate(models.Sum('amount'))['amount__sum'] or 0
         total_revenue = float(total_revenue) / 100.0  # Convert from paisa to rupees
         
-        total_users = User.objects.filter(role='customer').count()
-        total_merchants = Merchant.objects.count()
+        total_users = User.objects.filter(role='customer', deleted_at__isnull=True).count()
+        total_merchants = Merchant.objects.filter(deleted_at__isnull=True).count()
         total_vouchers = Voucher.objects.count()
         total_payments = Payment.objects.count()
         total_prime_users = PrimeMembership.objects.filter(expires_at__gt=timezone.now()).values('user_id').distinct().count()

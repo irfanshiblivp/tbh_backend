@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   // Regression tests for: type 'String' is not a subtype of type 'Map<dynamic, dynamic>?'
   // When the native layer (Android/iOS) sends a plain-text error string instead of a
   // structured JSON object (e.g. FPX cancellation, UPI Turbo errors), the hard cast in

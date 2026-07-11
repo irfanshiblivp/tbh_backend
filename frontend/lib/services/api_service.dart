@@ -18,6 +18,7 @@ class ApiService {
       'https://api.thebaronclub.com/api'; // ✅ Production
 
   String? _token;
+  void Function()? onSessionExpired;
 
   void setToken(String? token) {
     _token = token;
@@ -635,6 +636,11 @@ class ApiService {
   }
 
   dynamic _handleResponse(http.Response response) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      if (onSessionExpired != null) {
+        onSessionExpired!();
+      }
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
         return response.body.isNotEmpty ? jsonDecode(response.body) : null;

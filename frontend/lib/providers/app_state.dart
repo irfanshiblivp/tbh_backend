@@ -25,6 +25,9 @@ class AppState extends ChangeNotifier {
   
   // App state management
   AppState() {
+    _api.onSessionExpired = () {
+      logout();
+    };
     checkLoginStatus();
   }
 
@@ -254,7 +257,7 @@ class AppState extends ChangeNotifier {
   double get totalSaved {
     double total = 0.0;
     for (var tx in _transactions) {
-      if (tx.status == 'REDEEMED') {
+      if (tx.status.startsWith('REDEEMED')) {
         total += tx.amountSaved;
       }
     }
@@ -416,7 +419,7 @@ class AppState extends ChangeNotifier {
               all.add(Transaction(
                 transactionId: p['razorpay_order_id'] ?? 'TX-${p['id']}',
                 amountPaid: (p['amount'] ?? 0) / 100.0,
-                status: p['status']?.toString().toUpperCase() ?? 'SUCCESS',
+                status: p['status']?.toString().toUpperCase() ?? 'PAID',
                 timestamp: _parseDateTime(p['created_at']),
                 userName: p['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: "Prime Membership Upgrade",
@@ -427,11 +430,17 @@ class AppState extends ChangeNotifier {
           if (customerData['vouchers'] != null) {
             final list = customerData['vouchers'] as List;
             for (var v in list) {
+              final code = v['code']?.toString() ?? '';
+              final isWeb = !code.startsWith('APP-');
+              final baseStatus = v['used_at'] != null ? 'REDEEMED' : 'PENDING';
+              final displayStatus = (baseStatus == 'REDEEMED')
+                  ? (isWeb ? 'REDEEMED (WEBSITE)' : 'REDEEMED (APP)')
+                  : baseStatus;
               all.add(Transaction(
                 transactionId: v['code'] ?? 'VC-${v['id']}',
                 amountPaid: (double.tryParse(v['bill_amount']?.toString() ?? '0') ?? 0),
                 amountSaved: (double.tryParse(v['amount_saved']?.toString() ?? '0') ?? 0),
-                status: v['used_at'] != null ? 'REDEEMED' : 'PENDING',
+                status: displayStatus,
                 timestamp: _parseDateTime(v['used_at'] ?? v['created_at']),
                 userName: v['user_name'] ?? _profile?.username ?? "Me",
                 merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",
@@ -912,7 +921,7 @@ class AppState extends ChangeNotifier {
         all.add(Transaction(
           transactionId: p['razorpay_order_id'] ?? 'TX-${p['id']}',
           amountPaid: (p['amount'] ?? 0) / 100.0,
-          status: p['status']?.toString().toUpperCase() ?? 'SUCCESS',
+          status: p['status']?.toString().toUpperCase() ?? 'PAID',
           timestamp: _parseDateTime(p['created_at']),
           userName: p['user_name'] ?? "User #${p['user']}",
           merchantName: isPrime ? "System (Prime)" : purpose,
@@ -932,11 +941,18 @@ class AppState extends ChangeNotifier {
           vMerchantId = int.tryParse(mProfile.toString());
         }
 
+        final code = v['code']?.toString() ?? '';
+        final isWeb = !code.startsWith('APP-');
+        final baseStatus = v['used_at'] != null ? 'REDEEMED' : 'PENDING';
+        final displayStatus = (baseStatus == 'REDEEMED')
+            ? (isWeb ? 'REDEEMED (WEBSITE)' : 'REDEEMED (APP)')
+            : baseStatus;
+
         all.add(Transaction(
           transactionId: v['code'] ?? 'VC-${v['id']}',
           amountPaid: double.tryParse(v['bill_amount']?.toString() ?? '0') ?? 0.0,
           amountSaved: double.tryParse(v['amount_saved']?.toString() ?? '0') ?? 0.0,
-          status: v['used_at'] != null ? 'REDEEMED' : 'PENDING',
+          status: displayStatus,
           timestamp: _parseDateTime(v['used_at'] ?? v['created_at']),
           userName: v['user_name'] ?? "User #${v['user']}",
           merchantName: v['merchant_name'] ?? "Merchant #${v['merchant_profile']}",

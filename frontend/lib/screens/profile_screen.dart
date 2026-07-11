@@ -673,18 +673,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _bankInfoTile(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
-          Text(value ?? "Not set", style: const TextStyle(color: Colors.white, fontSize: 14)),
-        ],
-      ),
-    );
-  }
+
   void _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {

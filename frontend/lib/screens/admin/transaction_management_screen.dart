@@ -179,7 +179,12 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
   }
 
   Widget _buildTransactionTable(List<Transaction> transactions) {
-    final filtered = transactions.where((t) => _statusFilter == "ALL" || t.status == _statusFilter).toList();
+    final filtered = transactions.where((t) {
+      if (_statusFilter == "ALL") return true;
+      if (_statusFilter == "REDEEMED") return t.status.startsWith("REDEEMED");
+      if (_statusFilter == "SUCCESS") return t.status == "SUCCESS" || t.status == "PAID";
+      return t.status == _statusFilter;
+    }).toList();
     
     return Container(
       margin: const EdgeInsets.all(24),
@@ -234,11 +239,20 @@ class _TransactionManagementScreenState extends State<TransactionManagementScree
 
   Widget _statusBadge(String status) {
     Color color;
-    switch (status) {
-      case 'SUCCESS': color = Colors.green; break;
-      case 'REDEEMED': color = Colors.blue; break;
-      case 'FAILED': color = Colors.red; break;
-      default: color = Colors.orange;
+    if (status.startsWith('REDEEMED')) {
+      color = Colors.blue;
+    } else {
+      switch (status) {
+        case 'SUCCESS':
+        case 'PAID':
+          color = Colors.green;
+          break;
+        case 'FAILED':
+          color = Colors.red;
+          break;
+        default:
+          color = Colors.orange;
+      }
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

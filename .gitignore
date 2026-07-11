@@ -13,3 +13,23 @@ frontend/analysis*.txt
 # OS-generated files
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+*.env
+
+# Credentials & Private Keys
+firebase-credentials.json
+backend/firebase-credentials.json
+
+# Test and Scratch scripts
+backend/check_db*.py
+backend/test_merchant_api.py
+backend/verify_firebase.py
+backend/inspect_merchants.py
+backend/list_merchant_addresses.py
+backend/upload_banners.py
+backend/test_email.py
+frontend/ieee website.txt
+
+
