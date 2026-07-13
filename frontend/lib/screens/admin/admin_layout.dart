@@ -98,25 +98,32 @@ class _AdminLayoutState extends State<AdminLayout> {
           children: [
             const SizedBox(height: 20),
             _buildLogo(isExpanded),
-          const SizedBox(height: 40),
-          _buildSidebarItem(0, Icons.dashboard_outlined, Icons.dashboard, "Dashboard", isExpanded),
-          _buildSidebarItem(1, Icons.receipt_long_outlined, Icons.receipt_long, "Transactions", isExpanded),
-          _buildSidebarItem(2, Icons.store_outlined, Icons.store, "Merchants", isExpanded),
-          _buildSidebarItem(3, Icons.people_outline, Icons.people, "Users", isExpanded),
-          _buildSidebarItem(4, Icons.category_outlined, Icons.category, "Categories", isExpanded),
-          _buildSidebarItem(5, Icons.campaign_outlined, Icons.campaign, "Announcements", isExpanded),
-          _buildSidebarItem(6, Icons.admin_panel_settings_outlined, Icons.admin_panel_settings, "Admins", isExpanded),
-          _buildSidebarItem(7, Icons.badge_outlined, Icons.badge, "Staff", isExpanded),
-          _buildSidebarItem(8, Icons.star_outline, Icons.star, "Prime Plan", isExpanded),
-          _buildSidebarItem(9, Icons.card_giftcard_outlined, Icons.card_giftcard, "Referrals", isExpanded),
-          _buildSidebarItem(10, Icons.view_carousel_outlined, Icons.view_carousel, "Hero Banners", isExpanded),
-          _buildSidebarItem(11, Icons.workspace_premium_outlined, Icons.workspace_premium, "Premium Requests", isExpanded),
-          const Spacer(),
-
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildSidebarItem(0, Icons.dashboard_outlined, Icons.dashboard, "Dashboard", isExpanded),
+                    _buildSidebarItem(1, Icons.receipt_long_outlined, Icons.receipt_long, "Transactions", isExpanded),
+                    _buildSidebarItem(2, Icons.store_outlined, Icons.store, "Merchants", isExpanded),
+                    _buildSidebarItem(3, Icons.people_outline, Icons.people, "Users", isExpanded),
+                    _buildSidebarItem(4, Icons.category_outlined, Icons.category, "Categories", isExpanded),
+                    _buildSidebarItem(5, Icons.campaign_outlined, Icons.campaign, "Announcements", isExpanded),
+                    _buildSidebarItem(6, Icons.admin_panel_settings_outlined, Icons.admin_panel_settings, "Admins", isExpanded),
+                    _buildSidebarItem(7, Icons.badge_outlined, Icons.badge, "Staff", isExpanded),
+                    _buildSidebarItem(8, Icons.star_outline, Icons.star, "Prime Plan", isExpanded),
+                    _buildSidebarItem(9, Icons.card_giftcard_outlined, Icons.card_giftcard, "Referrals", isExpanded),
+                    _buildSidebarItem(10, Icons.view_carousel_outlined, Icons.view_carousel, "Hero Banners", isExpanded),
+                    _buildSidebarItem(11, Icons.workspace_premium_outlined, Icons.workspace_premium, "Premium Requests", isExpanded),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
-    ),
     );
   }
 

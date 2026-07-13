@@ -141,11 +141,19 @@ class User(AbstractBaseUser):
             # 2. Handle random 6-digit referral_code
             if not self.referral_code:
                 import random
+                attempts = 0
                 while True:
-                    code = f"TBC{random.randint(100000, 999999)}"
+                    if attempts < 100:
+                        code = f"TBC{random.randint(100000, 999999)}"
+                    elif attempts < 200:
+                        code = f"TBC{random.randint(10000000, 99999999)}"
+                    else:
+                        code = f"TBC{random.randint(1000000000, 9999999999)}"
+                        
                     if not User.objects.filter(referral_code=code).exists():
                         self.referral_code = code
                         break
+                    attempts += 1
                         
         super().save(*args, **kwargs)
 

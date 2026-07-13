@@ -715,7 +715,14 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(icon, color: isSelected ? AppColors.amber : AppColors.text2, size: 24),
             const SizedBox(height: 8),
-            Text(label.toUpperCase(), style: TextStyle(color: isSelected ? Colors.white : AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Text(
+                label.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: isSelected ? Colors.white : AppColors.text2, fontSize: 9, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       ),

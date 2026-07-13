@@ -12,6 +12,7 @@ class AppSettingSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     referral_code = serializers.SerializerMethodField()
+    customer_id = serializers.SerializerMethodField()
     is_prime = serializers.SerializerMethodField()
     prime_starts_at = serializers.SerializerMethodField()
     prime_expires_at = serializers.SerializerMethodField()
@@ -22,13 +23,30 @@ class UserSerializer(serializers.ModelSerializer):
     def get_referral_code(self, obj):
         if obj.role == 'customer' and not obj.referral_code:
             import random
+            attempts = 0
             while True:
-                code = f"TBC{random.randint(100000, 999999)}"
+                if attempts < 100:
+                    code = f"TBC{random.randint(100000, 999999)}"
+                elif attempts < 200:
+                    code = f"TBC{random.randint(10000000, 99999999)}"
+                else:
+                    code = f"TBC{random.randint(1000000000, 9999999999)}"
+                    
                 if not User.objects.filter(referral_code=code).exists():
                     obj.referral_code = code
                     User.objects.filter(id=obj.id).update(referral_code=code)
                     break
+                attempts += 1
         return obj.referral_code
+
+    def get_customer_id(self, obj):
+        if not obj.customer_number:
+            return "—"
+        if obj.created_at:
+            ym = obj.created_at.strftime('%y%m')
+        else:
+            ym = timezone.now().strftime('%y%m')
+        return f"TBC{ym}-{obj.customer_number:05d}"
     
     class Meta:
         model = User
@@ -36,7 +54,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'name', 'email', 'role', 'phone', 'profile_picture', 
             'status', 'referral_balance', 'referral_total_earned', 'referral_code',
             'bank_account_holder_name', 'bank_account_number', 'bank_ifsc', 
-            'bank_name', 'bank_upi_id', 'customer_number', 'created_at',
+            'bank_name', 'bank_upi_id', 'customer_number', 'customer_id', 'created_at',
             'is_prime', 'prime_starts_at', 'prime_expires_at', 'email_verified_at', 'state',
             'signup_method', 'referred_membership_count', 'free_prime_requested'
         )

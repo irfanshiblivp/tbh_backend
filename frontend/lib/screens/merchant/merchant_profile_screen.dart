@@ -142,7 +142,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
     final newPass = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Change Password"),
         content: Column(
@@ -153,7 +153,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               final oldText = oldPass.text.trim();
@@ -172,14 +172,14 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
               }
               try {
                 await state.changePassword(oldText, newText);
-                if (mounted) {
-                  Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Password changed successfully!"), backgroundColor: Colors.green),
                   );
                 }
               } catch (e) {
-                if (mounted) {
+                if (context.mounted) {
                   String errMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Failed to change password:', '').trim();
                   if (errMsg.toLowerCase().contains('incorrect old password')) {
                     errMsg = 'The current password you entered is incorrect. Please try again.';

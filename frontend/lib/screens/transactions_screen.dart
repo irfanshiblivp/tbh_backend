@@ -58,27 +58,41 @@ class TransactionsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            "Transactions",
-                            style: GoogleFonts.playfairDisplay(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
+                          if (Navigator.of(context).canPop()) ...[
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => Navigator.of(context).pop(),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "PAST SPENDING & SAVINGS",
-                            style: GoogleFonts.jost(
-                              color: AppColors.text2,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
+                            const SizedBox(width: 16),
+                          ],
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Transactions",
+                                style: GoogleFonts.playfairDisplay(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "PAST SPENDING & SAVINGS",
+                                style: GoogleFonts.jost(
+                                  color: AppColors.text2,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

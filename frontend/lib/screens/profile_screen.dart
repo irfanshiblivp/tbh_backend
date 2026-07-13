@@ -29,9 +29,11 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF07070A),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
             // Profile Hero
             Container(
               padding: const EdgeInsets.only(top: 80, bottom: 40),
@@ -79,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
                   if (profile?.customerNumber != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      "CUSTOMER ID: ${profile!.customerNumber}",
+                      "CUSTOMER ID: ${profile!.displayCustomerId}",
                       style: GoogleFonts.dmMono(
                         color: AppColors.amber,
                         fontSize: 12,
@@ -272,11 +274,31 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 30),
                   const Text("The Baron Club", style: TextStyle(color: Colors.white12, fontSize: 10, letterSpacing: 0.5)),
                   const SizedBox(height: 40),
-                ],
+              ],
+            ),
+          ),
+            ],
+          ),
+        ),
+        if (Navigator.of(context).canPop())
+          Positioned(
+            top: 50,
+            left: 20,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -603,33 +625,38 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showBankDetailsDialog(BuildContext context, dynamic profile) {
-    final state = context.read<AppState>();
+  void _showBankDetailsDialog(BuildContext context, AppUser? profile) {
     final nameController = TextEditingController(text: profile?.bankAccountHolderName);
     final numberController = TextEditingController(text: profile?.bankAccountNumber);
     final ifscController = TextEditingController(text: profile?.bankIfsc);
     final bankController = TextEditingController(text: profile?.bankName);
     final upiController = TextEditingController(text: profile?.bankUpiId);
 
+    final state = Provider.of<AppState>(context, listen: false);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text("Update Bank Details"),
+        title: const Text("Bank & UPI Details"),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildEditField("Account Holder", nameController),
+              _buildEditField("Bank Name", bankController),
+              _buildEditField("Account Holder Name", nameController),
               _buildEditField("Account Number", numberController),
               _buildEditField("IFSC Code", ifscController),
-              _buildEditField("Bank Name", bankController),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text("OR", style: TextStyle(color: Colors.white30, fontWeight: FontWeight.bold)),
+              ),
               _buildEditField("UPI ID", upiController),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               await state.updateProfile({
@@ -639,7 +666,7 @@ class ProfileScreen extends StatelessWidget {
                 'bank_name': bankController.text,
                 'bank_upi_id': upiController.text,
               });
-              if (context.mounted) Navigator.pop(context);
+              if (context.mounted) Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
             child: const Text("Save"),
@@ -686,7 +713,7 @@ class ProfileScreen extends StatelessWidget {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Edit Profile"),
         content: Column(
@@ -697,7 +724,7 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               final phone = phoneController.text.trim();
@@ -718,8 +745,10 @@ class ProfileScreen extends StatelessWidget {
                 'name': nameController.text,
                 'phone': phone,
               });
-              if (context.mounted) Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated!")));
+              if (context.mounted) {
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated!")));
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
             child: const Text("Save"),
@@ -776,7 +805,7 @@ class ProfileScreen extends StatelessWidget {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Withdraw Bonus"),
         content: Column(
@@ -798,16 +827,20 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.isEmpty) return;
               try {
                 await state.requestWithdrawal(double.parse(controller.text));
-                if (context.mounted) Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Withdrawal request submitted!")));
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Withdrawal request submitted!")));
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: Colors.black),
@@ -914,7 +947,7 @@ class ProfileScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text("Change Password"),
         content: SingleChildScrollView(
@@ -929,7 +962,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
@@ -962,7 +995,7 @@ class ProfileScreen extends StatelessWidget {
               try {
                 await state.changePassword(oldPass, newPass);
                 if (context.mounted) {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Password changed successfully!"), backgroundColor: Colors.green),
                   );

@@ -162,6 +162,7 @@ class AppUser {
   final String? bankName;
   final String? bankUpiId;
   final int? customerNumber;
+  final String? customerId;
   final String? referralCode;
   final DateTime? emailVerifiedAt;
   final bool isPrime;
@@ -171,6 +172,7 @@ class AppUser {
   final String signupMethod;
   final int referredMembershipCount;
   final String freePrimeRequested;
+  final DateTime? createdAt;
 
   AppUser({
     required this.id,
@@ -188,6 +190,7 @@ class AppUser {
     this.bankName,
     this.bankUpiId,
     this.customerNumber,
+    this.customerId,
     this.referralCode,
     this.emailVerifiedAt,
     this.isPrime = false,
@@ -197,10 +200,23 @@ class AppUser {
     this.signupMethod = "Direct",
     this.referredMembershipCount = 0,
     this.freePrimeRequested = 'none',
+    this.createdAt,
   });
 
   // bool get isPrime => role == 'customer' && referralBalance > 0;
   bool get isBlocked => status == 'inactive';
+
+  String get displayCustomerId {
+    if (customerId != null && customerId!.isNotEmpty && customerId != '—') {
+      return customerId!;
+    }
+    if (customerNumber == null) return '—';
+    final date = createdAt ?? DateTime.now();
+    final year = date.year.toString().substring(2);
+    final month = date.month.toString().padLeft(2, '0');
+    final numStr = customerNumber!.toString().padLeft(5, '0');
+    return 'TBC$year$month-$numStr';
+  }
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
@@ -219,6 +235,7 @@ class AppUser {
       bankName: json['bank_name'],
       bankUpiId: json['bank_upi_id'],
       customerNumber: json['customer_number'],
+      customerId: json['customer_id'],
       referralCode: json['referral_code'],
       emailVerifiedAt: parseLocalTime(json['email_verified_at']),
       isPrime: json['is_prime'] ?? false,
@@ -228,6 +245,7 @@ class AppUser {
       signupMethod: json['signup_method'] ?? 'Direct',
       referredMembershipCount: json['referred_membership_count'] ?? 0,
       freePrimeRequested: json['free_prime_requested'] ?? 'none',
+      createdAt: parseLocalTime(json['created_at']),
     );
   }
 }

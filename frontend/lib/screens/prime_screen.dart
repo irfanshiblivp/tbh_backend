@@ -234,7 +234,6 @@ class _PrimeScreenState extends State<PrimeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: Row(
                     children: [
-                      const Spacer(),
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
@@ -248,6 +247,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                           child: const Icon(Icons.chevron_left, color: Colors.white70),
                         ),
                       ),
+                      const Spacer(),
                     ],
                   ),
                 ),

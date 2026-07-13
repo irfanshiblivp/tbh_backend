@@ -66,14 +66,28 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Categories",
-                        style: GoogleFonts.playfairDisplay(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (Navigator.of(context).canPop()) ...[
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            const SizedBox(width: 16),
+                          ],
+                          Text(
+                            "Categories",
+                            style: GoogleFonts.playfairDisplay(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                       GestureDetector(
                         onTap: () => _showFilterSheet(context, state),

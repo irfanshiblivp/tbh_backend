@@ -122,7 +122,7 @@ class _FreePrimeRequestsScreenState extends State<FreePrimeRequestsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            "ID: TBC${user['customer_number']}",
+                            "ID: ${user['customer_id'] ?? 'TBC${user['customer_number']}'}",
                             style: const TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
