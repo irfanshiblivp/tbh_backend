@@ -35,7 +35,9 @@ class ApiService {
         msg.contains('Network is unreachable') ||
         msg.contains('Connection failed') ||
         msg.contains('ClientException') ||
-        msg.contains('HandshakeException')) {
+        msg.contains('HandshakeException') ||
+        msg.contains('TlsException') ||
+        msg.contains('HttpException')) {
       return AppError(
         "Unable to connect to our servers. Please check your internet connection and try again.",
       );
@@ -48,15 +50,52 @@ class ApiService {
       );
     }
 
-    // Clean any existing Exception: prefixes
+    // Format / Null / Type / Internal code errors
+    if (msg.contains('FormatException') ||
+        msg.contains('Unexpected character') ||
+        msg.contains('TypeError') ||
+        msg.contains('is not a subtype') ||
+        msg.contains('NoSuchMethodError') ||
+        msg.contains('NullThrownError') ||
+        msg.contains('RangeError') ||
+        msg.contains('StateError') ||
+        msg.contains('ArgumentError') ||
+        msg.contains('UnimplementedError')) {
+      return AppError(
+        "An unexpected error occurred while processing data. Please try again.",
+      );
+    }
+
+    // Technical DB / Server exception keywords
+    if (msg.contains('OperationalError') ||
+        msg.contains('ProgrammingError') ||
+        msg.contains('DatabaseError') ||
+        msg.contains('IntegrityError') ||
+        msg.contains('AttributeError') ||
+        msg.contains('KeyError') ||
+        msg.contains('ZeroDivisionError') ||
+        msg.contains('SyntaxError') ||
+        msg.contains('[Errno') ||
+        msg.contains('Traceback') ||
+        msg.contains('<!DOCTYPE html>') ||
+        msg.contains('<html') ||
+        msg.contains('Internal Server Error')) {
+      return AppError(
+        "We encountered a temporary server error. Please try again shortly.",
+      );
+    }
+
+    // Clean any existing Exception: or AppError: prefixes
     String cleanMsg = msg;
     if (cleanMsg.startsWith('Exception: ')) {
       cleanMsg = cleanMsg.substring('Exception: '.length);
     } else if (cleanMsg.startsWith('Exception:')) {
       cleanMsg = cleanMsg.substring('Exception:'.length);
+    } else if (cleanMsg.startsWith('AppError: ')) {
+      cleanMsg = cleanMsg.substring('AppError: '.length);
     }
 
-    return AppError(cleanMsg);
+    return AppError(cleanMsg.trim());
   }
 
   static String _cleanBackendError(dynamic error) {
@@ -86,6 +125,22 @@ class ApiService {
     if (msg.contains('Invalid password')) {
       return 'The password you entered is incorrect.';
     }
+
+    // Sanitize technical details from backend string
+    if (msg.contains('OperationalError') ||
+        msg.contains('ProgrammingError') ||
+        msg.contains('DatabaseError') ||
+        msg.contains('IntegrityError') ||
+        msg.contains('AttributeError') ||
+        msg.contains('KeyError') ||
+        msg.contains('[Errno') ||
+        msg.contains('Traceback') ||
+        msg.contains('<!DOCTYPE html>') ||
+        msg.contains('Failed to create order:') ||
+        msg.contains('Failed to delete user:')) {
+      return 'An unexpected error occurred on the server. Please try again.';
+    }
+
     return msg;
   }
 

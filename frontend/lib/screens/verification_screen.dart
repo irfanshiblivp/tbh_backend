@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/core/app_theme.dart';
 import 'package:frontend/providers/app_state.dart';
+import 'package:frontend/services/api_service.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -141,7 +142,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(e.toString().replaceAll('Exception: ', '')),
+                              content: Text(ApiService.parseError(e).message),
                               backgroundColor: Colors.redAccent,
                               behavior: SnackBarBehavior.floating,
                             ),
@@ -176,7 +177,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       } catch (e) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(e.toString()), backgroundColor: Colors.redAccent),
+                            SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent),
                           );
                         }
                       } finally {

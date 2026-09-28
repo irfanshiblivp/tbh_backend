@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../services/api_service.dart';
 
 class StaffPerformanceScreen extends StatefulWidget {
   const StaffPerformanceScreen({super.key});
@@ -289,7 +290,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
                       }
                     }
                   },
@@ -318,7 +319,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
                       }
                     }
                   },

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../services/api_service.dart';
 
 class CategoryManagementScreen extends StatefulWidget {
   const CategoryManagementScreen({super.key});
@@ -44,7 +45,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Category added successfully!")));
                 Navigator.pop(context);
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
+                }
               }
             },
             child: Text(category == null ? "Add" : "Save"),
@@ -141,7 +144,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                   await state.deleteCategory(category.id);
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Category deleted")));
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
+                  }
                 }
               }
             },

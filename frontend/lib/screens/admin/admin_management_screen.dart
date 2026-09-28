@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../services/api_service.dart';
 
 class AdminManagementScreen extends StatefulWidget {
   final String roleFilter;
@@ -118,7 +119,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
                     }
                   }
                 },
@@ -240,7 +241,9 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                 await state.deleteAppUser(user.id);
                 _loadUsers();
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
+                }
               }
             },
           ),

@@ -249,7 +249,7 @@ class RazorpayCreateOrderView(views.APIView):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            return Response({'error': f'Failed to create order: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to create payment order. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class RazorpayVerifyPaymentView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -806,7 +806,8 @@ class UserViewSet(viewsets.ModelViewSet):
             
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"DEBUG create_user error: {e}")
+            return Response({'error': 'Failed to create user. Please check your inputs and try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def admin_create_merchant(self, request):
@@ -907,7 +908,7 @@ class UserViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(f"DEBUG admin_create_merchant ERROR: {e}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Failed to create merchant. Please check your inputs and try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def grant_prime(self, request, pk=None):
@@ -1067,7 +1068,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     cursor.execute("DELETE FROM users WHERE id = %s", [user_id])
             return Response({'status': 'success', 'message': 'User and all related records deleted successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({'error': f'Failed to delete user: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"DEBUG delete_user error: {e}")
+            return Response({'error': 'Failed to delete user account. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -1484,7 +1486,7 @@ class ResendVerificationView(views.APIView):
             })
         except Exception as e:
             print(f"Error resending OTP email for {user.email}: {e}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to send OTP email. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class VerifyOTPView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1568,7 +1570,7 @@ class ForgotPasswordView(views.APIView):
             return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(f"DEBUG: Forgot Password Error: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to send password reset email. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ResetPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -1849,7 +1851,7 @@ class ChangePasswordView(views.APIView):
             return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"DEBUG: ChangePasswordView error: {e}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Failed to change password. Please check your inputs and try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class HeroBannerViewSet(viewsets.ModelViewSet):
     queryset = HeroBanner.objects.all().order_by('-created_at')

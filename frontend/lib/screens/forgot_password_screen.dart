@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../providers/app_state.dart';
+import '../services/api_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -77,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent)
+                        SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent)
                       );
                     }
                   }
@@ -174,7 +175,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent)
+                        SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent)
                       );
                     }
                   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../services/api_service.dart';
 import 'merchant_form_screen.dart';
 
 class MerchantManagementScreen extends StatefulWidget {
@@ -146,14 +147,18 @@ class _MerchantManagementScreenState extends State<MerchantManagementScreen> {
                   try {
                     await state.restoreMerchant(merchant.id);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
+                    }
                   }
                 }),
               _actionButton("Delete", Icons.delete_outline, Colors.redAccent, () async {
                 try {
                   await state.deleteMerchant(merchant.id);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
+                  }
                 }
               }),
             ],

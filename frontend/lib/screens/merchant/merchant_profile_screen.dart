@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_theme.dart';
 import '../../providers/app_state.dart';
 import '../../models/models.dart';
+import '../../services/api_service.dart';
 
 class MerchantProfileScreen extends StatefulWidget {
   const MerchantProfileScreen({super.key});
@@ -180,11 +181,9 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  String errMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Failed to change password:', '').trim();
-                  if (errMsg.toLowerCase().contains('incorrect old password')) {
+                  String errMsg = ApiService.parseError(e).message;
+                  if (errMsg.toLowerCase().contains('incorrect old password') || errMsg.toLowerCase().contains('incorrect password')) {
                     errMsg = 'The current password you entered is incorrect. Please try again.';
-                  } else if (errMsg.isEmpty) {
-                    errMsg = 'Unable to change password. Please verify your connection and try again.';
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(errMsg), backgroundColor: Colors.redAccent),

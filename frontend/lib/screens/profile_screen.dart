@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'prime_screen.dart';
 import 'package:frontend/models/models.dart';
+import 'package:frontend/services/api_service.dart';
 
 
 class ProfileScreen extends StatelessWidget {
@@ -839,7 +840,7 @@ class ProfileScreen extends StatelessWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent));
                 }
               }
             },
@@ -1002,11 +1003,9 @@ class ProfileScreen extends StatelessWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  String errMsg = e.toString().replaceAll('Exception: ', '').replaceAll('Failed to change password:', '').trim();
-                  if (errMsg.toLowerCase().contains('incorrect old password')) {
+                  String errMsg = ApiService.parseError(e).message;
+                  if (errMsg.toLowerCase().contains('incorrect old password') || errMsg.toLowerCase().contains('incorrect password')) {
                     errMsg = 'The current password you entered is incorrect. Please try again.';
-                  } else if (errMsg.isEmpty) {
-                    errMsg = 'Unable to change password. Please verify your connection and try again.';
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(errMsg), backgroundColor: Colors.redAccent),
