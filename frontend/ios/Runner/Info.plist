@@ -1,83 +1,87 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 
-	<!-- App Information -->
-	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+    <!-- App Information -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
 
-	<key>CFBundleDisplayName</key>
-	<string>The Baron Club</string>
+    <key>CFBundleDisplayName</key>
+    <string>The Baron Club</string>
 
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
 
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
 
-	<key>CFBundleName</key>
-	<string>The Baron Club</string>
+    <key>CFBundleName</key>
+    <string>The Baron Club</string>
 
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
 
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
 
-	<key>CFBundleSignature</key>
-	<string>????</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
 
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
 
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
 
-	<!-- Launch Screen -->
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
+    <!-- Launch Screen -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
 
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
 
-	<!-- Supported Orientations -->
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+    <!-- Supported Orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
 
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
 
-	<!-- Performance / Input -->
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+    <!-- Performance / Input -->
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
 
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
 
-	<!-- Location Permission -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>The Baron Club uses your location to display nearby featured merchants and calculate distances.</string>
+    <!-- Location Permissions -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>The Baron Club uses your location to display nearby featured merchants and calculate distances while you use the app.</string>
 
-	<!-- Camera Permission -->
-	<key>NSCameraUsageDescription</key>
-	<string>The Baron Club uses the camera to scan merchant UPI QR codes, identify the UPI ID, and help initiate the payment.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>The Baron Club uses your location to provide location-based merchant features when background location access is necessary.</string>
 
-	<!-- Photo Library Permission -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>The Baron Club needs access to your photo library to allow merchants and administrators to upload store and banner images.</string>
+    <!-- Camera Permission -->
+    <key>NSCameraUsageDescription</key>
+    <string>The Baron Club uses the camera to scan merchant UPI QR codes, identify the UPI ID, and help initiate the payment.</string>
+
+    <!-- Photo Library Permission -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>The Baron Club needs access to your photo library to allow merchants and administrators to upload store and banner images.</string>
 
 </dict>
 </plist>
