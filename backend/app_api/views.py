@@ -1243,27 +1243,37 @@ class LoginView(views.APIView):
     throttle_scope = 'auth_sensitive'
 
     def post(self, request):
-        # Support both email and username label for backward compatibility in UI
+        # Support both email, username, or phone label for backward compatibility in UI
         email = (request.data.get('email') or request.data.get('username', '')).strip().lower()
         password = request.data.get('password')
         
+        if not email or not password:
+            return Response({'error': 'Please enter both email and password'}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
-            db_user = User.objects.get(email__iexact=email)
+            db_user = User.objects.filter(models.Q(email__iexact=email) | models.Q(phone=email)).first()
+            if not db_user:
+                return Response({'error': 'Email or username not registered'}, status=status.HTTP_401_UNAUTHORIZED)
             if db_user.status == 'inactive':
                 return Response({'error': 'Your account has been blocked by the administrator.'}, status=status.HTTP_403_FORBIDDEN)
             
-            # Manually check password to see if it matches
+            # Check password
             match = db_user.check_password(password)
-            print(f"DEBUG: Manual check_password match: {match}")
-            if not match:
-                return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
-        except User.DoesNotExist:
-            print(f"DEBUG: No user found in DB with email: {email}")
-            return Response({'error': 'Email not registered'}, status=status.HTTP_401_UNAUTHORIZED)
+            if not match and db_user.password and db_user.password.startswith(('$2y$', '$2b$', '$2a$')):
+                try:
+                    import bcrypt
+                    verify_hash = ('$2b$' + db_user.password[4:]) if db_user.password.startswith(('$2y$', '$2a$')) else db_user.password
+                    match = bcrypt.checkpw(password.encode('utf-8'), verify_hash.encode('utf-8'))
+                except Exception:
+                    match = False
             
-        user = authenticate(username=email, password=password)
+            if not match:
+                return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        user = authenticate(username=db_user.email, password=password) or db_user
         if user:
-            print(f"Login successful for user: {user.email}")
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -1271,8 +1281,7 @@ class LoginView(views.APIView):
                 'user': UserSerializer(user).data
             })
         
-        print(f"Login failed for email: {email}")
-        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
 
 import os
 from django.conf import settings
@@ -1551,7 +1560,7 @@ class SignupView(views.APIView):
             return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
             
         if User.objects.filter(phone=phone).exists():
-            return Response({'error': 'A user with this phone number already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Mobile number already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
         user = User.objects.create_user(
             email=email,

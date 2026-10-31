@@ -101,18 +101,23 @@ class ApiService {
   static String _cleanBackendError(dynamic error) {
     if (error == null) return 'An unexpected error occurred.';
     if (error is List) {
-      return error.map((e) => _cleanBackendError(e)).join(', ');
+      return error.map((e) => _cleanBackendError(e)).join('\n');
     }
     if (error is Map) {
       final List<String> fieldErrors = [];
       error.forEach((key, value) {
-        final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
-        if (value is List) {
-          fieldErrors.add(
-            '$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}',
-          );
+        final k = key.toString().toLowerCase();
+        if (k == 'error' || k == 'detail' || k == 'message' || k == 'non_field_errors') {
+          fieldErrors.add(_cleanBackendError(value));
         } else {
-          fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+          final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
+          if (value is List) {
+            fieldErrors.add(
+              '$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}',
+            );
+          } else {
+            fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+          }
         }
       });
       return fieldErrors.join('\n');
@@ -121,9 +126,6 @@ class ApiService {
     String msg = error.toString();
     if (msg.contains('Signature has expired')) {
       return 'Your session has expired. Please log in again.';
-    }
-    if (msg.contains('Invalid password')) {
-      return 'The password you entered is incorrect.';
     }
 
     // Sanitize technical details from backend string
@@ -691,11 +693,6 @@ class ApiService {
   }
 
   dynamic _handleResponse(http.Response response) {
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      if (onSessionExpired != null) {
-        onSessionExpired!();
-      }
-    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
         return response.body.isNotEmpty ? jsonDecode(response.body) : null;
@@ -706,43 +703,59 @@ class ApiService {
       }
     }
 
+    // 1. Try to extract exact error message from backend response first
+    String? extractedError;
     try {
-      final errorData = jsonDecode(response.body);
-      if (errorData is Map) {
-        if (errorData.containsKey('error') && errorData['error'] != null) {
-          throw AppError(_cleanBackendError(errorData['error']));
-        }
-        if (errorData.containsKey('detail') && errorData['detail'] != null) {
-          throw AppError(_cleanBackendError(errorData['detail']));
-        }
-        if (errorData.containsKey('non_field_errors') &&
-            errorData['non_field_errors'] != null) {
-          throw AppError(_cleanBackendError(errorData['non_field_errors']));
-        }
-
-        // Handle generic field errors like {"email": ["Enter a valid email address."]}
-        final List<String> fieldErrors = [];
-        errorData.forEach((key, value) {
-          final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
-          if (value is List) {
-            fieldErrors.add(
-              '$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}',
-            );
-          } else if (value is Map) {
-            fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+      if (response.body.isNotEmpty) {
+        final errorData = jsonDecode(response.body);
+        if (errorData is Map) {
+          if (errorData.containsKey('error') && errorData['error'] != null) {
+            extractedError = _cleanBackendError(errorData['error']);
+          } else if (errorData.containsKey('detail') && errorData['detail'] != null) {
+            extractedError = _cleanBackendError(errorData['detail']);
+          } else if (errorData.containsKey('message') && errorData['message'] != null) {
+            extractedError = _cleanBackendError(errorData['message']);
+          } else if (errorData.containsKey('non_field_errors') &&
+              errorData['non_field_errors'] != null) {
+            extractedError = _cleanBackendError(errorData['non_field_errors']);
           } else {
-            fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+            // Handle field errors like {"phone": ["..."], "email": ["..."]}
+            final List<String> fieldErrors = [];
+            errorData.forEach((key, value) {
+              final cleanKey = _capitalize(key.toString().replaceAll('_', ' '));
+              if (value is List) {
+                fieldErrors.add(
+                  '$cleanKey: ${value.map((v) => _cleanBackendError(v)).join(", ")}',
+                );
+              } else if (value is Map) {
+                fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+              } else {
+                fieldErrors.add('$cleanKey: ${_cleanBackendError(value)}');
+              }
+            });
+            if (fieldErrors.isNotEmpty) {
+              extractedError = fieldErrors.join('\n');
+            }
           }
-        });
-        if (fieldErrors.isNotEmpty) {
-          throw AppError(fieldErrors.join('\n'));
+        } else if (errorData is List && errorData.isNotEmpty) {
+          extractedError = errorData.map((v) => _cleanBackendError(v)).join('\n');
+        } else if (errorData is String && errorData.trim().isNotEmpty) {
+          extractedError = _cleanBackendError(errorData);
         }
       }
     } catch (_) {
-      // Ignore JSON parse errors here, let standard status checks run
+      // Body wasn't JSON
     }
 
+    if (extractedError != null && extractedError.trim().isNotEmpty) {
+      throw AppError(extractedError.trim());
+    }
+
+    // 2. Fallbacks if no specific message was returned by the server
     if (response.statusCode == 401 || response.statusCode == 403) {
+      if (onSessionExpired != null) {
+        onSessionExpired!();
+      }
       throw AppError(
         'Your session has expired or you do not have permission. Please log in again.',
       );

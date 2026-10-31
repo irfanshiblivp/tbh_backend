@@ -415,10 +415,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                 : () async {
                                     try {
                                       if (isLogin) {
-                                        final success = await state.login(
-                                          _emailController.text,
-                                          _passController.text,
-                                        );
+                                        final email = _emailController.text.trim();
+                                        final pass = _passController.text;
+                                        if (email.isEmpty) {
+                                          throw Exception("Please enter your email or username");
+                                        }
+                                        if (pass.isEmpty) {
+                                          throw Exception("Please enter your password");
+                                        }
+                                        final success = await state.login(email, pass);
                                         if (!success && mounted) {
                                           ScaffoldMessenger.of(
                                             context,
@@ -427,6 +432,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                               content: Text(
                                                 "Login failed: Invalid credentials",
                                               ),
+                                              backgroundColor: Colors.redAccent,
                                             ),
                                           );
                                         }
@@ -508,7 +514,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                       if (mounted) {
                                         String errorMsg = e
                                             .toString()
-                                            .replaceAll('Exception: ', '');
+                                            .replaceAll('Exception: ', '')
+                                            .replaceAll('AppError: ', '');
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(

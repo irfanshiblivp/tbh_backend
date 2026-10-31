@@ -207,8 +207,11 @@ class AppState extends ChangeNotifier {
   void _sortMerchantsByDistance() {
     if (_devicePosition == null || _merchants.isEmpty) return;
     _merchants.sort((a, b) {
-      if (a.latitude == null || a.longitude == null) return 1;
-      if (b.latitude == null || b.longitude == null) return -1;
+      final aHasLoc = a.latitude != null && a.longitude != null;
+      final bHasLoc = b.latitude != null && b.longitude != null;
+      if (!aHasLoc && !bHasLoc) return 0;
+      if (!aHasLoc) return 1;
+      if (!bHasLoc) return -1;
       
       double distA = Geolocator.distanceBetween(
         _devicePosition!.latitude,

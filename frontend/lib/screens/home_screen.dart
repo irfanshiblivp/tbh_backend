@@ -236,27 +236,31 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      if (state.devicePosition != null) {
-        matches.sort((a, b) {
-          if (a.latitude == null || a.longitude == null) return 1;
-          if (b.latitude == null || b.longitude == null) return -1;
-          double distA = Geolocator.distanceBetween(
-            state.devicePosition!.latitude,
-            state.devicePosition!.longitude,
-            a.latitude!,
-            a.longitude!,
-          );
-          double distB = Geolocator.distanceBetween(
-            state.devicePosition!.latitude,
-            state.devicePosition!.longitude,
-            b.latitude!,
-            b.longitude!,
-          );
-          return distA.compareTo(distB);
-        });
-      }
-
       filteredMerchants = matches;
+    }
+
+    // Always sort merchants by nearest location first on customer home page
+    if (state.devicePosition != null) {
+      filteredMerchants.sort((a, b) {
+        final aHasLoc = a.latitude != null && a.longitude != null;
+        final bHasLoc = b.latitude != null && b.longitude != null;
+        if (!aHasLoc && !bHasLoc) return 0;
+        if (!aHasLoc) return 1;
+        if (!bHasLoc) return -1;
+        double distA = Geolocator.distanceBetween(
+          state.devicePosition!.latitude,
+          state.devicePosition!.longitude,
+          a.latitude!,
+          a.longitude!,
+        );
+        double distB = Geolocator.distanceBetween(
+          state.devicePosition!.latitude,
+          state.devicePosition!.longitude,
+          b.latitude!,
+          b.longitude!,
+        );
+        return distA.compareTo(distB);
+      });
     }
 
     return Scaffold(
@@ -549,7 +553,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       return _buildCategoryItem("all", "All", Icons.grid_view, state);
                     }
                     final cat = state.categories[index - 1];
-                    return _buildCategoryItem(cat.name.toLowerCase(), cat.name, AppTheme.getCategoryIcon(cat.name), state);
+                    final catSlug = cat.slug.isNotEmpty ? cat.slug : cat.name.toLowerCase();
+                    return _buildCategoryItem(catSlug, cat.name, AppTheme.getCategoryIcon(cat.name), state);
                   },
                 ),
               ),
