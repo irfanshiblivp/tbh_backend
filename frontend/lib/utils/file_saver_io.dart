@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:share_plus/share_plus.dart';
 
 Future<void> saveAndShareCSV(String csvContent, String filename) async {
@@ -10,5 +11,6 @@ Future<void> saveAndShareCSV(String csvContent, String filename) async {
     [XFile(file.path, mimeType: 'text/csv')],
     subject: filename,
     text: 'Exported customer list.',
+    sharePositionOrigin: const Rect.fromLTWH(0, 0, 100, 100),
   );
 }

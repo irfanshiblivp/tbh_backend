@@ -58,20 +58,42 @@ class UserSerializer(serializers.ModelSerializer):
             'is_prime', 'prime_starts_at', 'prime_expires_at', 'email_verified_at', 'state',
             'signup_method', 'referred_membership_count', 'free_prime_requested'
         )
-        read_only_fields = ('referral_balance', 'referral_total_earned', 'customer_number')
+        read_only_fields = (
+            'role', 'status', 'referral_balance', 'referral_total_earned', 
+            'customer_number', 'email_verified_at', 'referral_code'
+        )
 
     def get_is_prime(self, obj):
-        return PrimeMembership.objects.filter(user=obj, expires_at__gt=timezone.now()).exists()
+        now = self.context.get('now') or timezone.now()
+        prime_map = self.context.get('prime_map')
+        if prime_map is not None:
+            m = prime_map.get(obj.id)
+            return bool(m and m.expires_at and m.expires_at > now)
+        return PrimeMembership.objects.filter(user=obj, expires_at__gt=now).exists()
 
     def get_prime_starts_at(self, obj):
+        prime_map = self.context.get('prime_map')
+        if prime_map is not None:
+            m = prime_map.get(obj.id)
+            return m.starts_at.isoformat() if m and m.starts_at else None
         membership = PrimeMembership.objects.filter(user=obj).order_by('-expires_at').first()
         return membership.starts_at.isoformat() if membership and membership.starts_at else None
 
     def get_prime_expires_at(self, obj):
+        prime_map = self.context.get('prime_map')
+        if prime_map is not None:
+            m = prime_map.get(obj.id)
+            return m.expires_at.isoformat() if m and m.expires_at else None
         membership = PrimeMembership.objects.filter(user=obj).order_by('-expires_at').first()
         return membership.expires_at.isoformat() if membership and membership.expires_at else None
 
     def get_signup_method(self, obj):
+        referred_by_map = self.context.get('referred_by_map')
+        if referred_by_map is not None:
+            code = referred_by_map.get(obj.id)
+            if code:
+                return f"Referral ({code})"
+            return "Direct"
         from .models import Referral
         ref = Referral.objects.filter(referred=obj).select_related('referrer').first()
         if ref:
@@ -79,6 +101,9 @@ class UserSerializer(serializers.ModelSerializer):
         return "Direct"
 
     def get_referred_membership_count(self, obj):
+        ref_count_map = self.context.get('ref_count_map')
+        if ref_count_map is not None:
+            return ref_count_map.get(obj.id, 0)
         from .models import Referral, PrimeMembership
         referrals = Referral.objects.filter(referrer=obj).select_related('referred')
         count = 0
@@ -88,6 +113,9 @@ class UserSerializer(serializers.ModelSerializer):
         return count
 
     def get_free_prime_requested(self, obj):
+        free_req_map = self.context.get('free_req_map')
+        if free_req_map is not None:
+            return free_req_map.get(obj.id, 'none')
         from .models import FreePrimeRequest
         req = FreePrimeRequest.objects.filter(user=obj).order_by('-created_at').first()
         if req:
@@ -203,6 +231,7 @@ class FreePrimeRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FreePrimeRequest
         fields = '__all__'
+        read_only_fields = ('user', 'status', 'created_at', 'updated_at')
 
     def get_referred_membership_count(self, obj):
         from .models import Referral, PrimeMembership

@@ -80,12 +80,16 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
     final state = Provider.of<AppState>(context, listen: false);
     try {
       final users = await state.getAppUsers();
-      setState(() {
-        _users = users.where((u) => u.role == 'customer').toList();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _users = users.where((u) => u.role == 'customer').toList();
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -151,18 +155,30 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
           ),
 
           Expanded(
-            child: _loading 
-              ? const Center(child: CircularProgressIndicator(color: AppColors.amber))
-              : filteredUsers.isEmpty
-                  ? const Center(child: Text("No customers match this filter", style: TextStyle(color: Colors.white24)))
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = filteredUsers[index];
-                        return _buildAppUserTile(user);
-                      },
-                    ),
+            child: RefreshIndicator(
+              onRefresh: _loadAppUsers,
+              color: AppColors.amber,
+              child: _loading 
+                ? const Center(child: CircularProgressIndicator(color: AppColors.amber))
+                : filteredUsers.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300,
+                          alignment: Alignment.center,
+                          child: const Text("No customers match this filter", style: TextStyle(color: Colors.white24)),
+                        ),
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          final user = filteredUsers[index];
+                          return _buildAppUserTile(user);
+                        },
+                      ),
+            ),
           ),
         ],
       ),

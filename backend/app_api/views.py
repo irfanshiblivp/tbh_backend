@@ -144,16 +144,62 @@ class AppSettingViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if instance.key and instance.key.startswith('PRIME_PLAN_'):
+            try:
+                parts = instance.value.split('|')
+                old_p = parts[0] if len(parts) > 0 and parts[0] else None
+                eff_p = parts[1] if len(parts) > 1 and parts[1] else None
+                if old_p:
+                    AppSetting.objects.update_or_create(key='prime_amount', defaults={'value': str(old_p)})
+                if eff_p:
+                    AppSetting.objects.update_or_create(key='prime_effective_amount', defaults={'value': str(eff_p)})
+            except Exception as e:
+                print(f"Error syncing prime amounts on create: {e}")
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if instance.key and instance.key.startswith('PRIME_PLAN_'):
+            try:
+                parts = instance.value.split('|')
+                old_p = parts[0] if len(parts) > 0 and parts[0] else None
+                eff_p = parts[1] if len(parts) > 1 and parts[1] else None
+                if old_p:
+                    AppSetting.objects.update_or_create(key='prime_amount', defaults={'value': str(old_p)})
+                if eff_p:
+                    AppSetting.objects.update_or_create(key='prime_effective_amount', defaults={'value': str(eff_p)})
+            except Exception as e:
+                print(f"Error syncing prime amounts on update: {e}")
+
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         key_val = get_google_maps_api_key()
         found = False
         if isinstance(response.data, list):
+            prime_eff = None
+            prime_amt = None
+            prime_plan_items = []
             for item in response.data:
-                if item.get('key') == 'GOOGLE_MAPS_API_KEY':
+                k = item.get('key')
+                if k == 'GOOGLE_MAPS_API_KEY':
                     item['value'] = key_val
                     found = True
-                    break
+                elif k == 'prime_effective_amount':
+                    prime_eff = item.get('value')
+                elif k == 'prime_amount':
+                    prime_amt = item.get('value')
+                elif k and str(k).startswith('PRIME_PLAN_'):
+                    prime_plan_items.append(item)
+
+            # When prime price was updated from website, reflect it in PRIME_PLAN items
+            if prime_eff and prime_plan_items:
+                for plan_item in prime_plan_items:
+                    parts = plan_item.get('value', '').split('|')
+                    old_p = prime_amt or (parts[0] if parts and parts[0] else '9999')
+                    benefits = parts[2] if len(parts) > 2 else 'Exclusive Discounts and other offers, Referral Bonus, VIP Treatment'
+                    plan_item['value'] = f"{old_p}|{prime_eff}|{benefits}"
+
             if not found:
                 response.data.append({
                     'id': 9999,
@@ -169,7 +215,16 @@ class AppSettingViewSet(viewsets.ModelViewSet):
                 'key': 'GOOGLE_MAPS_API_KEY',
                 'value': get_google_maps_api_key()
             })
-        return super().retrieve(request, *args, **kwargs)
+        response = super().retrieve(request, *args, **kwargs)
+        if isinstance(response.data, dict) and str(response.data.get('key', '')).startswith('PRIME_PLAN_'):
+            prime_eff = AppSetting.objects.filter(key='prime_effective_amount').first()
+            prime_amt = AppSetting.objects.filter(key='prime_amount').first()
+            if prime_eff and prime_eff.value:
+                parts = response.data.get('value', '').split('|')
+                old_p = (prime_amt.value if prime_amt and prime_amt.value else (parts[0] if parts and parts[0] else '9999'))
+                benefits = parts[2] if len(parts) > 2 else 'Exclusive Discounts and other offers, Referral Bonus, VIP Treatment'
+                response.data['value'] = f"{old_p}|{prime_eff.value}|{benefits}"
+        return response
 
 class AdminPaymentListView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -196,6 +251,7 @@ from django.conf import settings
 
 class RazorpayCreateOrderView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = 'payment'
 
     def post(self, request):
         user = request.user
@@ -203,20 +259,32 @@ class RazorpayCreateOrderView(views.APIView):
         purpose = request.data.get('purpose', 'prime_membership')
         if purpose:
             purpose = purpose[:50]
-        
-        if not amount_in_rupees:
-            return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-        try:
-            amount = float(amount_in_rupees)
-        except ValueError:
-            return Response({'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
-            
-        if amount <= 0:
-            return Response({'error': 'Amount must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
             
         if purpose == 'prime_membership':
-            amount = amount * 1.18
+            # Security: Always determine Prime price server-side from DB settings
+            eff_setting = AppSetting.objects.filter(key='prime_effective_amount').first()
+            if eff_setting and eff_setting.value.strip():
+                try:
+                    base_price = float(eff_setting.value.strip())
+                except ValueError:
+                    base_price = 999.0
+            else:
+                plan_setting = AppSetting.objects.filter(key__startswith='PRIME_PLAN_').first()
+                if plan_setting:
+                    parts = plan_setting.value.split('|')
+                    base_price = float(parts[1] if len(parts) > 1 and parts[1].strip() else parts[0])
+                else:
+                    base_price = 999.0
+            amount = base_price * 1.18
+        else:
+            if not amount_in_rupees:
+                return Response({'error': 'Amount is required'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                amount = float(amount_in_rupees)
+            except ValueError:
+                return Response({'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
+            if amount <= 0:
+                return Response({'error': 'Amount must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
@@ -253,6 +321,7 @@ class RazorpayCreateOrderView(views.APIView):
 
 class RazorpayVerifyPaymentView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = 'payment'
 
     def post(self, request):
         user = request.user
@@ -276,33 +345,38 @@ class RazorpayVerifyPaymentView(views.APIView):
         try:
             payment = Payment.objects.get(razorpay_order_id=order_id)
         except Payment.DoesNotExist:
-            payment = Payment.objects.create(
-                user=user,
-                razorpay_order_id=order_id,
-                amount=99900,
-                purpose='prime_membership'
-            )
+            return Response({'error': 'Payment order not found'}, status=status.HTTP_404_NOT_FOUND)
             
-        payment.razorpay_payment_id = payment_id
-        payment.status = 'paid'
-        payment.save()
-        
-        if payment.purpose == 'prime_membership':
-            from django.utils import timezone
-            now = timezone.now()
+        # Security: Prevent IDOR - ensure payment order belongs to authenticated user
+        if payment.user != user:
+            return Response({'error': 'Unauthorized payment order'}, status=status.HTTP_403_FORBIDDEN)
             
-            active_membership = PrimeMembership.objects.filter(user=user, expires_at__gt=now).first()
-            if active_membership:
-                active_membership.expires_at = active_membership.expires_at + timezone.timedelta(days=365)
-                active_membership.save()
-                membership = active_membership
-            else:
-                membership = PrimeMembership.objects.create(
-                    user=user,
-                    source='payment',
-                    starts_at=now,
-                    expires_at=now + timezone.timedelta(days=365)
-                )
+        # Security: Prevent Replay Attacks - ensure payment is not processed more than once
+        if payment.status == 'paid':
+            return Response({'status': 'success', 'message': 'Payment already verified and processed'}, status=status.HTTP_200_OK)
+
+        from django.db import transaction
+        with transaction.atomic():
+            payment.razorpay_payment_id = payment_id
+            payment.status = 'paid'
+            payment.save()
+            
+            if payment.purpose == 'prime_membership':
+                from django.utils import timezone
+                now = timezone.now()
+                
+                active_membership = PrimeMembership.objects.filter(user=user, expires_at__gt=now).first()
+                if active_membership:
+                    active_membership.expires_at = active_membership.expires_at + timezone.timedelta(days=365)
+                    active_membership.save()
+                    membership = active_membership
+                else:
+                    membership = PrimeMembership.objects.create(
+                        user=user,
+                        source='payment',
+                        starts_at=now,
+                        expires_at=now + timezone.timedelta(days=365)
+                    )
             
             # Send notification/email for Prime purchase
             try:
@@ -314,20 +388,22 @@ class RazorpayVerifyPaymentView(views.APIView):
             referral_code = request.data.get('referral_code')
             if referral_code:
                 try:
-                    code_str = str(referral_code).strip().upper()
-                    if not code_str.startswith('TBC'):
-                        code_str = f"TBC{code_str}"
-                    referrer = User.objects.filter(referral_code=code_str).first()
+                    raw_code = str(referral_code).strip().upper()
+                    referrer = User.objects.filter(
+                        models.Q(referral_code__iexact=raw_code) |
+                        models.Q(referral_code__iexact=f"TBC{raw_code}") |
+                        models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
+                    ).first()
                     if referrer and referrer != user:
                         if not Referral.objects.filter(referred=user).exists():
                             import random, string
-                            link, _ = ReferralLink.objects.get_or_create(
-                                user=referrer,
-                                defaults={
-                                    'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                    'expires_at': timezone.now() + timezone.timedelta(days=365)
-                                }
-                            )
+                            link = ReferralLink.objects.filter(user=referrer).first()
+                            if not link:
+                                link = ReferralLink.objects.create(
+                                    user=referrer,
+                                    token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                                    expires_at=timezone.now() + timezone.timedelta(days=365)
+                                )
                             Referral.objects.create(
                                 referrer=referrer,
                                 referred=user,
@@ -341,7 +417,11 @@ class RazorpayVerifyPaymentView(views.APIView):
             if referral:
                 referrer = referral.referrer
                 from decimal import Decimal
-                reward_amount_dec = Decimal('100.00')
+                reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
+                try:
+                    reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('100.00')
+                except Exception:
+                    reward_amount_dec = Decimal('100.00')
                 referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
                 referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
                 referrer.save()
@@ -349,9 +429,9 @@ class RazorpayVerifyPaymentView(views.APIView):
                 referral.reward_amount = reward_amount_dec
                 referral.save()
                 
-            message = 'Payment verified and Prime membership activated successfully!'
-        else:
-            message = 'Payment verified successfully!'
+                message = 'Payment verified and Prime membership activated successfully!'
+            else:
+                message = 'Payment verified successfully!'
             
         return Response({
             'status': 'success',
@@ -408,6 +488,11 @@ class MerchantViewSet(viewsets.ModelViewSet):
     queryset = Merchant.objects.all()
     serializer_class = MerchantSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'staff') and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden. Only administrators or staff can register merchants.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -524,8 +609,14 @@ class MerchantViewSet(viewsets.ModelViewSet):
             queryset = Merchant.objects.filter(status='active', deleted_at__isnull=True)
             
         category = self.request.query_params.get('category')
-        if category:
-            queryset = queryset.filter(category=category)
+        if category and category.strip() and category.strip().lower() != 'all':
+            cat_clean = category.strip()
+            queryset = queryset.filter(
+                models.Q(category__iexact=cat_clean) |
+                models.Q(category__iexact=cat_clean.replace('-', ' ')) |
+                models.Q(category__iexact=cat_clean.replace('-', ' & ')) |
+                models.Q(category__icontains=cat_clean)
+            )
         return queryset
 
     @action(detail=True, methods=['post'])
@@ -584,7 +675,13 @@ class MerchantViewSet(viewsets.ModelViewSet):
         if not query:
             return Response({'error': 'Query parameter required'}, status=400)
             
-        user = User.objects.filter(models.Q(email=query) | models.Q(phone=query)).first()
+        query = str(query).strip()
+        user = User.objects.filter(
+            models.Q(email__iexact=query) |
+            models.Q(phone=query) |
+            models.Q(referral_code__iexact=query) |
+            models.Q(referral_code__iexact=f"TBC{query}")
+        ).first()
         if not user:
             return Response({'error': 'User not found'}, status=404)
             
@@ -771,6 +868,67 @@ class UserViewSet(viewsets.ModelViewSet):
             return User.objects.filter(deleted_at__isnull=True).order_by('-created_at')
         return User.objects.filter(id=self.request.user.id, deleted_at__isnull=True)
 
+    def create(self, request, *args, **kwargs):
+        return Response({'error': 'Direct creation not allowed. Use the registration endpoint.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False) and instance != request.user:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False) and instance != request.user:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        if self.request.user.role != 'admin' and not getattr(self.request.user, 'is_superuser', False):
+            for field in ('role', 'status', 'referral_balance', 'referral_total_earned', 'customer_number'):
+                serializer.validated_data.pop(field, None)
+        serializer.save()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        users_list = list(queryset)
+        user_ids = [u.id for u in users_list]
+
+        now = timezone.now()
+        memberships = PrimeMembership.objects.filter(user_id__in=user_ids).order_by('-expires_at')
+        prime_map = {}
+        for m in memberships:
+            if m.user_id not in prime_map:
+                prime_map[m.user_id] = m
+
+        referred_by_map = {}
+        for ref in Referral.objects.filter(referred_id__in=user_ids).select_related('referrer'):
+            referred_by_map[ref.referred_id] = ref.referrer.referral_code if ref.referrer else ''
+
+        prime_user_ids = set(PrimeMembership.objects.filter(expires_at__gt=now).values_list('user_id', flat=True))
+        referrals_made = Referral.objects.filter(referrer_id__in=user_ids).values_list('referrer_id', 'referred_id')
+        ref_count_map = {}
+        for referrer_id, referred_id in referrals_made:
+            if referred_id in prime_user_ids:
+                ref_count_map[referrer_id] = ref_count_map.get(referrer_id, 0) + 1
+
+        free_req_map = {}
+        for req in FreePrimeRequest.objects.filter(user_id__in=user_ids).order_by('-created_at'):
+            if req.user_id not in free_req_map:
+                free_req_map[req.user_id] = req.status
+
+        context = self.get_serializer_context()
+        context.update({
+            'prime_map': prime_map,
+            'referred_by_map': referred_by_map,
+            'ref_count_map': ref_count_map,
+            'free_req_map': free_req_map,
+            'now': now,
+        })
+
+        serializer = self.get_serializer(users_list, many=True, context=context)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['post'])
     def admin_create_staff(self, request):
         if self.request.user.role != 'admin' and not self.request.user.is_superuser:
@@ -935,6 +1093,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def fake_purchase_prime(self, request):
+        # Security: Never permit simulated purchase bypass in production unless invoked by admin
+        if not getattr(settings, 'DEBUG', False) and request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Simulated purchases are strictly disabled in production.'}, status=status.HTTP_403_FORBIDDEN)
+            
         user = request.user
         
         # 1. Create the membership
@@ -955,20 +1117,22 @@ class UserViewSet(viewsets.ModelViewSet):
         referral_code = request.data.get('referral_code')
         if referral_code:
             try:
-                code_str = str(referral_code).strip().upper()
-                if not code_str.startswith('TBC'):
-                    code_str = f"TBC{code_str}"
-                referrer = User.objects.filter(referral_code=code_str).first()
+                raw_code = str(referral_code).strip().upper()
+                referrer = User.objects.filter(
+                    models.Q(referral_code__iexact=raw_code) |
+                    models.Q(referral_code__iexact=f"TBC{raw_code}") |
+                    models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
+                ).first()
                 if referrer and referrer != user:
                     if not Referral.objects.filter(referred=user).exists():
                         import random, string
-                        link, _ = ReferralLink.objects.get_or_create(
-                            user=referrer,
-                            defaults={
-                                'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                'expires_at': timezone.now() + timezone.timedelta(days=365)
-                            }
-                        )
+                        link = ReferralLink.objects.filter(user=referrer).first()
+                        if not link:
+                            link = ReferralLink.objects.create(
+                                user=referrer,
+                                token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                                expires_at=timezone.now() + timezone.timedelta(days=365)
+                            )
                         Referral.objects.create(
                             referrer=referrer,
                             referred=user,
@@ -979,12 +1143,15 @@ class UserViewSet(viewsets.ModelViewSet):
                 print(f"Error processing dynamic referral code: {e}")
         
         # 2. Check for referral reward
-        # On the website, if a referred user takes prime, the referrer gets 100
         referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
         if referral:
             referrer = referral.referrer
             from decimal import Decimal
-            reward_amount_dec = Decimal('100.00')
+            reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
+            try:
+                reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('100.00')
+            except Exception:
+                reward_amount_dec = Decimal('100.00')
             
             # Update referrer's balance safely using Decimal
             referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
@@ -993,10 +1160,10 @@ class UserViewSet(viewsets.ModelViewSet):
             
             # Mark referral as paid
             referral.reward_paid_at = timezone.now()
-            referral.reward_amount = reward_amount
+            referral.reward_amount = reward_amount_dec
             referral.save()
             
-            print(f"Awarded ₹{reward_amount} referral bonus to {referrer.email} for {user.email}")
+            print(f"Awarded ₹{reward_amount_dec} referral bonus to {referrer.email} for {user.email}")
             
         user.refresh_from_db()
         return Response({
@@ -1073,19 +1240,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'auth_sensitive'
 
     def post(self, request):
         # Support both email and username label for backward compatibility in UI
         email = (request.data.get('email') or request.data.get('username', '')).strip().lower()
         password = request.data.get('password')
         
-        print(f"Login attempt for email: '{email}'")
         try:
             db_user = User.objects.get(email__iexact=email)
             if db_user.status == 'inactive':
                 return Response({'error': 'Your account has been blocked by the administrator.'}, status=status.HTTP_403_FORBIDDEN)
-            print(f"DEBUG: User found in DB: {db_user.email}, Role: {db_user.role}")
-            print(f"DEBUG: Stored Hash: {db_user.password[:20]}...")
             
             # Manually check password to see if it matches
             match = db_user.check_password(password)
@@ -1354,6 +1519,7 @@ def send_welcome_email(user, password):
 
 class SignupView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'auth_sensitive'
 
     def post(self, request):
         data = request.data
@@ -1362,6 +1528,10 @@ class SignupView(views.APIView):
         password = data.get('password')
         phone = data.get('phone', '').strip()
         role = data.get('role', 'customer').lower()
+        
+        # Security: Prevent privilege escalation via public signup
+        if role not in ('customer', 'merchant'):
+            role = 'customer'
         
         if not name or not email or not password:
             return Response({'error': 'Name, Email and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1398,17 +1568,21 @@ class SignupView(views.APIView):
         referral_code = data.get('referral_code')
         if referral_code and role == 'customer':
             try:
-                code_str = str(referral_code).strip().upper()
-                if not code_str.startswith('TBC'):
-                    code_str = f"TBC{code_str}"
-                referrer = User.objects.filter(referral_code=code_str).first()
+                raw_code = str(referral_code).strip().upper()
+                referrer = User.objects.filter(
+                    models.Q(referral_code__iexact=raw_code) |
+                    models.Q(referral_code__iexact=f"TBC{raw_code}") |
+                    models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
+                ).first()
                 if referrer:
                     # Find or create a referral link for the referrer
-                    # In Laravel, these are typically pre-generated or created on first use
-                    link, _ = ReferralLink.objects.get_or_create(
-                        user=referrer,
-                        defaults={'token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)), 'expires_at': timezone.now() + timezone.timedelta(days=365)}
-                    )
+                    link = ReferralLink.objects.filter(user=referrer).first()
+                    if not link:
+                        link = ReferralLink.objects.create(
+                            user=referrer,
+                            token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+                            expires_at=timezone.now() + timezone.timedelta(days=365)
+                        )
                     
                     Referral.objects.create(
                         referrer=referrer,
@@ -1465,6 +1639,7 @@ class SignupView(views.APIView):
 
 class ResendVerificationView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = 'otp'
 
     def post(self, request):
         user = request.user
@@ -1478,7 +1653,6 @@ class ResendVerificationView(views.APIView):
             cache.set(cache_key, otp, 900) # 15 minutes
             
             expiry_str = (timezone.now() + timezone.timedelta(minutes=15)).strftime("%I:%M %p")
-            print(f"DEBUG: Generated resend OTP {otp} for user {user.email}")
             send_otp_email(user, otp, expiry_str)
             
             return Response({
@@ -1490,12 +1664,11 @@ class ResendVerificationView(views.APIView):
 
 class VerifyOTPView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = 'otp'
 
     def post(self, request):
         user = request.user
         otp_received = request.data.get('otp')
-        
-        print(f"OTP Verification attempt for user: {user.email}, OTP: {otp_received}")
         
         if not otp_received:
             return Response({'error': 'Please enter the 6-digit OTP code.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1503,11 +1676,9 @@ class VerifyOTPView(views.APIView):
         cache_key = f"otp_{user.email}"
         cached_otp = cache.get(cache_key)
         
-        print(f"Cached OTP for {user.email}: {cached_otp}")
-        
-        is_test_domain = any(user.email.endswith(dom) for dom in ['@4nly.com', '@test.com', '@example.com'])
+        # Test domain bypass is strictly allowed only when DEBUG is True
+        is_test_domain = getattr(settings, 'DEBUG', False) and any(user.email.endswith(dom) for dom in ['@4nly.com', '@test.com', '@example.com'])
         if (cached_otp and str(cached_otp) == str(otp_received)) or (is_test_domain and str(otp_received) == '123456'):
-            print(f"OTP Match! Verifying {user.email}")
             user.email_verified_at = timezone.now()
             user.save()
             cache.delete(cache_key)
@@ -1516,7 +1687,6 @@ class VerifyOTPView(views.APIView):
                 'user': UserSerializer(user).data
             })
         else:
-            print(f"OTP Mismatch or Expired for {user.email}")
             return Response({'error': 'The OTP you entered is invalid or has expired. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmailView(views.APIView):
@@ -1549,6 +1719,7 @@ class VerifyEmailView(views.APIView):
 
 class ForgotPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'auth_sensitive'
 
     def post(self, request):
         email = request.data.get('email')
@@ -1559,21 +1730,21 @@ class ForgotPasswordView(views.APIView):
             email_clean = str(email).strip().lower()
             user = User.objects.get(email__iexact=email_clean)
             otp = str(random.randint(100000, 999999))
-            cache.set(f'otp_{email}', otp, timeout=600) # 10 minutes
+            cache.set(f'otp_{email_clean}', otp, timeout=600) # 10 minutes
             
             expiry_str = (timezone.now() + timezone.timedelta(minutes=10)).strftime("%I:%M %p")
-            print(f"DEBUG: Sending Forgot Password OTP {otp} to {user.email}")
             send_otp_email(user, otp, expiry_str)
-            return Response({'message': 'OTP sent to your email'}, status=status.HTTP_200_OK)
+            return Response({'message': 'If an account exists with this email, an OTP has been sent.'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            print(f"DEBUG: Forgot Password requested for non-existent email: {email}")
-            return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            # Prevent account enumeration: return identical message
+            return Response({'message': 'If an account exists with this email, an OTP has been sent.'}, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"DEBUG: Forgot Password Error: {str(e)}")
             return Response({'error': 'Failed to send password reset email. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ResetPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'auth_sensitive'
 
     def post(self, request):
         email = request.data.get('email')
@@ -1583,14 +1754,20 @@ class ResetPasswordView(views.APIView):
         if not email or not otp or not password:
             return Response({'error': 'Email, OTP and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
             
-        cached_otp = cache.get(f'otp_{email}')
-        is_test_domain = any(str(email).endswith(dom) for dom in ['@4nly.com', '@test.com', '@example.com'])
+        if len(password) < 8:
+            return Response({'error': 'The password field must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        email_clean = str(email).strip().lower()
+        cached_otp = cache.get(f'otp_{email_clean}')
+        
+        # Test domain bypass is strictly allowed only when DEBUG is True
+        is_test_domain = getattr(settings, 'DEBUG', False) and any(email_clean.endswith(dom) for dom in ['@4nly.com', '@test.com', '@example.com'])
         if (cached_otp and str(cached_otp) == str(otp)) or (is_test_domain and str(otp) == '123456'):
             try:
-                user = User.objects.get(email=email)
+                user = User.objects.get(email__iexact=email_clean)
                 user.set_password(password)
                 user.save()
-                cache.delete(f'otp_{email}')
+                cache.delete(f'otp_{email_clean}')
                 return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1863,6 +2040,26 @@ class HeroBannerViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         instance = serializer.save()
         if instance.image:
@@ -1883,6 +2080,21 @@ class FreePrimeRequestViewSet(viewsets.ModelViewSet):
         if self.request.user.role == 'admin':
             return self.queryset
         return self.queryset.filter(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role != 'admin' and not getattr(request.user, 'is_superuser', False):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         user = request.user

@@ -120,17 +120,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         return;
                       }
                       
+                      final messenger = ScaffoldMessenger.of(context);
                       try {
                         final success = await state.verifyOtp(_otpController.text);
                         if (success) {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               const SnackBar(content: Text("Email verified successfully!")),
                             );
                           }
                         } else {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               const SnackBar(
                                 content: Text("Verification failed. Please check the OTP."),
                                 backgroundColor: Colors.redAccent,
@@ -140,7 +141,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         }
                       } catch (e) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             SnackBar(
                               content: Text(ApiService.parseError(e).message),
                               backgroundColor: Colors.redAccent,
@@ -167,16 +168,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   TextButton(
                     onPressed: isResending ? null : () async {
                       setState(() => isResending = true);
+                      final messenger = ScaffoldMessenger.of(context);
                       try {
                         await state.resendVerification();
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             const SnackBar(content: Text("New OTP sent to your email!")),
                           );
                         }
                       } catch (e) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             SnackBar(content: Text(ApiService.parseError(e).message), backgroundColor: Colors.redAccent),
                           );
                         }

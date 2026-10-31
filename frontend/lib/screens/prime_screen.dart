@@ -36,11 +36,21 @@ class _PrimeScreenState extends State<PrimeScreen> {
       final state = context.read<AppState>();
       state.loadSettings().then((_) {
         final primeSettings = state.settings.where((s) => s.key.startsWith('PRIME_PLAN_')).toList();
+        final effSetting = state.settings.where((s) => s.key == 'prime_effective_amount').firstOrNull;
         if (primeSettings.isNotEmpty) {
           setState(() {
             selectedPlanId = primeSettings.first.key;
             final parts = primeSettings.first.value.split('|');
-            price = double.tryParse(parts.length > 1 ? parts[1] : parts[0]) ?? 999;
+            double parsedPrice = double.tryParse(parts.length > 1 ? parts[1] : parts[0]) ?? 999;
+            if (effSetting != null && double.tryParse(effSetting.value) != null) {
+              parsedPrice = double.tryParse(effSetting.value)!;
+            }
+            price = parsedPrice;
+          });
+        } else if (effSetting != null && double.tryParse(effSetting.value) != null) {
+          setState(() {
+            selectedPlanId = 'PRIME_PLAN_ANNUAL';
+            price = double.tryParse(effSetting.value) ?? 999;
           });
         }
       });
@@ -294,26 +304,52 @@ class _PrimeScreenState extends State<PrimeScreen> {
                           child: Column(
                             children: [
                               Row(
-                                children: state.settings.where((s) => s.key.startsWith('PRIME_PLAN_')).isNotEmpty
-                                    ? state.settings
-                                        .where((s) => s.key.startsWith('PRIME_PLAN_'))
-                                        .map((plan) {
-                                       final parts = plan.value.split('|');
-                                       final pOldPrice = (parts.isNotEmpty && parts[0].isNotEmpty) ? parts[0] : "1499";
-                                       final pNewPrice = (parts.length > 1 && parts[1].isNotEmpty) ? parts[1] : pOldPrice;
-                                       final pName = plan.key.replaceAll('PRIME_PLAN_', '').replaceAll('_MONTHLY', '').replaceAll('_YEARLY', '').replaceAll('_', ' ');
-                                       final pType = plan.key.contains('YEARLY') ? 'YEARLY' : 'MONTHLY';
-                                       return _buildPlanCard(
-                                         plan.key,
-                                         pName,
-                                         '₹$pNewPrice',
-                                         pType,
-                                         originalPriceStr: '₹$pOldPrice',
-                                       );
-                                     }).toList()
-                                    : [
-                                        const Expanded(child: Center(child: Text("No plans available", style: TextStyle(color: Colors.white24)))),
-                                      ],
+                                children: () {
+                                  final primePlans = state.settings.where((s) => s.key.startsWith('PRIME_PLAN_')).toList();
+                                  final effSetting = state.settings.where((s) => s.key == 'prime_effective_amount').firstOrNull;
+                                  final amtSetting = state.settings.where((s) => s.key == 'prime_amount').firstOrNull;
+
+                                  if (primePlans.isNotEmpty) {
+                                    return primePlans.map((plan) {
+                                      final parts = plan.value.split('|');
+                                      String pOldPrice = (parts.isNotEmpty && parts[0].isNotEmpty) ? parts[0] : "1499";
+                                      String pNewPrice = (parts.length > 1 && parts[1].isNotEmpty) ? parts[1] : pOldPrice;
+
+                                      if (amtSetting != null && amtSetting.value.trim().isNotEmpty) {
+                                        pOldPrice = amtSetting.value.trim();
+                                      }
+                                      if (effSetting != null && effSetting.value.trim().isNotEmpty) {
+                                        pNewPrice = effSetting.value.trim();
+                                      }
+
+                                      final pName = plan.key.replaceAll('PRIME_PLAN_', '').replaceAll('_MONTHLY', '').replaceAll('_YEARLY', '').replaceAll('_', ' ');
+                                      final pType = plan.key.contains('YEARLY') ? 'YEARLY' : 'MONTHLY';
+                                      return _buildPlanCard(
+                                        plan.key,
+                                        pName,
+                                        '₹$pNewPrice',
+                                        pType,
+                                        originalPriceStr: '₹$pOldPrice',
+                                      );
+                                    }).toList();
+                                  } else if (effSetting != null) {
+                                    final pOldPrice = (amtSetting != null && amtSetting.value.trim().isNotEmpty) ? amtSetting.value.trim() : "9999";
+                                    final pNewPrice = effSetting.value.trim();
+                                    return [
+                                      _buildPlanCard(
+                                        'PRIME_PLAN_ANNUAL',
+                                        'ANNUAL',
+                                        '₹$pNewPrice',
+                                        'YEARLY',
+                                        originalPriceStr: '₹$pOldPrice',
+                                      ),
+                                    ];
+                                  } else {
+                                    return const [
+                                      Expanded(child: Center(child: Text("No plans available", style: TextStyle(color: Colors.white24)))),
+                                    ];
+                                  }
+                                }(),
                               ),
                               const SizedBox(height: 24),
                               TextField(
@@ -359,8 +395,17 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                     orElse: () => AppSetting(id: 0, key: '', value: ''),
                                   );
                                   final parts = selectedPlan.value.split('|');
-                                  final pOldPrice = (parts.isNotEmpty && parts[0].isNotEmpty) ? parts[0] : "1499";
-                                  final pNewPrice = (parts.length > 1 && parts[1].isNotEmpty) ? parts[1] : pOldPrice;
+                                  String pOldPrice = (parts.isNotEmpty && parts[0].isNotEmpty) ? parts[0] : "1499";
+                                  String pNewPrice = (parts.length > 1 && parts[1].isNotEmpty) ? parts[1] : pOldPrice;
+
+                                  final effSetting = state.settings.where((s) => s.key == 'prime_effective_amount').firstOrNull;
+                                  final amtSetting = state.settings.where((s) => s.key == 'prime_amount').firstOrNull;
+                                  if (amtSetting != null && amtSetting.value.trim().isNotEmpty) {
+                                    pOldPrice = amtSetting.value.trim();
+                                  }
+                                  if (effSetting != null && effSetting.value.trim().isNotEmpty) {
+                                    pNewPrice = effSetting.value.trim();
+                                  }
                                   
                                   if (pOldPrice != pNewPrice) {
                                     final discount = (double.tryParse(pOldPrice) ?? 0) - (double.tryParse(pNewPrice) ?? 0);

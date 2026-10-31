@@ -189,6 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (m.businessName.toLowerCase().contains(q)) {
         suggestionsMap[m.businessName] = false;
       }
+      if (m.categoryName.isNotEmpty && m.categoryName.toLowerCase().contains(q)) {
+        suggestionsMap[m.categoryName] = false;
+      }
     }
     final sortedKeys = suggestionsMap.keys.toList()..sort();
     return sortedKeys.take(6).map((key) {
@@ -209,25 +212,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_searchQuery.trim().isNotEmpty) {
       final query = _searchQuery.toLowerCase().trim();
+      final words = query.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
       
       List<Merchant> matches = [];
-      List<Merchant> nonMatches = [];
 
       for (var m in rawMerchants) {
         final city = m.city.toLowerCase();
         final stateName = m.state.toLowerCase();
         final address = m.address.toLowerCase();
         final name = m.businessName.toLowerCase();
+        final catName = m.categoryName.toLowerCase();
         
-        if (city.contains(query) || stateName.contains(query) || address.contains(query) || name.contains(query)) {
+        bool matchesQuery = words.isNotEmpty && words.every((word) =>
+          name.contains(word) ||
+          city.contains(word) ||
+          stateName.contains(word) ||
+          address.contains(word) ||
+          catName.contains(word)
+        );
+
+        if (matchesQuery) {
           matches.add(m);
-        } else {
-          nonMatches.add(m);
         }
       }
 
       if (state.devicePosition != null) {
-        int sortFn(Merchant a, Merchant b) {
+        matches.sort((a, b) {
           if (a.latitude == null || a.longitude == null) return 1;
           if (b.latitude == null || b.longitude == null) return -1;
           double distA = Geolocator.distanceBetween(
@@ -243,12 +253,10 @@ class _HomeScreenState extends State<HomeScreen> {
             b.longitude!,
           );
           return distA.compareTo(distB);
-        }
-        matches.sort(sortFn);
-        nonMatches.sort(sortFn);
+        });
       }
 
-      filteredMerchants = [...matches, ...nonMatches];
+      filteredMerchants = matches;
     }
 
     return Scaffold(

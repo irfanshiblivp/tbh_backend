@@ -50,10 +50,13 @@ class Category {
   Category({required this.id, required this.name, this.slug = '', this.iconType = 'storefront'});
 
   factory Category.fromJson(Map<String, dynamic> json) {
+    final rawName = (json['name'] ?? 'General').toString();
+    final rawSlug = json['slug'];
+    final generatedSlug = rawName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '');
     return Category(
       id: json['id'] ?? 0,
-      name: json['name'] ?? 'General',
-      slug: json['slug'] ?? '',
+      name: rawName,
+      slug: (rawSlug != null && (rawSlug as String).isNotEmpty) ? rawSlug : (generatedSlug.isNotEmpty ? generatedSlug : rawName.toLowerCase()),
       iconType: json['icon_type'] ?? 'storefront',
     );
   }

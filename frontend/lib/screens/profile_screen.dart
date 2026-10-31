@@ -507,28 +507,40 @@ class ProfileScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Share button
-                TextButton.icon(
-                  onPressed: () {
-                    final text = "Join The Baron Club and save 1-100% at the finest merchants! Use my referral code: $referralCode\nDownload the app now!";
-                    if (kIsWeb) {
-                      Clipboard.setData(ClipboardData(text: text));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Referral message copied to clipboard!"), backgroundColor: AppColors.amber),
-                      );
-                    } else {
-                      Share.share(text);
-                    }
+                Builder(
+                  builder: (btnContext) {
+                    return TextButton.icon(
+                      onPressed: () {
+                        final text = "Join The Baron Club and save 1-100% at the finest merchants! Use my referral code: $referralCode\nDownload the app now!";
+                        if (kIsWeb) {
+                          Clipboard.setData(ClipboardData(text: text));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Referral message copied to clipboard!"), backgroundColor: AppColors.amber),
+                          );
+                        } else {
+                          final box = btnContext.findRenderObject() as RenderBox?;
+                          final origin = box != null
+                              ? box.localToGlobal(Offset.zero) & box.size
+                              : Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height / 2);
+                          Share.share(
+                            text,
+                            subject: 'Join The Baron Club',
+                            sharePositionOrigin: origin,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.share, color: AppColors.amber, size: 16),
+                      label: Text(
+                        "SHARE",
+                        style: GoogleFonts.jost(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        backgroundColor: Colors.white.withValues(alpha: 0.04),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.share, color: AppColors.amber, size: 16),
-                  label: Text(
-                    "SHARE",
-                    style: GoogleFonts.jost(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    backgroundColor: Colors.white.withValues(alpha: 0.04),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
                 ),
                 if (!isPrime && !isExpiredPrime)
                   ElevatedButton(

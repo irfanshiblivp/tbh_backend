@@ -38,6 +38,12 @@ android {
         versionName = flutter.versionName
     }
 
+    packaging {
+        jniLibs {
+            keepDebugSymbols.add("**/*.so")
+        }
+    }
+
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
@@ -56,10 +62,17 @@ android {
             } else {
                 signingConfig = signingConfigs.getByName("debug")
             }
+            ndk {
+                debugSymbolLevel = "none"
+            }
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+tasks.matching { it.name.contains("strip") && it.name.contains("DebugSymbols") }.configureEach {
+    enabled = false
 }

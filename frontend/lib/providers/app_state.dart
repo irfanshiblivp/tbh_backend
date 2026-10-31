@@ -196,29 +196,34 @@ class AppState extends ChangeNotifier {
       }
 
       if (_devicePosition != null && _merchants.isNotEmpty) {
-        _merchants.sort((a, b) {
-          if (a.latitude == null || a.longitude == null) return 1;
-          if (b.latitude == null || b.longitude == null) return -1;
-          
-          double distA = Geolocator.distanceBetween(
-            _devicePosition!.latitude,
-            _devicePosition!.longitude,
-            a.latitude!,
-            a.longitude!,
-          );
-          double distB = Geolocator.distanceBetween(
-            _devicePosition!.latitude,
-            _devicePosition!.longitude,
-            b.latitude!,
-            b.longitude!,
-          );
-          return distA.compareTo(distB);
-        });
+        _sortMerchantsByDistance();
         notifyListeners();
       }
     } catch (e) {
       // debugPrint("Error fetching location or sorting: $e");
     }
+  }
+
+  void _sortMerchantsByDistance() {
+    if (_devicePosition == null || _merchants.isEmpty) return;
+    _merchants.sort((a, b) {
+      if (a.latitude == null || a.longitude == null) return 1;
+      if (b.latitude == null || b.longitude == null) return -1;
+      
+      double distA = Geolocator.distanceBetween(
+        _devicePosition!.latitude,
+        _devicePosition!.longitude,
+        a.latitude!,
+        a.longitude!,
+      );
+      double distB = Geolocator.distanceBetween(
+        _devicePosition!.latitude,
+        _devicePosition!.longitude,
+        b.latitude!,
+        b.longitude!,
+      );
+      return distA.compareTo(distB);
+    });
   }
 
   List<Category> _categories = [];
@@ -778,18 +783,18 @@ class AppState extends ChangeNotifier {
     
     _merchants = fetched;
     
-    // 4. Distance sorting if 'Near Me' filter is active
-    if (_isNearMeFilter) {
-      await fetchLocationAndSort();
-    } else {
+    // 4. Distance sorting (always sort according to location, exactly like 'all' category)
+    if (_devicePosition != null) {
+      _sortMerchantsByDistance();
       notifyListeners();
+    } else {
+      await fetchLocationAndSort();
     }
   }
 
   Future<List<AppUser>> getAppUsers() async {
     try {
-      final response = await _api.get('/users/');
-      return (response as List).map((u) => AppUser.fromJson(u)).toList();
+      return await _api.getAppUsers();
     } catch (e) {
       return [];
     }

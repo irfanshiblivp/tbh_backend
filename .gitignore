@@ -32,4 +32,12 @@ backend/upload_banners.py
 backend/test_email.py
 frontend/ieee website.txt
 
+# Build artifacts & binary bundles
+*.aab
+*.apk
+.gradle/
+**/checksums.lock
+**/md5-checksums.bin
+**/sha1-checksums.bin
+
 

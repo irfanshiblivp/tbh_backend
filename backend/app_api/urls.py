@@ -20,7 +20,10 @@ router.register(r'referral-payouts', ReferralPayoutViewSet)
 router.register(r'hero-banners', HeroBannerViewSet)
 router.register(r'free-prime-requests', FreePrimeRequestViewSet)
 
+from core.urls import health_check
+
 urlpatterns = [
+    path('health/', health_check, name='api-health'),
     path('', include(router.urls)),
     path('profile/', ProfileView.as_view(), name='profile'),
     

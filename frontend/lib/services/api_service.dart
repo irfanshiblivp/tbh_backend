@@ -380,7 +380,7 @@ class ApiService {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/users/'), headers: await _getHeaders())
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
         List data = jsonDecode(response.body);
         return data.map((u) => AppUser.fromJson(u)).toList();
