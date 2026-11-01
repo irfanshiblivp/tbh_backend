@@ -21,6 +21,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _repeatPassController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _referralCodeController = TextEditingController();
   bool termsAccepted = false;
   bool _showPassword = false;
   final bool _showSuggestions = false;
@@ -348,6 +349,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            _buildLabel("Referral Code (Optional)"),
+                            _buildField(
+                              _referralCodeController,
+                              placeholder: "e.g. TBC123456",
+                            ),
+                            const SizedBox(height: 16),
                             Row(
                               children: [
                                 Checkbox(
@@ -430,7 +437,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           ).showSnackBar(
                                             const SnackBar(
                                               content: Text(
-                                                "Login failed: Invalid credentials",
+                                                "Login failed. Please check your credentials.",
                                               ),
                                               backgroundColor: Colors.redAccent,
                                             ),
@@ -489,13 +496,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                           );
                                         }
 
+                                        final refCode = _referralCodeController.text.trim().toUpperCase();
                                         final success = await state.signup({
                                           'name': _userController.text.trim(),
                                           'email': _emailController.text.trim(),
                                           'password': _passController.text,
                                           'role': 'customer',
-                                          'phone': _phoneController.text.trim(),
+                                          'phone': digitsOnly,
                                           'state': selectedState,
+                                          if (refCode.isNotEmpty) 'referral_code': refCode,
                                         });
                                         if (!success && mounted) {
                                           ScaffoldMessenger.of(

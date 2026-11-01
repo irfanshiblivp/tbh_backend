@@ -239,6 +239,26 @@ class ApiService {
         await prefs.setString('user_role', data['user']['role']);
         return data;
       }
+
+      // Attempt to extract specific login failure error
+      try {
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map) {
+            final msg = errorData['error'] ?? errorData['detail'] ?? errorData['message'];
+            if (msg != null && msg.toString().trim().isNotEmpty) {
+              throw AppError(_cleanBackendError(msg));
+            }
+          }
+        }
+      } catch (err) {
+        if (err is AppError) rethrow;
+      }
+
+      if (response.statusCode == 401) {
+        throw AppError("Invalid credentials. Please check your email and password.");
+      }
+
       _handleResponse(response);
       return null;
     } catch (e) {

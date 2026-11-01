@@ -207,8 +207,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<AppState>();
     final profile = state.profile;
 
-    final rawMerchants = state.merchants;
+    final rawMerchants = state.allMerchants;
     List<Merchant> filteredMerchants = List.from(rawMerchants);
+
+    // Apply active category filter if not 'all'
+    if (activeCategory != 'all') {
+      final catClean = activeCategory.toLowerCase().replaceAll('-', ' ').trim();
+      filteredMerchants = filteredMerchants.where((m) {
+        final mCat = m.categoryName.toLowerCase().trim();
+        return mCat == catClean ||
+               mCat.contains(catClean) ||
+               catClean.contains(mCat) ||
+               mCat.replaceAll('&', 'and').contains(catClean.replaceAll('&', 'and'));
+      }).toList();
+    }
 
     if (_searchQuery.trim().isNotEmpty) {
       final query = _searchQuery.toLowerCase().trim();
@@ -216,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
       
       List<Merchant> matches = [];
 
-      for (var m in rawMerchants) {
+      for (var m in filteredMerchants) {
         final city = m.city.toLowerCase();
         final stateName = m.state.toLowerCase();
         final address = m.address.toLowerCase();
@@ -239,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
       filteredMerchants = matches;
     }
 
-    // Always sort merchants by nearest location first on customer home page
+    // Always sort merchants by nearest location first (increasing kilometers) on customer home page
     if (state.devicePosition != null) {
       filteredMerchants.sort((a, b) {
         final aHasLoc = a.latitude != null && a.longitude != null;

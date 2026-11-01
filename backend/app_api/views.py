@@ -394,7 +394,13 @@ class RazorpayVerifyPaymentView(views.APIView):
                         models.Q(referral_code__iexact=f"TBC{raw_code}") |
                         models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
                     ).first()
+                    if not referrer and raw_code.replace('TBC', '').isdigit():
+                        referrer = User.objects.filter(customer_number=int(raw_code.replace('TBC', ''))).first()
                     if referrer and referrer != user:
+                        if not referrer.referral_code:
+                            import random
+                            referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
+                            referrer.save(update_fields=['referral_code'])
                         if not Referral.objects.filter(referred=user).exists():
                             import random, string
                             link = ReferralLink.objects.filter(user=referrer).first()
@@ -416,6 +422,10 @@ class RazorpayVerifyPaymentView(views.APIView):
             referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
             if referral:
                 referrer = referral.referrer
+                if referrer and not referrer.referral_code:
+                    import random
+                    referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
+                    referrer.save(update_fields=['referral_code'])
                 from decimal import Decimal
                 reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
                 try:
@@ -428,6 +438,7 @@ class RazorpayVerifyPaymentView(views.APIView):
                 referral.reward_paid_at = timezone.now()
                 referral.reward_amount = reward_amount_dec
                 referral.save()
+                print(f"Referral reward credited to {referrer.email}: {reward_amount_dec}")
                 
                 message = 'Payment verified and Prime membership activated successfully!'
             else:
@@ -903,7 +914,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         referred_by_map = {}
         for ref in Referral.objects.filter(referred_id__in=user_ids).select_related('referrer'):
-            referred_by_map[ref.referred_id] = ref.referrer.referral_code if ref.referrer else ''
+            code = (ref.referrer.referral_code if (ref.referrer and ref.referrer.referral_code) else (f"TBC{ref.referrer.id}" if ref.referrer else "TBC"))
+            referred_by_map[ref.referred_id] = code
 
         prime_user_ids = set(PrimeMembership.objects.filter(expires_at__gt=now).values_list('user_id', flat=True))
         referrals_made = Referral.objects.filter(referrer_id__in=user_ids).values_list('referrer_id', 'referred_id')
@@ -1251,9 +1263,17 @@ class LoginView(views.APIView):
             return Response({'error': 'Please enter both email and password'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            db_user = User.objects.filter(models.Q(email__iexact=email) | models.Q(phone=email)).first()
+            # Match by email or phone (including 10-digit variation)
+            raw_input = email
+            digits = ''.join(c for c in raw_input if c.isdigit())
+            user_filter = models.Q(email__iexact=raw_input) | models.Q(phone=raw_input)
+            if len(digits) >= 10:
+                last10 = digits[-10:]
+                user_filter |= models.Q(phone__endswith=last10) | models.Q(phone=last10) | models.Q(phone=f"+91{last10}")
+            
+            db_user = User.objects.filter(user_filter).first()
             if not db_user:
-                return Response({'error': 'Email or username not registered'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'error': 'Email or mobile number is not registered'}, status=status.HTTP_401_UNAUTHORIZED)
             if db_user.status == 'inactive':
                 return Response({'error': 'Your account has been blocked by the administrator.'}, status=status.HTTP_403_FORBIDDEN)
             
@@ -1268,9 +1288,9 @@ class LoginView(views.APIView):
                     match = False
             
             if not match:
-                return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
-            return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
             
         user = authenticate(username=db_user.email, password=password) or db_user
         if user:
@@ -1281,7 +1301,7 @@ class LoginView(views.APIView):
                 'user': UserSerializer(user).data
             })
         
-        return Response({'error': 'Wrong password or username'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Incorrect password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 import os
 from django.conf import settings
@@ -1559,19 +1579,31 @@ class SignupView(views.APIView):
         if User.objects.filter(email__iexact=email).exists():
             return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
             
-        if User.objects.filter(phone=phone).exists():
-            return Response({'error': 'Mobile number already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        phone_query = models.Q(phone=phone)
+        if len(digits_only) >= 10:
+            last10 = digits_only[-10:]
+            phone_query |= models.Q(phone__endswith=last10) | models.Q(phone=last10) | models.Q(phone=f"+91{last10}")
+        if User.objects.filter(phone_query).exists():
+            return Response({'error': 'This mobile number is already registered. Please log in or use another number.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = User.objects.create_user(
-            email=email,
-            password=password,
-            name=name,
-            role=role,
-            phone=phone if phone else None,
-            status='active',
-            email_verified_at=timezone.now() if role == 'merchant' else None,
-            state=data.get('state')
-        )
+        try:
+            user = User.objects.create_user(
+                email=email,
+                password=password,
+                name=name,
+                role=role,
+                phone=phone if phone else None,
+                status='active',
+                email_verified_at=timezone.now() if role == 'merchant' else None,
+                state=data.get('state')
+            )
+        except Exception as create_err:
+            err_str = str(create_err).lower()
+            if 'phone' in err_str or 'duplicate' in err_str:
+                return Response({'error': 'This mobile number is already registered. Please log in or use another number.'}, status=status.HTTP_400_BAD_REQUEST)
+            elif 'email' in err_str:
+                return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            raise create_err
 
         # Handle Referral Code
         referral_code = data.get('referral_code')
@@ -1583,7 +1615,13 @@ class SignupView(views.APIView):
                     models.Q(referral_code__iexact=f"TBC{raw_code}") |
                     models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
                 ).first()
-                if referrer:
+                if not referrer and raw_code.replace('TBC', '').isdigit():
+                    referrer = User.objects.filter(customer_number=int(raw_code.replace('TBC', ''))).first()
+                if referrer and referrer != user:
+                    if not referrer.referral_code:
+                        import random
+                        referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
+                        referrer.save(update_fields=['referral_code'])
                     # Find or create a referral link for the referrer
                     link = ReferralLink.objects.filter(user=referrer).first()
                     if not link:

@@ -155,6 +155,8 @@ class AppState extends ChangeNotifier {
 
   List<Merchant> _merchants = [];
   List<Merchant> get merchants => _merchants;
+  List<Merchant> _allMerchants = [];
+  List<Merchant> get allMerchants => _allMerchants.isNotEmpty ? _allMerchants : _merchants;
 
   List<HeroBanner> _heroBanners = [];
   List<HeroBanner> get heroBanners => _heroBanners;
@@ -316,6 +318,7 @@ class AppState extends ChangeNotifier {
     try {
       _categories = await _api.getCategories();
       _merchants = await _api.getMerchants();
+      _allMerchants = List.from(_merchants);
       _heroBanners = await _api.getHeroBanners();
       await fetchLocationAndSort();
       notifyListeners();
@@ -388,6 +391,7 @@ class AppState extends ChangeNotifier {
       _profile = results[0] as AppUser;
       _categories = results[1] as List<Category>;
       _merchants = results[2] as List<Merchant>;
+      _allMerchants = List.from(_merchants);
       _heroBanners = results[3] as List<HeroBanner>;
       await fetchLocationAndSort();
       
@@ -761,8 +765,35 @@ class AppState extends ChangeNotifier {
     _selectedCityFilter = city;
     _isNearMeFilter = nearMe ?? false;
     
-    // 1. Fetch the raw merchants list for this category
-    List<Merchant> fetched = await _api.getMerchants(category: category);
+    // 1. Fetch or filter merchants for this category
+    List<Merchant> fetched;
+    if (category == null || category.isEmpty || category.toLowerCase() == 'all') {
+      if (_allMerchants.isNotEmpty) {
+        fetched = List.from(_allMerchants);
+      } else {
+        fetched = await _api.getMerchants();
+        _allMerchants = List.from(fetched);
+      }
+    } else {
+      final catClean = category.toLowerCase().replaceAll('-', ' ').trim();
+      final localFiltered = _allMerchants.where((m) {
+        final mCat = m.categoryName.toLowerCase().trim();
+        return mCat == catClean ||
+               mCat.contains(catClean) ||
+               catClean.contains(mCat) ||
+               mCat.replaceAll('&', 'and').contains(catClean.replaceAll('&', 'and'));
+      }).toList();
+
+      if (localFiltered.isNotEmpty) {
+        fetched = localFiltered;
+      } else {
+        try {
+          fetched = await _api.getMerchants(category: category);
+        } catch (_) {
+          fetched = localFiltered;
+        }
+      }
+    }
     
     // 2. Locally filter by State if selected
     if (_selectedStateFilter != null && _selectedStateFilter!.isNotEmpty) {

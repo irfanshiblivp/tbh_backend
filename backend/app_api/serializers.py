@@ -90,14 +90,15 @@ class UserSerializer(serializers.ModelSerializer):
     def get_signup_method(self, obj):
         referred_by_map = self.context.get('referred_by_map')
         if referred_by_map is not None:
-            code = referred_by_map.get(obj.id)
-            if code:
-                return f"Referral ({code})"
+            if obj.id in referred_by_map:
+                code = referred_by_map.get(obj.id)
+                return f"Referral ({code})" if code else "Referral"
             return "Direct"
         from .models import Referral
         ref = Referral.objects.filter(referred=obj).select_related('referrer').first()
         if ref:
-            return f"Referral ({ref.referrer.referral_code})"
+            code = (ref.referrer.referral_code if (ref.referrer and ref.referrer.referral_code) else (f"TBC{ref.referrer.id}" if ref.referrer else "TBC"))
+            return f"Referral ({code})"
         return "Direct"
 
     def get_referred_membership_count(self, obj):
