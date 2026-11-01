@@ -225,30 +225,30 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_searchQuery.trim().isNotEmpty) {
       final query = _searchQuery.toLowerCase().trim();
       final words = query.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-      
-      List<Merchant> matches = [];
 
-      for (var m in filteredMerchants) {
+      filteredMerchants = filteredMerchants.where((m) {
         final city = m.city.toLowerCase();
         final stateName = m.state.toLowerCase();
         final address = m.address.toLowerCase();
         final name = m.businessName.toLowerCase();
         final catName = m.categoryName.toLowerCase();
-        
-        bool matchesQuery = words.isNotEmpty && words.every((word) =>
-          name.contains(word) ||
-          city.contains(word) ||
-          stateName.contains(word) ||
-          address.contains(word) ||
-          catName.contains(word)
-        );
 
-        if (matchesQuery) {
-          matches.add(m);
-        }
-      }
+        // Full query substring match (handles multi-word shop/city names)
+        final fullMatch = name.contains(query) ||
+            city.contains(query) ||
+            stateName.contains(query) ||
+            address.contains(query) ||
+            catName.contains(query);
+        if (fullMatch) return true;
 
-      filteredMerchants = matches;
+        // Any single word match (e.g. searching "restaurant" or "delhi")
+        return words.any((word) =>
+            name.contains(word) ||
+            city.contains(word) ||
+            stateName.contains(word) ||
+            address.contains(word) ||
+            catName.contains(word));
+      }).toList();
     }
 
     // Always sort merchants by nearest location first (increasing kilometers) on customer home page
@@ -725,7 +725,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         setState(() => activeCategory = slug);
-        state.filterMerchants(slug == 'all' ? null : slug);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 5),

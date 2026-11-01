@@ -207,14 +207,14 @@ class AppState extends ChangeNotifier {
   }
 
   void _sortMerchantsByDistance() {
-    if (_devicePosition == null || _merchants.isEmpty) return;
-    _merchants.sort((a, b) {
+    if (_devicePosition == null) return;
+
+    int _distCompare(Merchant a, Merchant b) {
       final aHasLoc = a.latitude != null && a.longitude != null;
       final bHasLoc = b.latitude != null && b.longitude != null;
       if (!aHasLoc && !bHasLoc) return 0;
       if (!aHasLoc) return 1;
       if (!bHasLoc) return -1;
-      
       double distA = Geolocator.distanceBetween(
         _devicePosition!.latitude,
         _devicePosition!.longitude,
@@ -228,7 +228,10 @@ class AppState extends ChangeNotifier {
         b.longitude!,
       );
       return distA.compareTo(distB);
-    });
+    }
+
+    if (_merchants.isNotEmpty) _merchants.sort(_distCompare);
+    if (_allMerchants.isNotEmpty) _allMerchants.sort(_distCompare);
   }
 
   List<Category> _categories = [];
