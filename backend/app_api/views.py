@@ -319,6 +319,41 @@ class RazorpayCreateOrderView(views.APIView):
             traceback.print_exc()
             return Response({'error': 'Failed to create payment order. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def credit_referral_reward(user):
+    """
+    Credits referral bonus to referrer when a referred user acquires Prime membership.
+    """
+    from decimal import Decimal
+    from django.utils import timezone
+    referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
+    if not referral:
+        return None
+    
+    referrer = referral.referrer
+    if not referrer:
+        return None
+        
+    if not referrer.referral_code:
+        import random
+        referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
+        referrer.save(update_fields=['referral_code'])
+        
+    reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
+    try:
+        reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('500.00')
+    except Exception:
+        reward_amount_dec = Decimal('500.00')
+        
+    referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
+    referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
+    referrer.save(update_fields=['referral_balance', 'referral_total_earned'])
+    
+    referral.reward_paid_at = timezone.now()
+    referral.reward_amount = reward_amount_dec
+    referral.save(update_fields=['reward_paid_at', 'reward_amount'])
+    print(f"Awarded referral reward of {reward_amount_dec} to {referrer.email} for {user.email}")
+    return reward_amount_dec
+
 class RazorpayVerifyPaymentView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_scope = 'payment'
@@ -419,30 +454,11 @@ class RazorpayVerifyPaymentView(views.APIView):
                 except Exception as e:
                     print(f"Error processing dynamic referral code via verify_payment: {e}")
                 
-            referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
-            if referral:
-                referrer = referral.referrer
-                if referrer and not referrer.referral_code:
-                    import random
-                    referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
-                    referrer.save(update_fields=['referral_code'])
-                from decimal import Decimal
-                reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
-                try:
-                    reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('100.00')
-                except Exception:
-                    reward_amount_dec = Decimal('100.00')
-                referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
-                referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
-                referrer.save()
-                referral.reward_paid_at = timezone.now()
-                referral.reward_amount = reward_amount_dec
-                referral.save()
-                print(f"Referral reward credited to {referrer.email}: {reward_amount_dec}")
-                
-                message = 'Payment verified and Prime membership activated successfully!'
+            awarded = credit_referral_reward(user)
+            if awarded:
+                message = f'Payment verified and Prime membership activated successfully! Referral reward of ₹{awarded} credited.'
             else:
-                message = 'Payment verified successfully!'
+                message = 'Payment verified and Prime membership activated successfully!'
             
         return Response({
             'status': 'success',
@@ -912,6 +928,15 @@ class UserViewSet(viewsets.ModelViewSet):
             if m.user_id not in prime_map:
                 prime_map[m.user_id] = m
 
+        # Auto-credit any pending referral rewards if the referred user has active Prime
+        try:
+            pending_refs = Referral.objects.filter(referred_id__in=user_ids, reward_paid_at__isnull=True).select_related('referred', 'referrer')
+            for pref in pending_refs:
+                if PrimeMembership.objects.filter(user=pref.referred, expires_at__gt=now).exists():
+                    credit_referral_reward(pref.referred)
+        except Exception as e:
+            print(f"Error checking pending referral rewards in UserViewSet: {e}")
+
         referred_by_map = {}
         for ref in Referral.objects.filter(referred_id__in=user_ids).select_related('referrer'):
             code = (ref.referrer.referral_code if (ref.referrer and ref.referrer.referral_code) else (f"TBC{ref.referrer.id}" if ref.referrer else "TBC"))
@@ -1092,6 +1117,7 @@ class UserViewSet(viewsets.ModelViewSet):
             starts_at=timezone.now(),
             expires_at=timezone.now() + timezone.timedelta(days=365)
         )
+        credit_referral_reward(user)
         return Response({'status': 'Prime membership granted'})
 
     @action(detail=True, methods=['post'])
@@ -1155,27 +1181,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 print(f"Error processing dynamic referral code: {e}")
         
         # 2. Check for referral reward
-        referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
-        if referral:
-            referrer = referral.referrer
-            from decimal import Decimal
-            reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
-            try:
-                reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('100.00')
-            except Exception:
-                reward_amount_dec = Decimal('100.00')
-            
-            # Update referrer's balance safely using Decimal
-            referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
-            referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
-            referrer.save()
-            
-            # Mark referral as paid
-            referral.reward_paid_at = timezone.now()
-            referral.reward_amount = reward_amount_dec
-            referral.save()
-            
-            print(f"Awarded ₹{reward_amount_dec} referral bonus to {referrer.email} for {user.email}")
+        credit_referral_reward(user)
             
         user.refresh_from_db()
         return Response({
@@ -1637,6 +1643,8 @@ class SignupView(views.APIView):
                         referral_link=link
                     )
                     print(f"Created referral record: {referrer.email} referred {user.email}")
+                    if PrimeMembership.objects.filter(user=user, expires_at__gt=timezone.now()).exists():
+                        credit_referral_reward(user)
             except Exception as e:
                 print(f"Error processing referral code: {e}")
         
@@ -2197,6 +2205,8 @@ class FreePrimeRequestViewSet(viewsets.ModelViewSet):
                     starts_at=now,
                     expires_at=now + timezone.timedelta(days=365)
                 )
+
+            credit_referral_reward(free_req.user)
 
         return Response({'status': 'approved'})
 

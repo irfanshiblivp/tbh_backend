@@ -34,6 +34,15 @@ class _PrimeScreenState extends State<PrimeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = context.read<AppState>();
+      if (_referralController.text.isEmpty && state.profile != null) {
+        final signupMethod = state.profile!.signupMethod;
+        if (signupMethod.startsWith('Referral (') && signupMethod.endsWith(')')) {
+          final code = signupMethod.substring('Referral ('.length, signupMethod.length - 1).trim();
+          if (code.isNotEmpty && code != 'TBC') {
+            _referralController.text = code;
+          }
+        }
+      }
       state.loadSettings().then((_) {
         final primeSettings = state.settings.where((s) => s.key.startsWith('PRIME_PLAN_')).toList();
         final effSetting = state.settings.where((s) => s.key == 'prime_effective_amount').firstOrNull;

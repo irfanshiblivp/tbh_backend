@@ -22,10 +22,11 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
 
   List<AppUser> _getFilteredUsers() {
     return _users.where((u) {
+      final isReferral = u.signupMethod.toLowerCase().contains('referral');
       if (_activeFilter == 'direct') {
-        return u.signupMethod == 'Direct';
+        return !isReferral;
       } else if (_activeFilter == 'referral') {
-        return u.signupMethod.startsWith('Referral');
+        return isReferral;
       }
       return true;
     }).toList();
@@ -96,8 +97,8 @@ class _AppUserManagementScreenState extends State<AppUserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredUsers = _getFilteredUsers();
-    final directCount = _users.where((u) => u.signupMethod == 'Direct').length;
-    final referralCount = _users.where((u) => u.signupMethod.startsWith('Referral')).length;
+    final referralCount = _users.where((u) => u.signupMethod.toLowerCase().contains('referral')).length;
+    final directCount = _users.length - referralCount;
 
     return Scaffold(
       backgroundColor: Colors.transparent,

@@ -286,6 +286,22 @@ class ApiService {
         }
         return data;
       }
+
+      // Explicitly extract backend error message for signup
+      try {
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map) {
+            final msg = errorData['error'] ?? errorData['detail'] ?? errorData['message'];
+            if (msg != null && msg.toString().trim().isNotEmpty) {
+              throw AppError(_cleanBackendError(msg));
+            }
+          }
+        }
+      } catch (err) {
+        if (err is AppError) rethrow;
+      }
+
       _handleResponse(response);
       return null;
     } catch (e) {

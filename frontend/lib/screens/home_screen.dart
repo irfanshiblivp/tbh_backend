@@ -179,22 +179,60 @@ class _HomeScreenState extends State<HomeScreen> {
     if (query.trim().isEmpty) return [];
     final q = query.toLowerCase().trim();
     final Map<String, bool> suggestionsMap = {};
+
     for (final m in merchants) {
+      // 1. City & State
       if (m.city.isNotEmpty && m.city.toLowerCase().contains(q)) {
-        suggestionsMap[m.city] = true;
+        suggestionsMap[m.city.trim()] = true;
       }
       if (m.state.isNotEmpty && m.state.toLowerCase().contains(q)) {
-        suggestionsMap[m.state] = true;
+        suggestionsMap[m.state.trim()] = true;
       }
+
+      // 2. Extract address components (localities, areas, landmarks)
+      if (m.address.isNotEmpty) {
+        final parts = m.address.split(',');
+        for (final rawPart in parts) {
+          String part = rawPart.trim();
+          // Remove pin codes e.g. "Kerala 682032" -> "Kerala", or standalone "682032"
+          part = part.replaceAll(RegExp(r'\b\d{6}\b'), '').trim();
+          // Skip plus codes (e.g. X8P5+8R), short codes, pure numbers, or generic countries
+          if (part.isEmpty ||
+              part.length < 3 ||
+              part.contains('+') ||
+              RegExp(r'^\d+').hasMatch(part) ||
+              part.toLowerCase() == 'india') {
+            continue;
+          }
+          if (part.toLowerCase().contains(q)) {
+            suggestionsMap[part] = true;
+          }
+        }
+      }
+
+      // 3. Shop names
       if (m.businessName.toLowerCase().contains(q)) {
-        suggestionsMap[m.businessName] = false;
+        suggestionsMap[m.businessName.trim()] = false;
       }
+
+      // 4. Categories
       if (m.categoryName.isNotEmpty && m.categoryName.toLowerCase().contains(q)) {
-        suggestionsMap[m.categoryName] = false;
+        suggestionsMap[m.categoryName.trim()] = false;
       }
     }
-    final sortedKeys = suggestionsMap.keys.toList()..sort();
-    return sortedKeys.take(6).map((key) {
+
+    final sortedKeys = suggestionsMap.keys.toList()
+      ..sort((a, b) {
+        final aLoc = suggestionsMap[a] == true;
+        final bLoc = suggestionsMap[b] == true;
+        if (aLoc != bLoc) return aLoc ? -1 : 1;
+        final aStarts = a.toLowerCase().startsWith(q);
+        final bStarts = b.toLowerCase().startsWith(q);
+        if (aStarts != bStarts) return aStarts ? -1 : 1;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+
+    return sortedKeys.take(8).map((key) {
       return {
         'text': key,
         'isLocation': suggestionsMap[key]!,
@@ -225,30 +263,38 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_searchQuery.trim().isNotEmpty) {
       final query = _searchQuery.toLowerCase().trim();
       final words = query.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+      
+      List<Merchant> matches = [];
 
-      filteredMerchants = filteredMerchants.where((m) {
+      for (var m in filteredMerchants) {
         final city = m.city.toLowerCase();
         final stateName = m.state.toLowerCase();
         final address = m.address.toLowerCase();
         final name = m.businessName.toLowerCase();
         final catName = m.categoryName.toLowerCase();
-
-        // Full query substring match (handles multi-word shop/city names)
-        final fullMatch = name.contains(query) ||
+        
+        bool matchesQuery = name.contains(query) ||
             city.contains(query) ||
             stateName.contains(query) ||
             address.contains(query) ||
             catName.contains(query);
-        if (fullMatch) return true;
 
-        // Any single word match (e.g. searching "restaurant" or "delhi")
-        return words.any((word) =>
+        if (!matchesQuery && words.isNotEmpty) {
+          matchesQuery = words.every((word) =>
             name.contains(word) ||
             city.contains(word) ||
             stateName.contains(word) ||
             address.contains(word) ||
-            catName.contains(word));
-      }).toList();
+            catName.contains(word)
+          );
+        }
+
+        if (matchesQuery) {
+          matches.add(m);
+        }
+      }
+
+      filteredMerchants = matches;
     }
 
     // Always sort merchants by nearest location first (increasing kilometers) on customer home page
@@ -725,6 +771,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         setState(() => activeCategory = slug);
+        state.filterMerchants(slug == 'all' ? null : slug);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 5),

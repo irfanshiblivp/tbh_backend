@@ -246,10 +246,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
                           // Fields
                           if (isLogin) ...[
-                            _buildLabel("Email"),
+                            _buildLabel("Email or Mobile Number"),
                             _buildField(
                               _emailController,
-                              placeholder: "you@example.com",
+                              placeholder: "you@example.com or 10-digit mobile",
                             ),
                           ] else ...[
                             _buildLabel("Full Name"),
@@ -422,16 +422,24 @@ class _AuthScreenState extends State<AuthScreen> {
                                 : () async {
                                     try {
                                       if (isLogin) {
-                                        final email = _emailController.text.trim();
+                                        final rawInput = _emailController.text.trim();
                                         final pass = _passController.text;
-                                        if (email.isEmpty) {
-                                          throw Exception("Please enter your email or username");
+                                        if (rawInput.isEmpty) {
+                                          throw Exception("Please enter your email or mobile number");
                                         }
                                         if (pass.isEmpty) {
                                           throw Exception("Please enter your password");
                                         }
-                                        final success = await state.login(email, pass);
+                                        String cleanLogin = rawInput;
+                                        if (!cleanLogin.contains('@')) {
+                                          final digits = cleanLogin.replaceAll(RegExp(r'\D'), '');
+                                          if (digits.length >= 10) {
+                                            cleanLogin = digits.substring(digits.length - 10);
+                                          }
+                                        }
+                                        final success = await state.login(cleanLogin, pass);
                                         if (!success && mounted) {
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -480,7 +488,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                           RegExp(r'\D'),
                                           '',
                                         );
-                                        if (digitsOnly.length != 10) {
+                                        final cleanPhone = digitsOnly.length >= 10
+                                            ? digitsOnly.substring(digitsOnly.length - 10)
+                                            : digitsOnly;
+                                        if (cleanPhone.length != 10) {
                                           throw Exception(
                                             "Please enter a valid 10-digit phone number",
                                           );
@@ -502,11 +513,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                           'email': _emailController.text.trim(),
                                           'password': _passController.text,
                                           'role': 'customer',
-                                          'phone': digitsOnly,
+                                          'phone': cleanPhone,
                                           'state': selectedState,
                                           if (refCode.isNotEmpty) 'referral_code': refCode,
                                         });
                                         if (!success && mounted) {
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -521,6 +533,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       }
                                     } catch (e) {
                                       if (mounted) {
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                         String errorMsg = e
                                             .toString()
                                             .replaceAll('Exception: ', '')
@@ -531,6 +544,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           SnackBar(
                                             content: Text(errorMsg),
                                             backgroundColor: Colors.redAccent,
+                                            duration: const Duration(seconds: 4),
                                           ),
                                         );
                                       }
