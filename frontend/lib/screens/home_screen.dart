@@ -179,60 +179,22 @@ class _HomeScreenState extends State<HomeScreen> {
     if (query.trim().isEmpty) return [];
     final q = query.toLowerCase().trim();
     final Map<String, bool> suggestionsMap = {};
-
     for (final m in merchants) {
-      // 1. City & State
       if (m.city.isNotEmpty && m.city.toLowerCase().contains(q)) {
-        suggestionsMap[m.city.trim()] = true;
+        suggestionsMap[m.city] = true;
       }
       if (m.state.isNotEmpty && m.state.toLowerCase().contains(q)) {
-        suggestionsMap[m.state.trim()] = true;
+        suggestionsMap[m.state] = true;
       }
-
-      // 2. Extract address components (localities, areas, landmarks)
-      if (m.address.isNotEmpty) {
-        final parts = m.address.split(',');
-        for (final rawPart in parts) {
-          String part = rawPart.trim();
-          // Remove pin codes e.g. "Kerala 682032" -> "Kerala", or standalone "682032"
-          part = part.replaceAll(RegExp(r'\b\d{6}\b'), '').trim();
-          // Skip plus codes (e.g. X8P5+8R), short codes, pure numbers, or generic countries
-          if (part.isEmpty ||
-              part.length < 3 ||
-              part.contains('+') ||
-              RegExp(r'^\d+').hasMatch(part) ||
-              part.toLowerCase() == 'india') {
-            continue;
-          }
-          if (part.toLowerCase().contains(q)) {
-            suggestionsMap[part] = true;
-          }
-        }
-      }
-
-      // 3. Shop names
       if (m.businessName.toLowerCase().contains(q)) {
-        suggestionsMap[m.businessName.trim()] = false;
+        suggestionsMap[m.businessName] = false;
       }
-
-      // 4. Categories
       if (m.categoryName.isNotEmpty && m.categoryName.toLowerCase().contains(q)) {
-        suggestionsMap[m.categoryName.trim()] = false;
+        suggestionsMap[m.categoryName] = false;
       }
     }
-
-    final sortedKeys = suggestionsMap.keys.toList()
-      ..sort((a, b) {
-        final aLoc = suggestionsMap[a] == true;
-        final bLoc = suggestionsMap[b] == true;
-        if (aLoc != bLoc) return aLoc ? -1 : 1;
-        final aStarts = a.toLowerCase().startsWith(q);
-        final bStarts = b.toLowerCase().startsWith(q);
-        if (aStarts != bStarts) return aStarts ? -1 : 1;
-        return a.toLowerCase().compareTo(b.toLowerCase());
-      });
-
-    return sortedKeys.take(8).map((key) {
+    final sortedKeys = suggestionsMap.keys.toList()..sort();
+    return sortedKeys.take(6).map((key) {
       return {
         'text': key,
         'isLocation': suggestionsMap[key]!,
@@ -245,18 +207,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<AppState>();
     final profile = state.profile;
 
-    final rawMerchants = state.allMerchants;
+    final rawMerchants = state.merchants;
     List<Merchant> filteredMerchants = List.from(rawMerchants);
 
-    // Apply active category filter if not 'all'
+    // Filter by active category if not 'all'
     if (activeCategory != 'all') {
-      final catClean = activeCategory.toLowerCase().replaceAll('-', ' ').trim();
+      final cleanActive = activeCategory.toLowerCase().replaceAll('-', ' ').trim();
       filteredMerchants = filteredMerchants.where((m) {
         final mCat = m.categoryName.toLowerCase().trim();
-        return mCat == catClean ||
-               mCat.contains(catClean) ||
-               catClean.contains(mCat) ||
-               mCat.replaceAll('&', 'and').contains(catClean.replaceAll('&', 'and'));
+        return mCat == cleanActive ||
+               mCat.contains(cleanActive) ||
+               cleanActive.contains(mCat) ||
+               mCat.replaceAll('&', 'and').contains(cleanActive.replaceAll('&', 'and')) ||
+               mCat.replaceAll(' ', '-').contains(activeCategory.toLowerCase());
       }).toList();
     }
 
@@ -273,21 +236,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final name = m.businessName.toLowerCase();
         final catName = m.categoryName.toLowerCase();
         
-        bool matchesQuery = name.contains(query) ||
-            city.contains(query) ||
-            stateName.contains(query) ||
-            address.contains(query) ||
-            catName.contains(query);
-
-        if (!matchesQuery && words.isNotEmpty) {
-          matchesQuery = words.every((word) =>
-            name.contains(word) ||
-            city.contains(word) ||
-            stateName.contains(word) ||
-            address.contains(word) ||
-            catName.contains(word)
-          );
-        }
+        bool matchesQuery = words.isNotEmpty && words.every((word) =>
+          name.contains(word) ||
+          city.contains(word) ||
+          stateName.contains(word) ||
+          address.contains(word) ||
+          catName.contains(word)
+        );
 
         if (matchesQuery) {
           matches.add(m);
@@ -297,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
       filteredMerchants = matches;
     }
 
-    // Always sort merchants by nearest location first (increasing kilometers) on customer home page
+    // Always sort merchants by nearest location first on customer home page
     if (state.devicePosition != null) {
       filteredMerchants.sort((a, b) {
         final aHasLoc = a.latitude != null && a.longitude != null;

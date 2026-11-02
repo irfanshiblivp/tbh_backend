@@ -21,9 +21,20 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _repeatPassController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _referralCodeController = TextEditingController();
+  final TextEditingController _referralController = TextEditingController();
   bool termsAccepted = false;
   bool _showPassword = false;
+
+  @override
+  void dispose() {
+    _userController.dispose();
+    _passController.dispose();
+    _repeatPassController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _referralController.dispose();
+    super.dispose();
+  }
   final bool _showSuggestions = false;
   final List<String> _locationSuggestions = [];
   String selectedState = 'Select State';
@@ -246,10 +257,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
                           // Fields
                           if (isLogin) ...[
-                            _buildLabel("Email or Mobile Number"),
+                            _buildLabel("Email"),
                             _buildField(
                               _emailController,
-                              placeholder: "you@example.com or 10-digit mobile",
+                              placeholder: "you@example.com",
                             ),
                           ] else ...[
                             _buildLabel("Full Name"),
@@ -351,7 +362,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             const SizedBox(height: 16),
                             _buildLabel("Referral Code (Optional)"),
                             _buildField(
-                              _referralCodeController,
+                              _referralController,
                               placeholder: "e.g. TBC123456",
                             ),
                             const SizedBox(height: 16),
@@ -422,30 +433,22 @@ class _AuthScreenState extends State<AuthScreen> {
                                 : () async {
                                     try {
                                       if (isLogin) {
-                                        final rawInput = _emailController.text.trim();
+                                        final email = _emailController.text.trim();
                                         final pass = _passController.text;
-                                        if (rawInput.isEmpty) {
-                                          throw Exception("Please enter your email or mobile number");
+                                        if (email.isEmpty) {
+                                          throw Exception("Please enter your email or username");
                                         }
                                         if (pass.isEmpty) {
                                           throw Exception("Please enter your password");
                                         }
-                                        String cleanLogin = rawInput;
-                                        if (!cleanLogin.contains('@')) {
-                                          final digits = cleanLogin.replaceAll(RegExp(r'\D'), '');
-                                          if (digits.length >= 10) {
-                                            cleanLogin = digits.substring(digits.length - 10);
-                                          }
-                                        }
-                                        final success = await state.login(cleanLogin, pass);
+                                        final success = await state.login(email, pass);
                                         if (!success && mounted) {
-                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
                                             const SnackBar(
                                               content: Text(
-                                                "Login failed. Please check your credentials.",
+                                                "Incorrect username/email or password.",
                                               ),
                                               backgroundColor: Colors.redAccent,
                                             ),
@@ -488,10 +491,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           RegExp(r'\D'),
                                           '',
                                         );
-                                        final cleanPhone = digitsOnly.length >= 10
-                                            ? digitsOnly.substring(digitsOnly.length - 10)
-                                            : digitsOnly;
-                                        if (cleanPhone.length != 10) {
+                                        if (digitsOnly.length != 10) {
                                           throw Exception(
                                             "Please enter a valid 10-digit phone number",
                                           );
@@ -507,18 +507,17 @@ class _AuthScreenState extends State<AuthScreen> {
                                           );
                                         }
 
-                                        final refCode = _referralCodeController.text.trim().toUpperCase();
                                         final success = await state.signup({
                                           'name': _userController.text.trim(),
                                           'email': _emailController.text.trim(),
                                           'password': _passController.text,
                                           'role': 'customer',
-                                          'phone': cleanPhone,
+                                          'phone': _phoneController.text.trim(),
                                           'state': selectedState,
-                                          if (refCode.isNotEmpty) 'referral_code': refCode,
+                                          if (_referralController.text.trim().isNotEmpty)
+                                            'referral_code': _referralController.text.trim().toUpperCase(),
                                         });
                                         if (!success && mounted) {
-                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -533,7 +532,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                       }
                                     } catch (e) {
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                         String errorMsg = e
                                             .toString()
                                             .replaceAll('Exception: ', '')
@@ -544,7 +542,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                           SnackBar(
                                             content: Text(errorMsg),
                                             backgroundColor: Colors.redAccent,
-                                            duration: const Duration(seconds: 4),
                                           ),
                                         );
                                       }

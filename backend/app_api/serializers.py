@@ -97,7 +97,7 @@ class UserSerializer(serializers.ModelSerializer):
         from .models import Referral
         ref = Referral.objects.filter(referred=obj).select_related('referrer').first()
         if ref:
-            code = (ref.referrer.referral_code if (ref.referrer and ref.referrer.referral_code) else (f"TBC{ref.referrer.id}" if ref.referrer else "TBC"))
+            code = (ref.referrer.referral_code if ref.referrer else None) or (f"TBC{ref.referrer.id}" if ref.referrer else "User")
             return f"Referral ({code})"
         return "Direct"
 

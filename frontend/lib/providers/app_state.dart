@@ -156,7 +156,6 @@ class AppState extends ChangeNotifier {
   List<Merchant> _merchants = [];
   List<Merchant> get merchants => _merchants;
   List<Merchant> _allMerchants = [];
-  List<Merchant> get allMerchants => _allMerchants.isNotEmpty ? _allMerchants : _merchants;
 
   List<HeroBanner> _heroBanners = [];
   List<HeroBanner> get heroBanners => _heroBanners;
@@ -207,8 +206,8 @@ class AppState extends ChangeNotifier {
   }
 
   void _sortMerchantsByDistance() {
-    if (_devicePosition == null) return;
-    int distCompare(Merchant a, Merchant b) {
+    if (_devicePosition == null || _merchants.isEmpty) return;
+    _merchants.sort((a, b) {
       final aHasLoc = a.latitude != null && a.longitude != null;
       final bHasLoc = b.latitude != null && b.longitude != null;
       if (!aHasLoc && !bHasLoc) return 0;
@@ -228,10 +227,7 @@ class AppState extends ChangeNotifier {
         b.longitude!,
       );
       return distA.compareTo(distB);
-    }
-
-    if (_merchants.isNotEmpty) _merchants.sort(distCompare);
-    if (_allMerchants.isNotEmpty) _allMerchants.sort(distCompare);
+    });
   }
 
   List<Category> _categories = [];
@@ -768,64 +764,71 @@ class AppState extends ChangeNotifier {
     _selectedCityFilter = city;
     _isNearMeFilter = nearMe ?? false;
     
-    // 1. Fetch or filter merchants for this category
-    List<Merchant> fetched;
-    if (category == null || category.isEmpty || category.toLowerCase() == 'all') {
-      if (_allMerchants.isNotEmpty) {
-        fetched = List.from(_allMerchants);
+    try {
+      List<Merchant> fetched;
+      if (category == null || category.isEmpty || category == 'all') {
+        fetched = _allMerchants.isNotEmpty ? List.from(_allMerchants) : await _api.getMerchants();
+        if (_allMerchants.isEmpty) {
+          _allMerchants = List.from(fetched);
+        }
       } else {
-        fetched = await _api.getMerchants();
-        _allMerchants = List.from(fetched);
-      }
-    } else {
-      final catClean = category.toLowerCase().replaceAll('-', ' ').trim();
-      final localFiltered = _allMerchants.where((m) {
-        final mCat = m.categoryName.toLowerCase().trim();
-        return mCat == catClean ||
-               mCat.contains(catClean) ||
-               catClean.contains(mCat) ||
-               mCat.replaceAll('&', 'and').contains(catClean.replaceAll('&', 'and'));
-      }).toList();
-
-      if (localFiltered.isNotEmpty) {
-        fetched = localFiltered;
-      } else {
-        try {
-          fetched = await _api.getMerchants(category: category);
-        } catch (_) {
-          fetched = localFiltered;
+        fetched = await _api.getMerchants(category: category);
+        if (fetched.isEmpty && _allMerchants.isNotEmpty) {
+          final cleanCat = category.toLowerCase().replaceAll('-', ' ').trim();
+          fetched = _allMerchants.where((m) {
+            final mCat = m.categoryName.toLowerCase().trim();
+            return mCat == cleanCat ||
+                   mCat.contains(cleanCat) ||
+                   cleanCat.contains(mCat) ||
+                   mCat.replaceAll('&', 'and').contains(cleanCat.replaceAll('&', 'and')) ||
+                   mCat.replaceAll(' ', '-').contains(category.toLowerCase());
+          }).toList();
         }
       }
-    }
-    
-    // 2. Locally filter by State if selected
-    if (_selectedStateFilter != null && _selectedStateFilter!.isNotEmpty) {
-      final String searchState = _selectedStateFilter!.toLowerCase();
-      fetched = fetched.where((m) {
-        final String mState = m.state.toLowerCase();
-        final String mAddress = m.address.toLowerCase();
-        return mState.contains(searchState) || mAddress.contains(searchState);
-      }).toList();
-    }
-    
-    // 3. Locally filter by City if selected
-    if (_selectedCityFilter != null && _selectedCityFilter!.isNotEmpty) {
-      final String searchCity = _selectedCityFilter!.toLowerCase();
-      fetched = fetched.where((m) {
-        final String mCity = m.city.toLowerCase();
-        final String mAddress = m.address.toLowerCase();
-        return mCity.contains(searchCity) || mAddress.contains(searchCity);
-      }).toList();
-    }
-    
-    _merchants = fetched;
-    
-    // 4. Distance sorting (always sort according to location, exactly like 'all' category)
-    if (_devicePosition != null) {
+      
+      // Locally filter by State if selected
+      if (_selectedStateFilter != null && _selectedStateFilter!.isNotEmpty) {
+        final String searchState = _selectedStateFilter!.toLowerCase();
+        fetched = fetched.where((m) {
+          final String mState = m.state.toLowerCase();
+          final String mAddress = m.address.toLowerCase();
+          return mState.contains(searchState) || mAddress.contains(searchState);
+        }).toList();
+      }
+      
+      // Locally filter by City if selected
+      if (_selectedCityFilter != null && _selectedCityFilter!.isNotEmpty) {
+        final String searchCity = _selectedCityFilter!.toLowerCase();
+        fetched = fetched.where((m) {
+          final String mCity = m.city.toLowerCase();
+          final String mAddress = m.address.toLowerCase();
+          return mCity.contains(searchCity) || mAddress.contains(searchCity);
+        }).toList();
+      }
+      
+      _merchants = fetched;
+      
+      // Distance sorting (always sort according to location, exactly like 'all' category)
+      if (_devicePosition != null) {
+        _sortMerchantsByDistance();
+        notifyListeners();
+      } else {
+        await fetchLocationAndSort();
+      }
+    } catch (e) {
+      if (category != null && category.isNotEmpty && category != 'all' && _allMerchants.isNotEmpty) {
+        final cleanCat = category.toLowerCase().replaceAll('-', ' ').trim();
+        _merchants = _allMerchants.where((m) {
+          final mCat = m.categoryName.toLowerCase().trim();
+          return mCat == cleanCat ||
+                 mCat.contains(cleanCat) ||
+                 cleanCat.contains(mCat) ||
+                 mCat.replaceAll('&', 'and').contains(cleanCat.replaceAll('&', 'and')) ||
+                 mCat.replaceAll(' ', '-').contains(category.toLowerCase());
+        }).toList();
+      }
       _sortMerchantsByDistance();
       notifyListeners();
-    } else {
-      await fetchLocationAndSort();
     }
   }
 

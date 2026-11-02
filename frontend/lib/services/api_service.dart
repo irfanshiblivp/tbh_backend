@@ -239,26 +239,6 @@ class ApiService {
         await prefs.setString('user_role', data['user']['role']);
         return data;
       }
-
-      // Attempt to extract specific login failure error
-      try {
-        if (response.body.isNotEmpty) {
-          final errorData = jsonDecode(response.body);
-          if (errorData is Map) {
-            final msg = errorData['error'] ?? errorData['detail'] ?? errorData['message'];
-            if (msg != null && msg.toString().trim().isNotEmpty) {
-              throw AppError(_cleanBackendError(msg));
-            }
-          }
-        }
-      } catch (err) {
-        if (err is AppError) rethrow;
-      }
-
-      if (response.statusCode == 401) {
-        throw AppError("Invalid credentials. Please check your email and password.");
-      }
-
       _handleResponse(response);
       return null;
     } catch (e) {
@@ -286,22 +266,6 @@ class ApiService {
         }
         return data;
       }
-
-      // Explicitly extract backend error message for signup
-      try {
-        if (response.body.isNotEmpty) {
-          final errorData = jsonDecode(response.body);
-          if (errorData is Map) {
-            final msg = errorData['error'] ?? errorData['detail'] ?? errorData['message'];
-            if (msg != null && msg.toString().trim().isNotEmpty) {
-              throw AppError(_cleanBackendError(msg));
-            }
-          }
-        }
-      } catch (err) {
-        if (err is AppError) rethrow;
-      }
-
       _handleResponse(response);
       return null;
     } catch (e) {
@@ -789,8 +753,15 @@ class ApiService {
 
     // 2. Fallbacks if no specific message was returned by the server
     if (response.statusCode == 401 || response.statusCode == 403) {
-      if (onSessionExpired != null) {
+      final isAuthEndpoint = response.request?.url.path.contains('/auth/login') == true ||
+                             response.request?.url.path.contains('/auth/signup') == true;
+      if (!isAuthEndpoint && onSessionExpired != null) {
         onSessionExpired!();
+      }
+      if (isAuthEndpoint) {
+        throw AppError(
+          'Incorrect username/email or password. Please try again.',
+        );
       }
       throw AppError(
         'Your session has expired or you do not have permission. Please log in again.',
