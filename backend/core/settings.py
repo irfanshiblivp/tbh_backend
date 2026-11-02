@@ -212,8 +212,15 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
 cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS')
 if cors_origins:
-    CORS_ALLOWED_ORIGINS = cors_origins.split(',')
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins.split(',') if o.strip()]
     CORS_ALLOW_ALL_ORIGINS = False
+
+# Allow local development ports for Flutter Web and dev clients
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
