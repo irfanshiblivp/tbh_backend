@@ -183,6 +183,8 @@ class TransactionsScreen extends StatelessWidget {
   Widget _buildTransactionItem(Transaction tx) {
     bool isPrimePayment = tx.merchantName.toLowerCase().contains('prime') || 
                           tx.merchantName.toLowerCase().contains('upgrade');
+    bool isReferralBonus = tx.merchantName.toLowerCase().contains('referral') || 
+                          tx.status.toUpperCase() == 'CREDITED';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -199,20 +201,28 @@ class TransactionsScreen extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: isPrimePayment 
-                  ? const Color(0xFFD4AF37).withValues(alpha: 0.08) 
-                  : AppColors.amber.withValues(alpha: 0.08),
+              color: isReferralBonus
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : isPrimePayment 
+                      ? const Color(0xFFD4AF37).withValues(alpha: 0.08) 
+                      : AppColors.amber.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: isPrimePayment 
-                    ? const Color(0xFFD4AF37).withValues(alpha: 0.22) 
-                    : AppColors.amber.withValues(alpha: 0.18),
+                color: isReferralBonus
+                    ? Colors.green.withValues(alpha: 0.3)
+                    : isPrimePayment 
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.22) 
+                        : AppColors.amber.withValues(alpha: 0.18),
                 width: 1.2,
               ),
             ),
             child: Icon(
-              isPrimePayment ? Icons.stars : Icons.payments_outlined, 
-              color: isPrimePayment ? const Color(0xFFD4AF37) : AppColors.amber, 
+              isReferralBonus
+                  ? Icons.card_giftcard
+                  : isPrimePayment ? Icons.stars : Icons.payments_outlined, 
+              color: isReferralBonus
+                  ? Colors.greenAccent
+                  : isPrimePayment ? const Color(0xFFD4AF37) : AppColors.amber, 
               size: 22,
             ),
           ),
@@ -228,7 +238,9 @@ class TransactionsScreen extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.jost(
-                    color: isPrimePayment ? const Color(0xFFD4AF37) : Colors.white, 
+                    color: isReferralBonus 
+                        ? Colors.greenAccent 
+                        : isPrimePayment ? const Color(0xFFD4AF37) : Colors.white, 
                     fontSize: 13, 
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -307,15 +319,27 @@ class TransactionsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "₹${tx.amountPaid.toStringAsFixed(2)}", 
+                isReferralBonus
+                    ? "+₹${tx.amountPaid.toStringAsFixed(0)}"
+                    : "₹${tx.amountPaid.toStringAsFixed(2)}", 
                 style: GoogleFonts.dmMono(
-                  color: Colors.white, 
+                  color: isReferralBonus ? Colors.greenAccent : Colors.white, 
                   fontSize: 14, 
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
-              tx.amountSaved > 0
+              isReferralBonus
+                  ? Text(
+                      "BONUS REWARD", 
+                      style: GoogleFonts.jost(
+                        color: AppColors.amber, 
+                        fontSize: 8, 
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    )
+                  : tx.amountSaved > 0
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -356,6 +380,8 @@ class TransactionsScreen extends StatelessWidget {
     switch (status.toUpperCase()) {
       case 'SUCCESS':
       case 'PAID':
+      case 'CREDITED':
+      case 'COMPLETED':
         return Colors.greenAccent;
       case 'FAILED':
         return Colors.redAccent;

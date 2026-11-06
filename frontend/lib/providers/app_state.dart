@@ -459,6 +459,36 @@ class AppState extends ChangeNotifier {
               ));
             }
           }
+          if (customerData['referrals'] != null) {
+            final list = customerData['referrals'] as List;
+            for (var r in list) {
+              all.add(Transaction(
+                transactionId: 'REF-${r['id']}',
+                amountPaid: (double.tryParse(r['amount']?.toString() ?? '0') ?? 100.0),
+                amountSaved: 0.0,
+                status: 'CREDITED',
+                timestamp: _parseDateTime(r['created_at']),
+                userName: _profile?.username ?? "Me",
+                merchantName: "Referral Bonus (${r['referred_name'] ?? 'Friend'})",
+                paymentMethod: 'WALLET',
+              ));
+            }
+          }
+          if (customerData['payouts'] != null) {
+            final list = customerData['payouts'] as List;
+            for (var p in list) {
+              all.add(Transaction(
+                transactionId: 'PAY-${p['id']}',
+                amountPaid: (double.tryParse(p['amount']?.toString() ?? '0') ?? 0.0),
+                amountSaved: 0.0,
+                status: p['status']?.toString().toUpperCase() ?? 'PENDING',
+                timestamp: _parseDateTime(p['created_at']),
+                userName: _profile?.username ?? "Me",
+                merchantName: "Referral Payout Withdrawal",
+                paymentMethod: 'BANK / UPI',
+              ));
+            }
+          }
           all.sort((a, b) => b.timestamp.compareTo(a.timestamp));
           _transactions = all;
           // print("Customer transactions loaded: ${_transactions.length}");

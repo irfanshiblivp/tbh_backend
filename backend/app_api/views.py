@@ -424,6 +424,47 @@ def link_user_referral(user, referrer):
     return existing_ref
 
 
+def notify_referral_reward(referrer, referred_user, reward_amount):
+    """
+    Sends email and push notification to the referrer when their referral bonus is credited.
+    """
+    try:
+        subject = f"You earned ₹{reward_amount:.0f} Referral Bonus! - The Baron Club"
+        text_content = (
+            f"Congratulations {referrer.name or 'Member'}!\n\n"
+            f"Your friend {referred_user.name or referred_user.email} has joined The Baron Club Prime. "
+            f"A referral bonus of ₹{reward_amount:.0f} has been added to your wallet.\n\n"
+            f"Check your balance in the app!"
+        )
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://thebaronclub.com/logo-01.png" alt="The Baron Club" style="height: 60px;">
+            </div>
+            <div style="background-color: #F8F9FA; border-left: 4px solid #28a745; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <h2 style="color: #28a745; margin: 0 0 8px 0; font-size: 20px;">+ ₹{reward_amount:.0f} Bonus Credited!</h2>
+                <p style="color: #555; margin: 0; font-size: 14px;">Your friend <strong>{referred_user.name or referred_user.email}</strong> just upgraded to Prime.</p>
+            </div>
+            <p style="color: #444; font-size: 14px; line-height: 1.6;">
+                Your referral bonus of <strong>₹{reward_amount:.0f}</strong> is now available in your Baron Club wallet. You can check your updated balance and request payouts directly from the app.
+            </p>
+        </div>
+        """
+        send_async_email_with_fallback(
+            subject=subject,
+            text_content=text_content,
+            to_email=referrer.email,
+            html_message=html_message
+        )
+        send_push_notification(
+            topic=f"user_{referrer.id}",
+            title="Referral Bonus Credited! 🎁",
+            message=f"₹{reward_amount:.0f} added to your wallet! Your friend joined Prime."
+        )
+    except Exception as e:
+        print(f"Error sending referral reward notification: {e}")
+
+
 def credit_referral_reward(user):
     """
     Credits ₹100 referral bonus to referrer when a referred user acquires Prime membership.
@@ -467,6 +508,10 @@ def credit_referral_reward(user):
     referral.reward_amount = reward_amount_dec
     referral.save(update_fields=['reward_paid_at', 'reward_amount'])
     print(f"Awarded referral reward of {reward_amount_dec} to {referrer.email} for {user.email}")
+    try:
+        notify_referral_reward(referrer, user, reward_amount_dec)
+    except Exception as e:
+        print(f"Error notifying referral reward: {e}")
     return reward_amount_dec
 
 class RazorpayVerifyPaymentView(views.APIView):
@@ -563,13 +608,39 @@ class CustomerTransactionsView(views.APIView):
         user = request.user
         payments = Payment.objects.filter(user=user).order_by('-id')
         vouchers = Voucher.objects.filter(user=user).order_by('-id')
+        referrals = Referral.objects.filter(referrer=user, reward_amount__gt=0).select_related('referred').order_by('-reward_paid_at', '-id')
+        payouts = ReferralPayout.objects.filter(user=user).order_by('-id')
         
         payments_data = PaymentSerializer(payments, many=True).data
         vouchers_data = VoucherSerializer(vouchers, many=True).data
+        referrals_data = [
+            {
+                'id': ref.id,
+                'amount': float(ref.reward_amount or 100.0),
+                'referred_name': ref.referred.name or ref.referred.email,
+                'referred_email': ref.referred.email,
+                'created_at': (ref.reward_paid_at or ref.created_at).isoformat() if (ref.reward_paid_at or ref.created_at) else None,
+                'status': 'CREDITED',
+                'description': f"Referral Bonus ({ref.referred.name or ref.referred.email})"
+            }
+            for ref in referrals
+        ]
+        payouts_data = [
+            {
+                'id': p.id,
+                'amount': float(p.amount),
+                'status': p.status.upper(),
+                'created_at': p.created_at.isoformat() if p.created_at else None,
+                'description': f"Referral Payout ({p.status.upper()})"
+            }
+            for p in payouts
+        ]
         
         return Response({
             'payments': payments_data,
-            'vouchers': vouchers_data
+            'vouchers': vouchers_data,
+            'referrals': referrals_data,
+            'payouts': payouts_data
         })
 
 from django.db import transaction, models
@@ -1203,7 +1274,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
             
         user = self.get_object()
-        PrimeMembership.objects.create(
+        membership = PrimeMembership.objects.create(
             user=user,
             source='admin',
             starts_at=timezone.now(),
@@ -1218,6 +1289,10 @@ class UserViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 print(f"Error processing dynamic referral in grant_prime: {e}")
         credit_referral_reward(user)
+        try:
+            notify_prime_purchase(user, membership)
+        except Exception as fcm_err:
+            print(f"Error triggering notifications on grant_prime: {fcm_err}")
         return Response({'status': 'Prime membership granted'})
 
     @action(detail=True, methods=['post'])
@@ -1529,32 +1604,113 @@ def send_async_email_with_fallback(subject, text_content, to_email, html_message
         return False
 
 
-def notify_prime_purchase(user):
+def notify_prime_purchase(user, membership=None):
     """
-    Sends an email notification and a push notification to admins when a user purchases Prime.
+    Sends email confirmation and push notifications to customer and admins when a user purchases/activates Prime.
     """
     from django.utils import timezone
-    subject = f"Prime Purchase: {user.name or user.email}"
-    text_content = (
-        f"A customer has purchased a Prime Membership.\n\n"
-        f"Customer Details:\n"
-        f"- Name: {user.name}\n"
-        f"- Email: {user.email}\n"
-        f"- Phone: {user.phone}\n"
-        f"- Time: {timezone.now()}"
-    )
-    # Send email
-    send_async_email_with_fallback(
-        subject=subject,
-        text_content=text_content,
-        to_email="loremelevate@gmail.com"
-    )
-    # Send push notification to admins
-    send_push_notification(
-        topic="admin",
-        title="New Prime Purchase",
-        message=f"{user.name or user.email} has purchased Prime membership!"
-    )
+
+    # 1. Customer Confirmation Email
+    try:
+        expires_str = membership.expires_at.strftime("%d %b, %Y") if (membership and getattr(membership, 'expires_at', None)) else (timezone.now() + timezone.timedelta(days=365)).strftime("%d %b, %Y")
+        customer_id_str = getattr(user, 'display_customer_id', f"TBC-{user.id}")
+
+        subject_customer = "Welcome to The Baron Club Prime! Your VIP Membership is Active"
+        text_customer = (
+            f"Hello {user.name or 'Member'},\n\n"
+            f"Welcome to The Baron Club Prime!\n"
+            f"Your Prime Membership is now officially active until {expires_str}.\n\n"
+            f"Enjoy exclusive discounts of 1% to 100% across all our premium partner merchants, "
+            f"priority access to special events, and ₹100 referral rewards whenever friends join using your referral code.\n\n"
+            f"Open the app to explore exclusive merchant discounts near you!"
+        )
+        html_customer = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <img src="https://thebaronclub.com/logo-01.png" alt="The Baron Club" style="height: 70px;">
+            </div>
+            <div style="background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%); padding: 24px; border-radius: 12px; color: #ffffff; text-align: center; margin-bottom: 24px;">
+                <span style="background: #D4AF37; color: #000; font-weight: bold; font-size: 11px; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase;">VIP Member</span>
+                <h2 style="color: #FFB000; margin: 12px 0 6px 0; font-size: 22px;">Prime Membership Activated!</h2>
+                <p style="color: #e0e0e0; font-size: 14px; margin: 0;">Welcome to an elite world of exclusive privileges and savings.</p>
+            </div>
+            <p style="color: #333; font-size: 15px; line-height: 1.6;">
+                Hello <strong>{user.name or 'Valued Member'}</strong>,<br><br>
+                Thank you for subscribing to <strong>The Baron Club Prime</strong>! Your account has been successfully upgraded with all premium perks.
+            </p>
+            <div style="background-color: #F8F9FA; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FFB000;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr>
+                        <td style="padding: 6px 0; color: #666;">Member Name:</td>
+                        <td style="padding: 6px 0; color: #111; font-weight: bold; text-align: right;">{user.name or 'Member'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #666;">Customer ID:</td>
+                        <td style="padding: 6px 0; color: #111; font-weight: bold; text-align: right;">{customer_id_str}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #666;">Valid Until:</td>
+                        <td style="padding: 6px 0; color: #28a745; font-weight: bold; text-align: right;">{expires_str}</td>
+                    </tr>
+                </table>
+            </div>
+            <h3 style="color: #222; font-size: 16px; margin: 20px 0 10px 0;">Your Prime Privileges:</h3>
+            <ul style="color: #555; font-size: 14px; line-height: 1.8; padding-left: 20px;">
+                <li>Exclusive 1% to 100% discounts at premium partner merchants</li>
+                <li>Priority access to special deals, VIP dining, and lifestyle events</li>
+                <li>Earn ₹100 instant bonus for every friend who joins Prime using your referral</li>
+            </ul>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://thebaronclub.com" style="background-color: #FFB000; color: #000; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">Open The Baron Club App</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+                © 2026 The Baron Club. All rights reserved.
+            </p>
+        </div>
+        """
+        send_async_email_with_fallback(
+            subject=subject_customer,
+            text_content=text_customer,
+            to_email=user.email,
+            html_message=html_customer
+        )
+    except Exception as e:
+        print(f"Error sending customer prime confirmation email: {e}")
+
+    # 2. Push Notification to Customer
+    try:
+        send_push_notification(
+            topic=f"user_{user.id}",
+            title="Welcome to Prime!",
+            message="Your Prime Membership has been successfully activated! Enjoy exclusive savings."
+        )
+    except Exception as e:
+        print(f"Error sending customer push notification: {e}")
+
+    # 3. Admin Email & Push Notification
+    try:
+        subject_admin = f"Prime Purchase: {user.name or user.email}"
+        text_admin = (
+            f"A customer has purchased a Prime Membership.\n\n"
+            f"Customer Details:\n"
+            f"- Name: {user.name}\n"
+            f"- Email: {user.email}\n"
+            f"- Phone: {user.phone}\n"
+            f"- Time: {timezone.now()}"
+        )
+        send_async_email_with_fallback(
+            subject=subject_admin,
+            text_content=text_admin,
+            to_email="loremelevate@gmail.com"
+        )
+        send_push_notification(
+            topic="admin",
+            title="New Prime Purchase",
+            message=f"{user.name or user.email} has purchased Prime membership!"
+        )
+    except Exception as e:
+        print(f"Error sending admin prime notifications: {e}")
 
 
 def send_verification_email(user):
@@ -2033,7 +2189,7 @@ class AdminDashboardView(views.APIView):
         if request.user.role != 'admin' and not request.user.is_superuser:
             return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
         
-        total_revenue = Payment.objects.filter(status='success').aggregate(models.Sum('amount'))['amount__sum'] or 0
+        total_revenue = Payment.objects.filter(status__in=['paid', 'success']).aggregate(models.Sum('amount'))['amount__sum'] or 0
         total_revenue = float(total_revenue) / 100.0  # Convert from paisa to rupees
         
         total_users = User.objects.filter(role='customer', deleted_at__isnull=True).count()
@@ -2056,7 +2212,7 @@ class AdminDashboardView(views.APIView):
                 'action': 'Expiring Soon',
                 'details': f"Plan for {m.user.email} expires on {m.expires_at.strftime('%Y-%m-%d')}",
                 'timestamp': timezone.now(),
-                'admin_name': 'System'
+                'admin_name': 'Prime Membership'
             })
 
         return Response({
@@ -2070,10 +2226,10 @@ class AdminDashboardView(views.APIView):
             },
             'recent_activity': expiring_announcements + [
                 {
-                    'action': f"Payment Received: ₹{p.amount/100.0}" if p.status == 'success' else f"Payment Pending: ₹{p.amount/100.0}" if p.status == 'pending' else f"Payment Failed: ₹{p.amount/100.0}", 
-                    'details': f"User: {p.user.email}", 
+                    'action': f"Payment Received: ₹{p.amount/100.0:.2f}" if p.status in ('paid', 'success') else f"Payment Pending: ₹{p.amount/100.0:.2f}" if p.status == 'pending' else f"Payment Failed: ₹{p.amount/100.0:.2f}", 
+                    'details': f"User: {p.user.email if p.user else 'Unknown'}", 
                     'timestamp': p.created_at,
-                    'admin_name': p.purpose if p.purpose and p.purpose != 'prime_membership' else 'System'
+                    'admin_name': "Prime Membership" if (p.purpose == 'prime_membership' or not p.purpose) else p.purpose
                 } for p in recent_payments
             ] + [
                 {
