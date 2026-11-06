@@ -21,7 +21,6 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _repeatPassController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _referralController = TextEditingController();
   bool termsAccepted = false;
   bool _showPassword = false;
 
@@ -32,7 +31,6 @@ class _AuthScreenState extends State<AuthScreen> {
     _repeatPassController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _referralController.dispose();
     super.dispose();
   }
   final bool _showSuggestions = false;
@@ -360,12 +358,6 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            _buildLabel("Referral Code (Optional)"),
-                            _buildField(
-                              _referralController,
-                              placeholder: "e.g. TBC123456",
-                            ),
-                            const SizedBox(height: 16),
                             Row(
                               children: [
                                 Checkbox(
@@ -514,8 +506,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                           'role': 'customer',
                                           'phone': _phoneController.text.trim(),
                                           'state': selectedState,
-                                          if (_referralController.text.trim().isNotEmpty)
-                                            'referral_code': _referralController.text.trim().toUpperCase(),
                                         });
                                         if (!success && mounted) {
                                           ScaffoldMessenger.of(
