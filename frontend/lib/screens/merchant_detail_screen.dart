@@ -49,6 +49,44 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _openGoogleMaps() async {
+    final m = widget.merchant;
+    Uri mapUri;
+    
+    // If coordinates are valid, open navigation/direction directly
+    if (m.latitude != null && m.longitude != null && m.latitude != 0.0 && m.longitude != 0.0) {
+      mapUri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}',
+      );
+    } else {
+      final queryParts = [m.businessName, m.address, m.city, m.state]
+          .where((s) => s.trim().isNotEmpty)
+          .join(', ');
+      mapUri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(queryParts)}',
+      );
+    }
+
+    try {
+      final launched = await launchUrl(
+        mapUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        await launchUrl(mapUri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Could not open Google Maps: $e"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
 
   void _handleMerchantPaymentSuccess(PaymentSuccessResponse response) async {
     showDialog(
@@ -719,6 +757,28 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
                   Text(
                     widget.merchant.address,
                     style: GoogleFonts.jost(color: AppColors.text2, fontSize: 15, height: 1.5),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _openGoogleMaps,
+                      icon: const Icon(Icons.directions_outlined, color: AppColors.amber, size: 18),
+                      label: Text(
+                        "View in Maps / Get Directions",
+                        style: GoogleFonts.jost(
+                          color: AppColors.amber,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.amber),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: AppColors.amber.withValues(alpha: 0.08),
+                      ),
+                    ),
                   ),
                   
                   const SizedBox(height: 32),

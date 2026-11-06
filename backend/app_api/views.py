@@ -319,35 +319,150 @@ class RazorpayCreateOrderView(views.APIView):
             traceback.print_exc()
             return Response({'error': 'Failed to create payment order. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def find_referrer_by_code(referral_input, exclude_user=None):
+    """
+    Finds a referrer User object matching any supported referral code format:
+    - 6-digit referral_code (e.g. TBC123456 or 123456)
+    - Sequential customer_number (e.g. 5, 00005, TBC00005)
+    - Full customer_id (e.g. TBC2611-00005, BARON-5)
+    - 10-digit mobile number
+    - Email address
+    """
+    if not referral_input:
+        return None
+    raw_code = str(referral_input).strip()
+    if not raw_code:
+        return None
+
+    upper_code = raw_code.upper()
+    clean_code = upper_code.replace('TBC', '').strip()
+
+    # 1. Direct referral_code match (e.g. TBC123456, 123456)
+    referrer = User.objects.filter(
+        models.Q(referral_code__iexact=raw_code) |
+        models.Q(referral_code__iexact=upper_code) |
+        models.Q(referral_code__iexact=f"TBC{upper_code}") |
+        models.Q(referral_code__iexact=f"TBC{clean_code}") |
+        models.Q(referral_code__iexact=clean_code)
+    ).first()
+
+    # 2. Customer ID match (e.g. TBC2611-00005, BARON-5)
+    if not referrer and '-' in upper_code:
+        last_seg = upper_code.split('-')[-1].strip()
+        if last_seg.isdigit():
+            seg_num = int(last_seg)
+            referrer = User.objects.filter(
+                models.Q(customer_number=seg_num) | models.Q(id=seg_num)
+            ).first()
+
+    # 3. Numeric code (e.g. 00005 or 123456)
+    if not referrer and clean_code.isdigit():
+        num_val = int(clean_code)
+        referrer = User.objects.filter(
+            models.Q(customer_number=num_val) |
+            models.Q(id=num_val) |
+            models.Q(referral_code__iexact=f"TBC{num_val}")
+        ).first()
+
+    # 4. 10-digit mobile number
+    digits = ''.join(c for c in raw_code if c.isdigit())
+    if not referrer and len(digits) >= 10:
+        phone10 = digits[-10:]
+        referrer = User.objects.filter(
+            models.Q(phone__endswith=phone10) |
+            models.Q(phone=phone10) |
+            models.Q(phone=f"+91{phone10}")
+        ).first()
+
+    # 5. Email address
+    if not referrer and '@' in raw_code:
+        referrer = User.objects.filter(email__iexact=raw_code.strip()).first()
+
+    if referrer and exclude_user and referrer.id == exclude_user.id:
+        return None
+
+    return referrer
+
+
+def link_user_referral(user, referrer):
+    """
+    Creates or updates the Referral record linking 'user' (referred) to 'referrer'.
+    """
+    if not referrer or not user or referrer.id == user.id:
+        return None
+    import random, string
+    from django.utils import timezone
+
+    if not referrer.referral_code:
+        referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
+        referrer.save(update_fields=['referral_code'])
+
+    link = ReferralLink.objects.filter(user=referrer).first()
+    if not link:
+        link = ReferralLink.objects.create(
+            user=referrer,
+            token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
+            expires_at=timezone.now() + timezone.timedelta(days=365)
+        )
+
+    existing_ref = Referral.objects.filter(referred=user).first()
+    if not existing_ref:
+        ref = Referral.objects.create(
+            referrer=referrer,
+            referred=user,
+            referral_link=link
+        )
+        print(f"Created referral record: {referrer.email} referred {user.email}")
+        return ref
+    elif existing_ref.reward_paid_at is None or existing_ref.reward_amount is None or existing_ref.reward_amount <= 0:
+        existing_ref.referrer = referrer
+        existing_ref.referral_link = link
+        existing_ref.save(update_fields=['referrer', 'referral_link'])
+        print(f"Updated referral record: {referrer.email} referred {user.email}")
+        return existing_ref
+
+    return existing_ref
+
+
 def credit_referral_reward(user):
     """
-    Credits referral bonus to referrer when a referred user acquires Prime membership.
+    Credits ₹100 referral bonus to referrer when a referred user acquires Prime membership.
+    Updates DB with reward_amount, reward_paid_at, increments referral_balance & referral_total_earned.
     """
     from decimal import Decimal
     from django.utils import timezone
-    referral = Referral.objects.filter(referred=user, reward_paid_at__isnull=True).first()
+
+    referral = Referral.objects.filter(referred=user).first()
     if not referral:
         return None
-    
-    referrer = referral.referrer
-    if not referrer:
+
+    # Already credited with reward
+    if referral.reward_paid_at is not None and referral.reward_amount is not None and referral.reward_amount > 0:
         return None
-        
+
+    referrer = referral.referrer
+    if not referrer or referrer.id == user.id:
+        return None
+
     if not referrer.referral_code:
         import random
         referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
         referrer.save(update_fields=['referral_code'])
-        
-    reward_setting = AppSetting.objects.filter(key='referral_reward_amount').first()
-    try:
-        reward_amount_dec = Decimal(str(reward_setting.value).strip()) if reward_setting and reward_setting.value else Decimal('500.00')
-    except Exception:
-        reward_amount_dec = Decimal('500.00')
-        
+
+    reward_amount_dec = Decimal('100.00')
+    reward_setting = AppSetting.objects.filter(key__in=['referral_reward_amount', 'referral_bonus', 'referral_amount']).first()
+    if reward_setting and reward_setting.value:
+        try:
+            val = Decimal(str(reward_setting.value).strip())
+            if val > 0:
+                reward_amount_dec = val
+        except Exception:
+            pass
+
     referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
     referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
     referrer.save(update_fields=['referral_balance', 'referral_total_earned'])
-    
+
     referral.reward_paid_at = timezone.now()
     referral.reward_amount = reward_amount_dec
     referral.save(update_fields=['reward_paid_at', 'reward_amount'])
@@ -423,34 +538,9 @@ class RazorpayVerifyPaymentView(views.APIView):
             referral_code = request.data.get('referral_code')
             if referral_code:
                 try:
-                    raw_code = str(referral_code).strip().upper()
-                    referrer = User.objects.filter(
-                        models.Q(referral_code__iexact=raw_code) |
-                        models.Q(referral_code__iexact=f"TBC{raw_code}") |
-                        models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
-                    ).first()
-                    if not referrer and raw_code.replace('TBC', '').isdigit():
-                        referrer = User.objects.filter(customer_number=int(raw_code.replace('TBC', ''))).first()
-                    if referrer and referrer != user:
-                        if not referrer.referral_code:
-                            import random
-                            referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
-                            referrer.save(update_fields=['referral_code'])
-                        if not Referral.objects.filter(referred=user).exists():
-                            import random, string
-                            link = ReferralLink.objects.filter(user=referrer).first()
-                            if not link:
-                                link = ReferralLink.objects.create(
-                                    user=referrer,
-                                    token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                    expires_at=timezone.now() + timezone.timedelta(days=365)
-                                )
-                            Referral.objects.create(
-                                referrer=referrer,
-                                referred=user,
-                                referral_link=link
-                            )
-                            print(f"Created dynamic referral record via verify_payment: {referrer.email} referred {user.email}")
+                    referrer = find_referrer_by_code(referral_code, exclude_user=user)
+                    if referrer:
+                        link_user_referral(user, referrer)
                 except Exception as e:
                     print(f"Error processing dynamic referral code via verify_payment: {e}")
                 
@@ -930,7 +1020,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Auto-credit any pending referral rewards if the referred user has active Prime
         try:
-            pending_refs = Referral.objects.filter(referred_id__in=user_ids, reward_paid_at__isnull=True).select_related('referred', 'referrer')
+            pending_refs = Referral.objects.filter(referred_id__in=user_ids).filter(
+                models.Q(reward_paid_at__isnull=True) | models.Q(reward_amount__isnull=True) | models.Q(reward_amount=0)
+            ).select_related('referred', 'referrer')
             for pref in pending_refs:
                 if PrimeMembership.objects.filter(user=pref.referred, expires_at__gt=now).exists():
                     credit_referral_reward(pref.referred)
@@ -942,8 +1034,8 @@ class UserViewSet(viewsets.ModelViewSet):
             code = (ref.referrer.referral_code if (ref.referrer and ref.referrer.referral_code) else (f"TBC{ref.referrer.id}" if ref.referrer else "TBC"))
             referred_by_map[ref.referred_id] = code
 
-        prime_user_ids = set(PrimeMembership.objects.filter(expires_at__gt=now).values_list('user_id', flat=True))
-        referrals_made = Referral.objects.filter(referrer_id__in=user_ids).values_list('referrer_id', 'referred_id')
+        prime_user_ids = set(PrimeMembership.objects.values_list('user_id', flat=True))
+        referrals_made = set(Referral.objects.filter(referrer_id__in=user_ids).values_list('referrer_id', 'referred_id'))
         ref_count_map = {}
         for referrer_id, referred_id in referrals_made:
             if referred_id in prime_user_ids:
@@ -1117,6 +1209,14 @@ class UserViewSet(viewsets.ModelViewSet):
             starts_at=timezone.now(),
             expires_at=timezone.now() + timezone.timedelta(days=365)
         )
+        referral_code = request.data.get('referral_code')
+        if referral_code:
+            try:
+                referrer = find_referrer_by_code(referral_code, exclude_user=user)
+                if referrer:
+                    link_user_referral(user, referrer)
+            except Exception as e:
+                print(f"Error processing dynamic referral in grant_prime: {e}")
         credit_referral_reward(user)
         return Response({'status': 'Prime membership granted'})
 
@@ -1155,28 +1255,9 @@ class UserViewSet(viewsets.ModelViewSet):
         referral_code = request.data.get('referral_code')
         if referral_code:
             try:
-                raw_code = str(referral_code).strip().upper()
-                referrer = User.objects.filter(
-                    models.Q(referral_code__iexact=raw_code) |
-                    models.Q(referral_code__iexact=f"TBC{raw_code}") |
-                    models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
-                ).first()
-                if referrer and referrer != user:
-                    if not Referral.objects.filter(referred=user).exists():
-                        import random, string
-                        link = ReferralLink.objects.filter(user=referrer).first()
-                        if not link:
-                            link = ReferralLink.objects.create(
-                                user=referrer,
-                                token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                                expires_at=timezone.now() + timezone.timedelta(days=365)
-                            )
-                        Referral.objects.create(
-                            referrer=referrer,
-                            referred=user,
-                            referral_link=link
-                        )
-                        print(f"Created dynamic referral record: {referrer.email} referred {user.email}")
+                referrer = find_referrer_by_code(referral_code, exclude_user=user)
+                if referrer:
+                    link_user_referral(user, referrer)
             except Exception as e:
                 print(f"Error processing dynamic referral code: {e}")
         
@@ -1611,42 +1692,17 @@ class SignupView(views.APIView):
                 return Response({'error': 'A user with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
             raise create_err
 
-        # Handle Referral Code
+        # Handle Referral Code (if provided)
         referral_code = data.get('referral_code')
         if referral_code and role == 'customer':
             try:
-                raw_code = str(referral_code).strip().upper()
-                referrer = User.objects.filter(
-                    models.Q(referral_code__iexact=raw_code) |
-                    models.Q(referral_code__iexact=f"TBC{raw_code}") |
-                    models.Q(referral_code__iexact=raw_code.replace('TBC', ''))
-                ).first()
-                if not referrer and raw_code.replace('TBC', '').isdigit():
-                    referrer = User.objects.filter(customer_number=int(raw_code.replace('TBC', ''))).first()
-                if referrer and referrer != user:
-                    if not referrer.referral_code:
-                        import random
-                        referrer.referral_code = f"TBC{random.randint(100000, 999999)}"
-                        referrer.save(update_fields=['referral_code'])
-                    # Find or create a referral link for the referrer
-                    link = ReferralLink.objects.filter(user=referrer).first()
-                    if not link:
-                        link = ReferralLink.objects.create(
-                            user=referrer,
-                            token=''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-                            expires_at=timezone.now() + timezone.timedelta(days=365)
-                        )
-                    
-                    Referral.objects.create(
-                        referrer=referrer,
-                        referred=user,
-                        referral_link=link
-                    )
-                    print(f"Created referral record: {referrer.email} referred {user.email}")
+                referrer = find_referrer_by_code(referral_code, exclude_user=user)
+                if referrer:
+                    link_user_referral(user, referrer)
                     if PrimeMembership.objects.filter(user=user, expires_at__gt=timezone.now()).exists():
                         credit_referral_reward(user)
             except Exception as e:
-                print(f"Error processing referral code: {e}")
+                print(f"Error processing referral code in signup: {e}")
         
         if role == 'merchant':
             from decimal import Decimal, InvalidOperation
@@ -1833,8 +1889,20 @@ class ProfileView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        print(f"ProfileView hit for user: {request.user}")
-        return Response(UserSerializer(request.user).data)
+        user = request.user
+        try:
+            now = timezone.now()
+            if PrimeMembership.objects.filter(user=user, expires_at__gt=now).exists():
+                credit_referral_reward(user)
+            uncredited = Referral.objects.filter(referrer=user).filter(
+                models.Q(reward_paid_at__isnull=True) | models.Q(reward_amount__isnull=True) | models.Q(reward_amount=0)
+            ).select_related('referred')
+            for uref in uncredited:
+                if PrimeMembership.objects.filter(user=uref.referred, expires_at__gt=now).exists():
+                    credit_referral_reward(uref.referred)
+        except Exception as e:
+            pass
+        return Response(UserSerializer(user).data)
 
     def put(self, request):
         user = request.user

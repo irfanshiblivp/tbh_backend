@@ -179,21 +179,55 @@ class _HomeScreenState extends State<HomeScreen> {
     if (query.trim().isEmpty) return [];
     final q = query.toLowerCase().trim();
     final Map<String, bool> suggestionsMap = {};
+
     for (final m in merchants) {
+      // 1. City
       if (m.city.isNotEmpty && m.city.toLowerCase().contains(q)) {
-        suggestionsMap[m.city] = true;
+        suggestionsMap[m.city.trim()] = true;
       }
+      // 2. State
       if (m.state.isNotEmpty && m.state.toLowerCase().contains(q)) {
-        suggestionsMap[m.state] = true;
+        suggestionsMap[m.state.trim()] = true;
       }
-      if (m.businessName.toLowerCase().contains(q)) {
-        suggestionsMap[m.businessName] = false;
+      // 3. Place / Locality from Address
+      if (m.address.isNotEmpty) {
+        final parts = m.address.split(RegExp(r'[,;\n]'));
+        for (final part in parts) {
+          final clean = part.trim();
+          if (clean.length >= 3 && clean.length <= 40 && clean.toLowerCase().contains(q)) {
+            if (!RegExp(r'^\d+$').hasMatch(clean)) {
+              suggestionsMap[clean] = true;
+            }
+          }
+        }
       }
+      // 4. Category
       if (m.categoryName.isNotEmpty && m.categoryName.toLowerCase().contains(q)) {
-        suggestionsMap[m.categoryName] = false;
+        suggestionsMap[m.categoryName.trim()] = false;
+      }
+      // 5. Details / keywords from description (excluding shop name)
+      if (m.description.isNotEmpty && m.description.toLowerCase().contains(q)) {
+        final descParts = m.description.split(RegExp(r'[,;\n•|]'));
+        for (final dp in descParts) {
+          final cleanDp = dp.trim();
+          if (cleanDp.length >= 3 && cleanDp.length <= 35 && cleanDp.toLowerCase().contains(q)) {
+            if (cleanDp.toLowerCase() != m.businessName.toLowerCase()) {
+              suggestionsMap[cleanDp] = false;
+            }
+          }
+        }
       }
     }
-    final sortedKeys = suggestionsMap.keys.toList()..sort();
+
+    final sortedKeys = suggestionsMap.keys.toList()
+      ..sort((a, b) {
+        final aStarts = a.toLowerCase().startsWith(q);
+        final bStarts = b.toLowerCase().startsWith(q);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.compareTo(b);
+      });
+
     return sortedKeys.take(6).map((key) {
       return {
         'text': key,
@@ -236,12 +270,15 @@ class _HomeScreenState extends State<HomeScreen> {
         final name = m.businessName.toLowerCase();
         final catName = m.categoryName.toLowerCase();
         
+        final desc = m.description.toLowerCase();
+        
         bool matchesQuery = words.isNotEmpty && words.every((word) =>
           name.contains(word) ||
           city.contains(word) ||
           stateName.contains(word) ||
           address.contains(word) ||
-          catName.contains(word)
+          catName.contains(word) ||
+          desc.contains(word)
         );
 
         if (matchesQuery) {
@@ -436,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             onSubmitted: (_) => setState(() => _showSuggestions = false),
                             decoration: InputDecoration(
-                              hintText: "Search location, city, state or shop...",
+                              hintText: "Search location, city, place, category...",
                               hintStyle: GoogleFonts.jost(color: Colors.white30, fontSize: 14),
                               prefixIcon: const Icon(Icons.search, color: AppColors.amber, size: 20),
                               suffixIcon: _searchQuery.isNotEmpty
@@ -503,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Icon(
                                           suggestion['isLocation'] == true
                                               ? Icons.location_on_outlined
-                                              : Icons.storefront,
+                                              : Icons.category_outlined,
                                           color: AppColors.amber,
                                           size: 16,
                                         ),

@@ -106,12 +106,8 @@ class UserSerializer(serializers.ModelSerializer):
         if ref_count_map is not None:
             return ref_count_map.get(obj.id, 0)
         from .models import Referral, PrimeMembership
-        referrals = Referral.objects.filter(referrer=obj).select_related('referred')
-        count = 0
-        for ref in referrals:
-            if PrimeMembership.objects.filter(user=ref.referred).exists():
-                count += 1
-        return count
+        referral_user_ids = Referral.objects.filter(referrer=obj).values_list('referred_id', flat=True).distinct()
+        return PrimeMembership.objects.filter(user_id__in=referral_user_ids).values('user_id').distinct().count()
 
     def get_free_prime_requested(self, obj):
         free_req_map = self.context.get('free_req_map')
