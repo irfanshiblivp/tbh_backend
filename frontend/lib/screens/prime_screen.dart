@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,51 @@ class _PrimeScreenState extends State<PrimeScreen> {
   double price = 0;
   final TextEditingController _referralController = TextEditingController();
   Razorpay? _razorpay;
+  String? _referredByName;
+  bool _isCheckingReferral = false;
+  String? _referralError;
+  Timer? _debounceTimer;
+
+  void _onReferralCodeChanged(String value) {
+    _debounceTimer?.cancel();
+    final clean = value.trim();
+    if (clean.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _referredByName = null;
+          _referralError = null;
+          _isCheckingReferral = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isCheckingReferral = true;
+        _referralError = null;
+      });
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      final state = context.read<AppState>();
+      final res = await state.checkReferralCode(clean);
+      if (!mounted) return;
+      if (res != null && res['valid'] == true) {
+        setState(() {
+          _referredByName = res['name'];
+          _referralError = null;
+          _isCheckingReferral = false;
+        });
+      } else {
+        setState(() {
+          _referredByName = null;
+          _referralError = res?['message'] ?? 'Invalid referral code';
+          _isCheckingReferral = false;
+        });
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -40,6 +86,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
           final code = signupMethod.substring('Referral ('.length, signupMethod.length - 1).trim();
           if (code.isNotEmpty && code != 'TBC') {
             _referralController.text = code;
+            _onReferralCodeChanged(code);
           }
         }
       }
@@ -71,6 +118,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _razorpay?.clear();
     _referralController.dispose();
     super.dispose();
@@ -364,6 +412,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                               TextField(
                                 controller: _referralController,
                                 style: GoogleFonts.jost(color: Colors.white, fontSize: 14),
+                                onChanged: _onReferralCodeChanged,
                                 decoration: InputDecoration(
                                   hintText: "Referral Code (Optional)",
                                   hintStyle: GoogleFonts.jost(color: Colors.white30),
@@ -379,8 +428,67 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                     borderSide: const BorderSide(color: AppColors.amber),
                                   ),
                                   prefixIcon: const Icon(Icons.group_add_outlined, color: AppColors.amber, size: 20),
+                                  suffixIcon: _isCheckingReferral
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.amber),
+                                          ),
+                                        )
+                                      : _referredByName != null
+                                          ? const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20)
+                                          : _referralError != null
+                                              ? const Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 20)
+                                              : null,
                                 ),
                               ),
+                              if (_referredByName != null) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.greenAccent.withOpacity(0.35)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.verified, color: Colors.greenAccent, size: 18),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          "You are referred by $_referredByName",
+                                          style: GoogleFonts.jost(
+                                            color: Colors.greenAccent,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else if (_referralError != null) ...[
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline, color: Colors.redAccent, size: 14),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          _referralError!,
+                                          style: GoogleFonts.jost(color: Colors.redAccent, fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 24),
                               // Dynamic Benefits from selected plan
                               if (selectedPlanId != null)

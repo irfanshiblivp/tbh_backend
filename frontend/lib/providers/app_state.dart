@@ -719,6 +719,10 @@ class AppState extends ChangeNotifier {
   }
 
 
+  Future<Map<String, dynamic>?> checkReferralCode(String code) async {
+    return await _api.checkReferralCode(code);
+  }
+
   Future<void> upgradeToPrime(double price, {String? referralCode}) async {
     _isLoading = true;
     notifyListeners();

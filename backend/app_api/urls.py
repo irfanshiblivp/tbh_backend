@@ -8,7 +8,7 @@ from .views import (
     VerifyEmailView, ForgotPasswordView, ResetPasswordView, VerifyOTPView,
     AdminNotificationView, ReferralPayoutViewSet, RazorpayCreateOrderView,
     RazorpayVerifyPaymentView, CustomerTransactionsView, ChangePasswordView,
-    HeroBannerViewSet, FreePrimeRequestViewSet
+    HeroBannerViewSet, FreePrimeRequestViewSet, CheckReferralCodeView
 )
 
 router = DefaultRouter()
@@ -30,6 +30,7 @@ urlpatterns = [
     # Auth Endpoints
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/signup/', SignupView.as_view(), name='signup'),
+    path('auth/check-referral/', CheckReferralCodeView.as_view(), name='check-referral'),
     path('auth/verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('auth/resend-otp/', ResendVerificationView.as_view(), name='resend_otp'),
     path('auth/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),

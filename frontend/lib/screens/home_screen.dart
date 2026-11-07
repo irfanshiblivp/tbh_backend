@@ -205,18 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (m.categoryName.isNotEmpty && m.categoryName.toLowerCase().contains(q)) {
         suggestionsMap[m.categoryName.trim()] = false;
       }
-      // 5. Details / keywords from description (excluding shop name)
-      if (m.description.isNotEmpty && m.description.toLowerCase().contains(q)) {
-        final descParts = m.description.split(RegExp(r'[,;\n•|]'));
-        for (final dp in descParts) {
-          final cleanDp = dp.trim();
-          if (cleanDp.length >= 3 && cleanDp.length <= 35 && cleanDp.toLowerCase().contains(q)) {
-            if (cleanDp.toLowerCase() != m.businessName.toLowerCase()) {
-              suggestionsMap[cleanDp] = false;
-            }
-          }
-        }
-      }
     }
 
     final sortedKeys = suggestionsMap.keys.toList()

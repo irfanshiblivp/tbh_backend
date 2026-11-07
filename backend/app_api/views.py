@@ -378,6 +378,10 @@ def find_referrer_by_code(referral_input, exclude_user=None):
     if not referrer and '@' in raw_code:
         referrer = User.objects.filter(email__iexact=raw_code.strip()).first()
 
+    # 6. Member name
+    if not referrer and len(raw_code) >= 3:
+        referrer = User.objects.filter(name__iexact=raw_code.strip()).first()
+
     if referrer and exclude_user and referrer.id == exclude_user.id:
         return None
 
@@ -414,10 +418,14 @@ def link_user_referral(user, referrer):
         )
         print(f"Created referral record: {referrer.email} referred {user.email}")
         return ref
-    elif existing_ref.reward_paid_at is None or existing_ref.reward_amount is None or existing_ref.reward_amount <= 0:
+    else:
         existing_ref.referrer = referrer
         existing_ref.referral_link = link
-        existing_ref.save(update_fields=['referrer', 'referral_link'])
+        # If reward has not been paid or was for a different referrer, reset so credit_referral_reward awards this referrer
+        if existing_ref.referrer_id != referrer.id or not existing_ref.reward_amount or existing_ref.reward_amount <= 0:
+            existing_ref.reward_paid_at = None
+            existing_ref.reward_amount = None
+        existing_ref.save()
         print(f"Updated referral record: {referrer.email} referred {user.email}")
         return existing_ref
 
@@ -465,7 +473,7 @@ def notify_referral_reward(referrer, referred_user, reward_amount):
         print(f"Error sending referral reward notification: {e}")
 
 
-def credit_referral_reward(user):
+def credit_referral_reward(user, force=False):
     """
     Credits ₹100 referral bonus to referrer when a referred user acquires Prime membership.
     Updates DB with reward_amount, reward_paid_at, increments referral_balance & referral_total_earned.
@@ -477,8 +485,8 @@ def credit_referral_reward(user):
     if not referral:
         return None
 
-    # Already credited with reward
-    if referral.reward_paid_at is not None and referral.reward_amount is not None and referral.reward_amount > 0:
+    # Already credited with reward and not forced
+    if not force and referral.reward_paid_at is not None and referral.reward_amount is not None and referral.reward_amount > 0:
         return None
 
     referrer = referral.referrer
@@ -500,19 +508,68 @@ def credit_referral_reward(user):
         except Exception:
             pass
 
-    referrer.referral_balance = (referrer.referral_balance or Decimal('0.00')) + reward_amount_dec
-    referrer.referral_total_earned = (referrer.referral_total_earned or Decimal('0.00')) + reward_amount_dec
+    current_bal = Decimal(str(referrer.referral_balance or 0.00))
+    current_earned = Decimal(str(referrer.referral_total_earned or 0.00))
+
+    referrer.referral_balance = current_bal + reward_amount_dec
+    referrer.referral_total_earned = current_earned + reward_amount_dec
     referrer.save(update_fields=['referral_balance', 'referral_total_earned'])
 
     referral.reward_paid_at = timezone.now()
     referral.reward_amount = reward_amount_dec
-    referral.save(update_fields=['reward_paid_at', 'reward_amount'])
+    referral.save(update_fields=['reward_paid_at', 'reward_amount', 'referrer', 'referral_link'])
     print(f"Awarded referral reward of {reward_amount_dec} to {referrer.email} for {user.email}")
     try:
         notify_referral_reward(referrer, user, reward_amount_dec)
     except Exception as e:
         print(f"Error notifying referral reward: {e}")
     return reward_amount_dec
+
+
+class CheckReferralCodeView(views.APIView):
+    """
+    Validates a referral code / customer ID / phone number and returns the referrer's display name.
+    Used by the mobile app on the Prime screen to show 'You are referred by <name>'.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        return self._validate(request)
+
+    def post(self, request):
+        return self._validate(request)
+
+    def _validate(self, request):
+        code = request.query_params.get('code') or request.data.get('code') or request.query_params.get('referral_code') or request.data.get('referral_code')
+        if not code or not str(code).strip():
+            return Response({'valid': False, 'message': 'Referral code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        current_user = request.user if request.user.is_authenticated else None
+
+        # Check for self-referral
+        if current_user:
+            self_match = find_referrer_by_code(code)
+            if self_match and self_match.id == current_user.id:
+                return Response({
+                    'valid': False,
+                    'is_self': True,
+                    'message': 'You cannot use your own referral code.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        referrer = find_referrer_by_code(code, exclude_user=current_user)
+        if not referrer:
+            return Response({
+                'valid': False,
+                'message': 'Invalid referral code. No member found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        referrer_name = referrer.name or (referrer.email.split('@')[0].capitalize() if referrer.email else "Valued Member")
+        return Response({
+            'valid': True,
+            'name': referrer_name,
+            'referral_code': referrer.referral_code or f"TBC{referrer.id}",
+            'message': f"You are referred by {referrer_name}"
+        }, status=status.HTTP_200_OK)
 
 class RazorpayVerifyPaymentView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -581,15 +638,17 @@ class RazorpayVerifyPaymentView(views.APIView):
                 
             # Dynamically process referral code if provided during Prime purchase
             referral_code = request.data.get('referral_code')
+            has_explicit_referral = False
             if referral_code:
                 try:
                     referrer = find_referrer_by_code(referral_code, exclude_user=user)
                     if referrer:
                         link_user_referral(user, referrer)
+                        has_explicit_referral = True
                 except Exception as e:
                     print(f"Error processing dynamic referral code via verify_payment: {e}")
                 
-            awarded = credit_referral_reward(user)
+            awarded = credit_referral_reward(user, force=has_explicit_referral)
             if awarded:
                 message = f'Payment verified and Prime membership activated successfully! Referral reward of ₹{awarded} credited.'
             else:
@@ -1281,14 +1340,16 @@ class UserViewSet(viewsets.ModelViewSet):
             expires_at=timezone.now() + timezone.timedelta(days=365)
         )
         referral_code = request.data.get('referral_code')
+        has_explicit = False
         if referral_code:
             try:
                 referrer = find_referrer_by_code(referral_code, exclude_user=user)
                 if referrer:
                     link_user_referral(user, referrer)
+                    has_explicit = True
             except Exception as e:
                 print(f"Error processing dynamic referral in grant_prime: {e}")
-        credit_referral_reward(user)
+        credit_referral_reward(user, force=has_explicit)
         try:
             notify_prime_purchase(user, membership)
         except Exception as fcm_err:
@@ -1303,6 +1364,10 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         PrimeMembership.objects.filter(user=user).delete()
         return Response({'status': 'Prime membership revoked'})
+
+    @action(detail=False, methods=['get', 'post'], permission_classes=[permissions.AllowAny])
+    def check_referral(self, request):
+        return CheckReferralCodeView()._validate(request)
 
     @action(detail=False, methods=['post'])
     def fake_purchase_prime(self, request):
@@ -1328,16 +1393,18 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Dynamically process referral code if provided during Prime purchase
         referral_code = request.data.get('referral_code')
+        has_explicit = False
         if referral_code:
             try:
                 referrer = find_referrer_by_code(referral_code, exclude_user=user)
                 if referrer:
                     link_user_referral(user, referrer)
+                    has_explicit = True
             except Exception as e:
                 print(f"Error processing dynamic referral code: {e}")
         
         # 2. Check for referral reward
-        credit_referral_reward(user)
+        credit_referral_reward(user, force=has_explicit)
             
         user.refresh_from_db()
         return Response({

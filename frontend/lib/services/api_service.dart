@@ -877,6 +877,32 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>?> checkReferralCode(String code) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/auth/check-referral/?code=${Uri.encodeComponent(code)}'),
+            headers: await _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        try {
+          final body = jsonDecode(response.body);
+          return {
+            'valid': false,
+            'message': body['message'] ?? 'Invalid referral code.',
+          };
+        } catch (_) {
+          return {'valid': false, 'message': 'Invalid referral code.'};
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<dynamic> getCustomerTransactions() async {
     try {
       final response = await http
