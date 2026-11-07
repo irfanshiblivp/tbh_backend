@@ -434,36 +434,9 @@ def link_user_referral(user, referrer):
 
 def notify_referral_reward(referrer, referred_user, reward_amount):
     """
-    Sends email and push notification to the referrer when their referral bonus is credited.
+    Sends push notification to the referrer when their referral bonus is credited (email disabled as per requirement).
     """
     try:
-        subject = f"You earned ₹{reward_amount:.0f} Referral Bonus! - The Baron Club"
-        text_content = (
-            f"Congratulations {referrer.name or 'Member'}!\n\n"
-            f"Your friend {referred_user.name or referred_user.email} has joined The Baron Club Prime. "
-            f"A referral bonus of ₹{reward_amount:.0f} has been added to your wallet.\n\n"
-            f"Check your balance in the app!"
-        )
-        html_message = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://thebaronclub.com/logo-01.png" alt="The Baron Club" style="height: 60px;">
-            </div>
-            <div style="background-color: #F8F9FA; border-left: 4px solid #28a745; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                <h2 style="color: #28a745; margin: 0 0 8px 0; font-size: 20px;">+ ₹{reward_amount:.0f} Bonus Credited!</h2>
-                <p style="color: #555; margin: 0; font-size: 14px;">Your friend <strong>{referred_user.name or referred_user.email}</strong> just upgraded to Prime.</p>
-            </div>
-            <p style="color: #444; font-size: 14px; line-height: 1.6;">
-                Your referral bonus of <strong>₹{reward_amount:.0f}</strong> is now available in your Baron Club wallet. You can check your updated balance and request payouts directly from the app.
-            </p>
-        </div>
-        """
-        send_async_email_with_fallback(
-            subject=subject,
-            text_content=text_content,
-            to_email=referrer.email,
-            html_message=html_message
-        )
         send_push_notification(
             topic=f"user_{referrer.id}",
             title="Referral Bonus Credited! 🎁",
@@ -577,9 +550,8 @@ class CheckReferralCodeView(views.APIView):
 
         return Response({
             'valid': True,
-            'name': referrer_name,
             'referral_code': referrer.referral_code or f"TBC{referrer.id}",
-            'message': f"You are referred by {referrer_name}"
+            'message': 'Referral code applied'
         }, status=status.HTTP_200_OK)
 
 class RazorpayVerifyPaymentView(views.APIView):

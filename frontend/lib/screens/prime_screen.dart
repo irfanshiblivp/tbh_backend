@@ -22,7 +22,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
   double price = 0;
   final TextEditingController _referralController = TextEditingController();
   Razorpay? _razorpay;
-  String? _referredByName;
+  bool _isReferralApplied = false;
   bool _isCheckingReferral = false;
   String? _referralError;
   Timer? _debounceTimer;
@@ -33,7 +33,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
     if (clean.isEmpty) {
       if (mounted) {
         setState(() {
-          _referredByName = null;
+          _isReferralApplied = false;
           _referralError = null;
           _isCheckingReferral = false;
         });
@@ -54,13 +54,13 @@ class _PrimeScreenState extends State<PrimeScreen> {
       if (!mounted) return;
       if (res != null && res['valid'] == true) {
         setState(() {
-          _referredByName = res['name'];
+          _isReferralApplied = true;
           _referralError = null;
           _isCheckingReferral = false;
         });
       } else {
         setState(() {
-          _referredByName = null;
+          _isReferralApplied = false;
           _referralError = res?['message'] ?? 'Invalid referral code';
           _isCheckingReferral = false;
         });
@@ -442,14 +442,14 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.amber),
                                           ),
                                         )
-                                      : _referredByName != null
+                                      : _isReferralApplied
                                           ? const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20)
                                           : _referralError != null
                                               ? const Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 20)
                                               : null,
                                 ),
                               ),
-                              if (_referredByName != null) ...[
+                              if (_isReferralApplied) ...[
                                 const SizedBox(height: 8),
                                 Container(
                                   width: double.infinity,
@@ -465,7 +465,7 @@ class _PrimeScreenState extends State<PrimeScreen> {
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          "You are referred by $_referredByName",
+                                          "Referral code applied",
                                           style: GoogleFonts.jost(
                                             color: Colors.greenAccent,
                                             fontSize: 13,
