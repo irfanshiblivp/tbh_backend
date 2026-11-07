@@ -30,12 +30,15 @@ class ActivityFeed extends StatelessWidget {
     IconData icon;
     Color color;
     
-    if (log.action.contains("Blocked")) {
+    if (log.action.contains("Blocked") || log.action.contains("Failed")) {
       icon = Icons.block;
       color = Colors.red;
-    } else if (log.action.contains("Created")) {
-      icon = Icons.add_circle;
+    } else if (log.action.contains("Created") || log.action.contains("Received") || log.action.contains("Redeemed")) {
+      icon = Icons.check_circle;
       color = Colors.green;
+    } else if (log.action.contains("Pending")) {
+      icon = Icons.hourglass_empty;
+      color = Colors.amber;
     } else {
       icon = Icons.history;
       color = Colors.blue;

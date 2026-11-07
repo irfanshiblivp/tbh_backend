@@ -278,7 +278,7 @@ class SystemAnnouncement(models.Model):
 
     class Meta:
         db_table = 'system_announcements'
-        managed = True
+        managed = False
 
 class ReferralPayout(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payouts', db_column='user_id')
@@ -291,7 +291,7 @@ class ReferralPayout(models.Model):
 
     class Meta:
         db_table = 'referral_payouts'
-        managed = True
+        managed = False
 
 class HeroBanner(models.Model):
     image = models.ImageField(upload_to='hero-banners/', null=True, blank=True)

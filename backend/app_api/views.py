@@ -564,6 +564,17 @@ class CheckReferralCodeView(views.APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
         referrer_name = referrer.name or (referrer.email.split('@')[0].capitalize() if referrer.email else "Valued Member")
+        
+        # Link user to referrer immediately if authenticated customer
+        if current_user and current_user.is_authenticated and current_user.id != referrer.id and getattr(current_user, 'role', 'customer') == 'customer':
+            try:
+                link_user_referral(current_user, referrer)
+                from django.utils import timezone
+                if PrimeMembership.objects.filter(user=current_user, expires_at__gt=timezone.now()).exists():
+                    credit_referral_reward(current_user, force=True)
+            except Exception as e:
+                print(f"Error auto-linking referral on check: {e}")
+
         return Response({
             'valid': True,
             'name': referrer_name,
@@ -2265,8 +2276,8 @@ class AdminDashboardView(views.APIView):
         total_payments = Payment.objects.count()
         total_prime_users = PrimeMembership.objects.filter(expires_at__gt=timezone.now()).values('user_id').distinct().count()
         
-        # Recent activity (mix of payments and vouchers)
-        recent_payments = Payment.objects.all().order_by('-id')[:5]
+        # Recent activity (mix of verified payments and vouchers)
+        recent_payments = Payment.objects.filter(status__in=['paid', 'success']).order_by('-id')[:5]
         recent_vouchers = Voucher.objects.all().order_by('-id')[:5]
         
         # Check for expiring memberships (next 7 days) for auto-announcements

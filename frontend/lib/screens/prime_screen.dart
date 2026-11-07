@@ -132,11 +132,12 @@ class _PrimeScreenState extends State<PrimeScreen> {
     );
 
     final state = context.read<AppState>();
+    final cleanRefCode = _referralController.text.trim();
     bool success = await state.verifyRazorpayPayment(
       orderId: response.orderId ?? '',
       paymentId: response.paymentId ?? '',
       signature: response.signature ?? '',
-      referralCode: _referralController.text,
+      referralCode: cleanRefCode.isNotEmpty ? cleanRefCode : null,
     );
 
     if (!mounted) return;
@@ -196,6 +197,10 @@ class _PrimeScreenState extends State<PrimeScreen> {
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
     );
+
+    if (referralInput.isNotEmpty) {
+      await state.checkReferralCode(referralInput);
+    }
 
     final orderData = await state.createRazorpayOrder(price);
     

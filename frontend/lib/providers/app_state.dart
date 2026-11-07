@@ -427,6 +427,7 @@ class AppState extends ChangeNotifier {
           if (customerData['payments'] != null) {
             final list = customerData['payments'] as List;
             for (var p in list) {
+              if (p['status']?.toString().toLowerCase() == 'pending') continue;
               all.add(Transaction(
                 transactionId: p['razorpay_order_id'] ?? 'TX-${p['id']}',
                 amountPaid: (p['amount'] ?? 0) / 100.0,
